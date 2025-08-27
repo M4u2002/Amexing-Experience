@@ -1,0 +1,146 @@
+@startuml AmexingWeb High-Level Architecture
+
+title AmexingWeb PCI DSS 4.0 Compliant Architecture\\nHigh-Level System Overview
+
+' Internet Zone (Untrusted)
+package "Internet Zone (Untrusted)" as InternetZone {
+    actor "Users" as Users
+    actor "Administrators" as Admins
+    cloud "Internet" as Internet
+}
+
+' DMZ Zone (Controlled Access)
+package "DMZ Zone (Controlled Access)" as DMZZone #FFE66D {
+    component "AWS Application\\nLoad Balancer" as ALB
+    component "Nginx Reverse Proxy\\n(SSL Termination)" as Nginx
+    note right of Nginx
+        **PCI DSS Req 4.2.1**
+        - TLS 1.3 encryption
+        - Certificate management
+        - Security headers
+    end note
+}
+
+' Application Zone (CDE - Cardholder Data Environment)
+package "Application Zone (CDE)" as AppZone #4ECDC4 {
+    node "AWS EC2 Instance" as EC2 {
+        component "Parse Server\\n(Node.js 18+)" as ParseServer
+        component "Express.js API" as ExpressAPI
+        component "Security Middleware" as SecurityMW
+        component "Winston Logger" as Logger
+        
+        note bottom of SecurityMW
+            **PCI DSS Req 6.2.4**
+            - Input validation
+            - XSS protection
+            - CSRF protection
+            - Rate limiting
+        end note
+    }
+    
+    component "Local File System\\n(Encrypted)" as LocalFS
+}
+
+' Database Zone (External CDE)
+package "Database Zone (External CDE)" as DBZone #D3D3D3 {
+    database "MongoDB Atlas\\n(PCI DSS Compliant)" as MongoDB
+    note bottom of MongoDB
+        **PCI DSS Req 3.5.1**
+        - AES-256 encryption at rest
+        - TLS 1.2+ in transit
+        - Access controls
+        - Audit logging
+    end note
+}
+
+' Storage Zone (Encrypted Storage)
+package "Storage Zone (Encrypted)" as StorageZone #95E1D3 {
+    storage "AWS S3\\n(Server-Side Encrypted)" as S3
+    note bottom of S3
+        **PCI DSS Req 3.4**
+        - SSE-S3 encryption
+        - Bucket policies
+        - Access logging
+        - Versioning enabled
+    end note
+}
+
+' Security Components
+package "Security & Monitoring" as SecurityZone #FF6B6B {
+    component "CloudWatch\\nMonitoring" as CloudWatch
+    component "AWS WAF\\n(Web Application Firewall)" as WAF
+    component "VPC Security Groups" as SecurityGroups
+    component "AWS CloudTrail\\n(Audit Logging)" as CloudTrail
+}
+
+' Connections with security annotations
+Users --> Internet : HTTPS only
+Admins --> Internet : HTTPS + MFA
+Internet --> WAF : **Filtered Traffic**
+WAF --> ALB : **Clean Traffic**
+ALB --> Nginx : **Load Balanced**
+
+Nginx --> ParseServer : **Internal Network\\n(Port 1337)**
+ParseServer --> ExpressAPI : **Local calls**
+ExpressAPI --> SecurityMW : **All requests**
+SecurityMW --> Logger : **Security events**
+
+ParseServer --> MongoDB : **TLS 1.3 Encrypted\\n(Port 27017)**
+ParseServer --> S3 : **HTTPS API\\n(Encrypted uploads)**
+
+' Monitoring connections
+EC2 --> CloudWatch : **Metrics & Logs**
+Nginx --> CloudTrail : **Access logs**
+ParseServer --> CloudTrail : **API calls**
+
+' Security boundaries
+rectangle "PCI DSS Scope Boundary" as PCIBoundary #FF6B6B {
+}
+
+' Firewall rules
+note top of SecurityGroups
+    **PCI DSS Req 1.2.1 - Firewall Rules**
+    - Port 443: Internet → ALB (HTTPS)
+    - Port 80: Internet → ALB (Redirect to HTTPS)
+    - Port 1337: ALB → EC2 (Internal API)
+    - Port 22: Admin access only (SSH)
+    - Outbound: MongoDB Atlas (27017)
+    - Outbound: S3 API (443)
+end note
+
+' Data flow annotations
+note bottom of Internet
+    **PCI DSS Req 1.3.1**
+    All inbound traffic restricted to:
+    - HTTPS (443) for application access
+    - SSH (22) for admin access only
+    All other ports denied by default
+end note
+
+note right of AppZone
+    **Cardholder Data Environment (CDE)**
+    **PCI DSS Req 1.2.3 - Network Diagram**
+    - All CHD processing occurs here
+    - Isolated from other networks
+    - Comprehensive logging enabled
+    - Access controls enforced
+end note
+
+legend bottom
+    **Security Zone Classification:**
+    Red: Security boundaries and critical components
+    Blue/Teal: Trusted/secure zones (CDE)
+    Yellow: DMZ and controlled access zones  
+    Gray: External services and infrastructure
+    Green: Data processing and storage zones
+    
+    **PCI DSS 4.0 Compliance:**
+    ✓ Network segmentation (Req 1.2.3)
+    ✓ Firewall configuration (Req 1.2.1) 
+    ✓ Encryption in transit (Req 4.2.1)
+    ✓ Encryption at rest (Req 3.5.1)
+    ✓ Access controls (Req 7.1.1)
+    ✓ Audit logging (Req 10.2.1)
+end legend
+
+@enduml

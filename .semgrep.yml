@@ -1,0 +1,28 @@
+# Semgrep Configuration
+# Free security analysis for JavaScript/Node.js
+
+rules:
+  # JavaScript Security Rules
+  - id: javascript-security-rules
+    languages:
+      - javascript
+      - typescript
+    paths:
+      include:
+        - "src/"
+        - "config/"
+      exclude:
+        - "node_modules/"
+        - "tests/"
+        - "coverage/"
+        - "logs/"
+        - "docs/"
+        - "*.test.js"
+        - "*.spec.js"
+
+  # Additional rulesets to include
+  - p/security-audit
+  - p/nodejs
+  - p/javascript
+  - p/express
+  - p/secrets

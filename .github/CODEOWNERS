@@ -1,0 +1,53 @@
+# CODEOWNERS - Mandatory Code Reviews for PCI DSS Compliance
+# Security-sensitive files require security team approval
+
+# Global fallback - all files need at least one review
+* @development-team
+
+# Security-critical directories (PCI DSS Req 6.2.4)
+/src/infrastructure/security/     @security-team @development-lead
+/src/application/middleware/      @security-team @development-team
+/.github/workflows/               @security-team @devops-team
+/config/                          @security-team @development-team
+/planning/pci_dss_4.0/           @security-team @compliance-officer
+
+# Authentication and authorization code (Critical)
+/src/application/controllers/authController.js    @security-team @development-lead
+/src/application/middleware/authMiddleware.js     @security-team @development-lead
+/src/cloud/functions/                             @security-team @development-team
+
+# Infrastructure and deployment (High Impact)
+/src/index.js                     @security-team @development-lead
+/src/infrastructure/              @security-team @development-team
+/scripts/                         @security-team @development-team
+
+# Security policies and documentation
+/SECURITY.md                      @security-team @compliance-officer
+/.github/SECURITY.md              @security-team @compliance-officer
+/docs/SECURE_DEVELOPMENT_GUIDE.md @security-team @development-lead
+
+# Configuration files (Potential security impact)
+package.json                      @security-team @development-lead
+yarn.lock                         @security-team @development-lead
+.env.example                      @security-team @development-team
+/.github/dependabot.yml           @security-team @devops-team
+
+# CI/CD and GitHub configuration
+/.github/                         @security-team @devops-team
+/.config/                         @security-team @development-team
+
+# Testing security
+/tests/security/                  @security-team @development-team
+/tests/integration/security/      @security-team @development-team
+
+# PCI DSS compliance tracking
+/planning/pci_dss_4.0/implementation/    @security-team @compliance-officer
+/planning/pci_dss_4.0/assessments/       @security-team @compliance-officer
+
+# Database and data handling
+/src/domain/                      @security-team @development-team
+/config/parse-server.js           @security-team @development-lead
+
+# Logging and monitoring (Audit trail critical)
+/src/infrastructure/logger.js     @security-team @development-team
+/logs/                            @security-team @development-team

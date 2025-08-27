@@ -1,0 +1,120 @@
+name: PR Validation & Security
+
+on:
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, master]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  validate:
+    name: Code Quality & Security Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # PCI DSS Requirement 6.2.4 - Unit Tests (REQUIRED)
+      - name: Run Unit Tests
+        run: |
+          echo "🧪 Running unit tests (PCI DSS Req 6.2.4 - Quality Assurance)..."
+          yarn test
+          echo "✅ Unit tests passed"
+
+      # PCI DSS Requirement 6.2.4 - Code Quality (REQUIRED)
+      - name: Run Linting
+        run: |
+          echo "🔍 Running code quality checks (PCI DSS Req 6.2.4 - Secure Development)..."
+          yarn lint
+          echo "✅ Code quality checks passed"
+
+      # PCI DSS Requirement 6.2.4 - Security Analysis (REQUIRED)
+      - name: Security Analysis
+        run: |
+          echo "🔒 Running security analysis (PCI DSS Req 6.2.4 - Vulnerability Management)..."
+          yarn security:all
+          echo "✅ Security analysis passed"
+
+      # PCI DSS Requirement 6.2.4 - Dependency Security (REQUIRED)
+      - name: Dependency Security Audit
+        run: |
+          echo "📦 Running dependency security audit (PCI DSS Req 6.2.4)..."
+          
+          # Run audit and capture results
+          yarn audit --level high --json > audit-results.json || true
+          
+          # Check for critical/high vulnerabilities
+          if [ -s audit-results.json ]; then
+            CRITICAL=$(jq -r '.data.vulnerabilities.critical // 0' audit-results.json)
+            HIGH=$(jq -r '.data.vulnerabilities.high // 0' audit-results.json)
+            
+            echo "Audit results:"
+            echo "- Critical vulnerabilities: $CRITICAL"
+            echo "- High vulnerabilities: $HIGH"
+            
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "❌ Critical or high severity vulnerabilities found!"
+              echo "Please fix these vulnerabilities before merging:"
+              yarn audit --level high
+              exit 1
+            fi
+          fi
+          
+          echo "✅ No critical or high severity vulnerabilities found"
+
+      # PCI DSS Requirement 3.4 - Secret Detection (REQUIRED)
+      - name: Secret Detection
+        run: |
+          echo "🕵️ Scanning for hardcoded secrets (PCI DSS Req 3.4)..."
+          
+          FINDINGS=0
+          
+          # Check for common secret patterns
+          if grep -rE '(password|secret|key|token|credential)\s*[:=]\s*["\'"'"'][^"'"'"']{8,}["\'"'"']' \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude="*.md" --exclude="*.json" .; then
+            echo "❌ Potential hardcoded secrets found!"
+            FINDINGS=$((FINDINGS + 1))
+          fi
+          
+          # Check for credit card patterns (PCI DSS specific)
+          if grep -rE '\b[0-9]{4}[-\s]?[0-9]{4}[-\s]?[0-9]{4}[-\s]?[0-9]{4}\b' \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude="*.md" .; then
+            echo "❌ Potential credit card numbers found!"
+            FINDINGS=$((FINDINGS + 1))
+          fi
+          
+          if [ "$FINDINGS" -gt 0 ]; then
+            echo "🚨 Security scan failed: $FINDINGS security issue(s) found"
+            echo "Please remove any hardcoded secrets or sensitive data before merging"
+            exit 1
+          fi
+          
+          echo "✅ No secrets detected"
+
+      # Success summary
+      - name: Validation Summary
+        if: success()
+        run: |
+          echo "🎉 All validation checks passed!"
+          echo ""
+          echo "✅ Unit tests: PASSED"
+          echo "✅ Code quality: PASSED"  
+          echo "✅ Security analysis: PASSED"
+          echo "✅ Dependency audit: PASSED"
+          echo "✅ Secret detection: PASSED"
+          echo ""
+          echo "🛡️ PCI DSS Compliance: Code meets secure development requirements"

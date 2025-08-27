@@ -1,0 +1,19 @@
+{
+  "output": "CHANGELOG.md",
+  "template": "keepachangelog",
+  "unreleased": true,
+  "commitLimit": false,
+  "backfillLimit": false,
+  "includeBranch": ["main", "master", "develop"],
+  "ignoreCommitPattern": "^(chore|docs|style|refactor|test|build|ci)\\(",
+  "replaceText": {
+    "feat": "Added",
+    "fix": "Fixed", 
+    "security": "Security",
+    "hotfix": "Security"
+  },
+  "handlebarsHelpers": {
+    "securityClassification": "function(commit) { const match = commit.body && commit.body.match(/SECURITY:\\s*(Critical|High|Medium|Low)/i); return match ? `**[${match[1].toUpperCase()}]**` : ''; }",
+    "pciReference": "function(commit) { const match = commit.body && commit.body.match(/PCI-DSS:\\s*(Req\\s*[\\d\\.]+)/i); return match ? ` (${match[1]})` : ''; }"
+  }
+}

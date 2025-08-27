@@ -1,0 +1,326 @@
+@startuml AmexingWeb AWS Infrastructure Deployment
+
+title AmexingWeb AWS Infrastructure Deployment\nPCI DSS 4.0 Compliant Production Environment
+
+' AWS Region and Availability Zone structure
+rectangle "AWS Region: us-east-1" as AWSRegion {
+    
+    rectangle "Availability Zone: us-east-1a" as AZ1 {
+        
+        rectangle "VPC: amexing-prod-vpc\n(10.0.0.0/16)" as VPC {
+            
+            ' Public subnet for load balancer and NAT gateway
+            rectangle "Public Subnet: 10.0.1.0/24" as PublicSubnet {
+                component "Internet Gateway\n(igw-amexing-prod)" as IGW
+                component "Application Load Balancer\n(alb-amexing-prod)" as ALB
+                component "NAT Gateway\n(nat-amexing-prod)" as NAT
+                
+                note right of ALB
+                    **ALB Configuration:**
+                    - Target Group: amexing-api-tg
+                    - Health Check: /health
+                    - SSL Policy: ELBSecurityPolicy-TLS-1-2-2019-07
+                    - Certificate: ACM managed
+                end note
+            }
+            
+            ' Private subnet for application servers
+            rectangle "Private Subnet: 10.0.2.0/24" as PrivateSubnet {
+                
+                node "EC2 Instance: i-amexing-prod-app" as EC2Instance {
+                    component "Ubuntu 22.04 LTS\n(Hardened)" as Ubuntu
+                    component "Docker Engine\n(24.0+)" as Docker
+                    component "Nginx\n(Port 80/443)" as Nginx
+                    component "Parse Server\n(Port 1337)" as ParseServer
+                    component "Winston Logger" as Logger
+                    component "CloudWatch Agent" as CWAgent
+                    
+                    note bottom of EC2Instance
+                        **Instance Configuration:**
+                        - Type: t3.medium (2 vCPU, 4GB RAM)
+                        - EBS: gp3 20GB (encrypted)
+                        - Security Group: sg-amexing-app
+                        - Key Pair: amexing-prod-keypair
+                        - IAM Role: EC2-AmexingApp-Role
+                    end note
+                }
+            }
+        }
+    }
+    
+    ' Second AZ for high availability (future)
+    rectangle "Availability Zone: us-east-1b" as AZ2 {
+        rectangle "Future Expansion" as FutureAZ {
+            note as FutureNote
+                **High Availability Setup (Phase 2):**
+                - Duplicate private subnet
+                - Additional EC2 instance
+                - Auto Scaling Group
+                - Cross-AZ load balancing
+            end note
+        }
+    }
+}
+
+' External AWS services
+rectangle "AWS Managed Services" as AWSServices {
+    
+    storage "S3 Bucket\n(amexing-prod-files)" as S3 {
+        component "Server-Side Encryption\n(SSE-S3)" as S3Encryption
+        component "Bucket Policy\n(Restrictive)" as S3Policy
+        component "Versioning Enabled" as S3Versioning
+        component "Access Logging" as S3Logging
+        
+        note bottom of S3
+            **S3 Configuration:**
+            - Encryption: AES-256
+            - Public Access: Blocked
+            - CORS: API domain only
+            - Lifecycle: 90-day deletion
+        end note
+    }
+    
+    component "CloudWatch\n(Monitoring)" as CloudWatch {
+        component "Custom Metrics" as CustomMetrics
+        component "Log Groups" as LogGroups
+        component "Alarms" as Alarms
+        component "Dashboards" as Dashboards
+    }
+    
+    component "AWS WAF\n(Web Application Firewall)" as WAF {
+        component "SQL Injection Rules" as SQLIRules
+        component "XSS Protection" as XSSRules
+        component "Rate Limiting" as RateLimit
+        component "IP Whitelisting" as IPWhitelist
+        
+        note right of WAF
+            **WAF Rules:**
+            - OWASP Top 10 protection
+            - Custom API rate limits
+            - Geographic restrictions
+            - Malicious IP blocking
+        end note
+    }
+    
+    component "Route 53\n(DNS)" as Route53 {
+        component "Health Checks" as HealthChecks
+        component "Failover Routing" as Failover
+    }
+    
+    component "Certificate Manager\n(ACM)" as ACM {
+        component "SSL Certificates" as SSLCerts
+        component "Auto Renewal" as AutoRenewal
+    }
+    
+    component "Secrets Manager" as SecretsManager {
+        component "Database Credentials" as DBSecrets
+        component "API Keys" as APISecrets
+        component "Automatic Rotation" as SecretRotation
+        
+        note bottom of SecretsManager
+            **Secret Management:**
+            - MongoDB Atlas credentials
+            - Parse Server secrets
+            - Third-party API keys
+            - 90-day rotation cycle
+        end note
+    }
+}
+
+' External services
+rectangle "External Services" as ExternalServices {
+    database "MongoDB Atlas\n(PCI DSS Compliant)" as MongoDB {
+        component "M10 Cluster\n(Dedicated)" as MongoCluster
+        component "Encryption at Rest" as MongoEncryption
+        component "Network Peering" as NetworkPeering
+        component "Backup & Recovery" as MongoBackup
+        
+        note bottom of MongoDB
+            **MongoDB Atlas:**
+            - Cluster: M10 (PCI DSS compliant)
+            - Region: us-east-1
+            - Encryption: AES-256
+            - Backup: Continuous
+            - Network: VPC Peering
+        end note
+    }
+}
+
+' Security Groups configuration
+rectangle "Security Groups" as SecurityGroups {
+    component "ALB Security Group\n(sg-amexing-alb)" as ALB_SG {
+        note right
+            **Inbound Rules:**
+            - HTTP (80): 0.0.0.0/0
+            - HTTPS (443): 0.0.0.0/0
+            
+            **Outbound Rules:**
+            - Port 1337: EC2 Security Group
+        end note
+    }
+    
+    component "EC2 Security Group\n(sg-amexing-app)" as EC2_SG {
+        note right
+            **Inbound Rules:**
+            - Port 1337: ALB Security Group
+            - SSH (22): Admin IP ranges
+            
+            **Outbound Rules:**
+            - HTTPS (443): 0.0.0.0/0
+            - MongoDB (27017): MongoDB Atlas
+        end note
+    }
+}
+
+' IAM Roles and Policies
+rectangle "IAM Configuration" as IAM {
+    component "EC2 Instance Role\n(EC2-AmexingApp-Role)" as EC2Role {
+        note right
+            **Attached Policies:**
+            - CloudWatchAgentServerPolicy
+            - S3-AmexingFiles-Access
+            - SecretsManager-Read
+            - Custom-ParseServer-Policy
+        end note
+    }
+    
+    component "Application Policies" as AppPolicies {
+        component "S3 Access Policy" as S3Policy_IAM
+        component "Secrets Access Policy" as SecretsPolicy
+        component "CloudWatch Policy" as CWPolicy
+    }
+}
+
+' Network connections and data flow
+IGW --> ALB : "Internet Traffic\n(HTTPS/HTTP)"
+ALB --> EC2Instance : "Load Balanced\n(Port 1337)"
+EC2Instance --> NAT : "Outbound Internet\n(Updates, APIs)"
+NAT --> IGW : "NAT Gateway"
+
+' AWS service connections
+EC2Instance --> S3 : "File Upload/Download\n(HTTPS)"
+EC2Instance --> CloudWatch : "Metrics & Logs\n(HTTPS)"
+EC2Instance --> SecretsManager : "Secret Retrieval\n(HTTPS)"
+ParseServer --> MongoDB : "Database Access\n(TLS 1.3)"
+
+' Security controls
+WAF --> ALB : "Filtered Traffic"
+Route53 --> WAF : "DNS Resolution"
+ACM --> ALB : "SSL Certificates"
+
+' Monitoring and logging flows
+Logger --> CloudWatch : "Application Logs"
+CWAgent --> CloudWatch : "System Metrics"
+S3 --> CloudWatch : "Access Logs"
+ALB --> CloudWatch : "Load Balancer Logs"
+
+' PCI DSS compliance annotations
+rectangle "PCI DSS Compliance Controls" as PCICompliance {
+    note as PCINote
+        **Network Security (Req 1):**
+        ✓ Firewall between internet and CDE
+        ✓ Security groups restrict traffic
+        ✓ Network segmentation implemented
+        ✓ Default deny rules applied
+        
+        **Secure Configuration (Req 2):**
+        ✓ System hardening standards
+        ✓ Default passwords changed
+        ✓ Unnecessary services disabled
+        ✓ Encryption for admin access
+        
+        **Data Protection (Req 3):**
+        ✓ CHD encrypted at rest (S3, MongoDB)
+        ✓ Strong cryptography (AES-256)
+        ✓ Key management (AWS KMS)
+        ✓ Secure key storage
+        
+        **Secure Transmission (Req 4):**
+        ✓ TLS 1.3 for all connections
+        ✓ Certificate management (ACM)
+        ✓ No unencrypted CHD transmission
+        ✓ Strong cryptographic protocols
+        
+        **Access Control (Req 7&8):**
+        ✓ IAM roles and policies
+        ✓ Least privilege principle
+        ✓ Multi-factor authentication
+        ✓ User access reviews
+        
+        **Monitoring (Req 10):**
+        ✓ Comprehensive logging (CloudWatch)
+        ✓ Log integrity protection
+        ✓ Real-time monitoring
+        ✓ Audit trail maintenance
+    end note
+}
+
+' Deployment process
+rectangle "Deployment Pipeline" as Deployment {
+    component "CI/CD Pipeline\n(GitHub Actions)" as CICD {
+        component "Code Build" as Build
+        component "Security Scanning" as SecurityScan
+        component "Deployment" as Deploy
+        component "Health Checks" as HealthCheck
+        
+        note bottom of CICD
+            **Deployment Steps:**
+            1. Code commit and build
+            2. Security vulnerability scan
+            3. Docker image creation
+            4. EC2 instance deployment
+            5. Health check validation
+            6. Traffic routing (blue/green)
+        end note
+    }
+    
+    component "Backup & Recovery" as BackupRecovery {
+        component "EBS Snapshots" as EBSSnapshots
+        component "Configuration Backup" as ConfigBackup
+        component "Disaster Recovery" as DR
+    }
+}
+
+' Infrastructure monitoring
+rectangle "Infrastructure Monitoring" as InfraMonitoring {
+    component "System Health\n(CPU, Memory, Disk)" as SystemHealth
+    component "Application Performance\n(Response Time, Errors)" as AppPerf
+    component "Security Monitoring\n(Failed Logins, Alerts)" as SecurityMon
+    component "Cost Optimization\n(Resource Usage)" as CostOpt
+    
+    note bottom of InfraMonitoring
+        **Monitoring Thresholds:**
+        - CPU > 80% for 5 minutes
+        - Memory > 85% for 3 minutes
+        - Disk > 90% immediate alert
+        - Response time > 2 seconds
+        - Error rate > 1%
+    end note
+}
+
+SystemHealth --> CloudWatch
+AppPerf --> CloudWatch
+SecurityMon --> CloudWatch
+CostOpt --> CloudWatch
+
+legend bottom
+    **Infrastructure Security Levels:**
+    🔴 Public Internet (Untrusted)
+    🟡 DMZ/Load Balancer (Controlled)
+    🟢 Private Subnet/CDE (Secure)
+    🔵 AWS Managed Services (Trusted)
+    
+    **Security Principles:**
+    ✓ Defense in depth with multiple security layers
+    ✓ Principle of least privilege for access
+    ✓ Encryption at rest and in transit
+    ✓ Comprehensive monitoring and logging
+    ✓ Regular security assessments and updates
+    
+    **Compliance Status:**
+    PCI DSS 4.0 Level 1 compliant architecture
+    All components within compliance scope
+    Regular security reviews and updates
+end legend
+
+@enduml

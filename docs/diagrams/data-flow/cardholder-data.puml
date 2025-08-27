@@ -1,0 +1,224 @@
+@startuml AmexingWeb Cardholder Data Flow
+
+title AmexingWeb Cardholder Data Flow\\nPCI DSS 4.0 Requirement 3 & 4 Compliance
+
+' External entities
+actor "Cardholder" as User
+actor "System Administrator" as Admin
+
+' Application components
+rectangle "Web Browser\\n(Client-Side)" as Browser {
+    component "Payment Form\\n(HTTPS)" as PaymentForm
+    component "Card Input Fields\\n(Secure)" as CardInputs
+    note right of CardInputs
+        **PCI DSS Req 4.2.1**
+        - No CHD storage in browser
+        - Secure transmission only
+        - Input validation
+    end note
+}
+
+rectangle "Load Balancer & Proxy\\n(DMZ)" as LoadBalancer {
+    component "AWS ALB" as ALB
+    component "Nginx Proxy" as Nginx
+    note bottom of Nginx
+        **PCI DSS Req 4.2.1**
+        - TLS 1.3 termination
+        - Certificate management
+        - Security headers
+    end note
+}
+
+rectangle "Application Server\\n(CDE)" as AppServer #4ECDC4 {
+    component "Parse Server API" as ParseAPI
+    component "Payment Processor" as PaymentProc
+    component "Data Validation" as Validation
+    component "Encryption Engine\\n(AES-256-GCM)" as Encryption
+    component "Audit Logger" as Logger
+    
+    note bottom of Encryption
+        **PCI DSS Req 3.5.1**
+        - AES-256-GCM encryption
+        - Secure key management
+        - Data protection at rest
+    end note
+}
+
+rectangle "Database Layer\\n(External CDE)" as Database #4ECDC4 {
+    database "MongoDB Atlas\\n(Encrypted)" as MongoDB
+    component "Connection Pool\\n(TLS 1.3)" as DBPool
+    
+    note bottom of MongoDB
+        **PCI DSS Req 3.5.1**
+        - Encryption at rest
+        - TLS encryption in transit
+        - Access controls
+        - Audit logging
+    end note
+}
+
+rectangle "File Storage\\n(Encrypted)" as Storage #4ECDC4 {
+    storage "AWS S3\\n(SSE-S3)" as S3
+    component "Secure Upload\\n(HTTPS)" as Upload
+}
+
+rectangle "Monitoring & Logging" as Monitoring {
+    component "CloudWatch Logs" as CloudWatch
+    component "Security Events" as SecurityEvents
+    component "Audit Trail" as AuditTrail
+    
+    note bottom of AuditTrail
+        **PCI DSS Req 10.2.1**
+        - All CHD access logged
+        - User identification
+        - Timestamp and details
+        - No CHD in logs
+    end note
+}
+
+' Data flow with security annotations
+User --> Browser : "1. Card Details Entry\\n**PLAINTEXT**"
+Browser --> PaymentForm : "2. Form Validation\\n**CLIENT-SIDE**"
+PaymentForm --> CardInputs : "3. Secure Input\\n**NO STORAGE**"
+
+CardInputs --> ALB : "4. HTTPS Transmission\\n**TLS 1.3 ENCRYPTED**"
+ALB --> Nginx : "5. Load Balanced\\n**ENCRYPTED CHANNEL**"
+Nginx --> ParseAPI : "6. Reverse Proxy\\n**INTERNAL HTTPS**"
+
+ParseAPI --> Validation : "7. Input Validation\\n**SANITIZATION**"
+Validation --> PaymentProc : "8. Validated Data\\n**CLEAN INPUT**"
+PaymentProc --> Encryption : "9. Pre-Storage\\n**PLAINTEXT → AES-256**"
+
+Encryption --> MongoDB : "10. Encrypted Storage\\n**AES-256-GCM**"
+Encryption --> S3 : "11. Secure Files\\n**SSE-S3**"
+
+' Audit logging flows
+ParseAPI --> Logger : "**CHD Access Event**"
+PaymentProc --> SecurityEvents : "**Payment Processing**"
+Encryption --> AuditTrail : "**Encryption Operations**"
+
+Logger --> CloudWatch : "**Audit Logs**\\n(No CHD)"
+SecurityEvents --> CloudWatch : "**Security Events**"
+AuditTrail --> CloudWatch : "**Compliance Logs**"
+
+' Return data flows (masked)
+MongoDB --> Encryption : "12. Encrypted Retrieval\\n**AES-256-GCM**"
+Encryption --> PaymentProc : "13. Decrypted Data\\n**SECURE MEMORY**"
+PaymentProc --> ParseAPI : "14. Masked Display\\n**PAN MASKED**"
+ParseAPI --> Nginx : "15. Response\\n**MASKED DATA**"
+Nginx --> ALB : "16. Proxy Response\\n**HTTPS**"
+ALB --> Browser : "17. Client Response\\n**TLS 1.3**"
+
+' Administrative access
+Admin --> ALB : "**Admin Access**\\n(MFA Required)"
+ALB --> ParseAPI : "**Authenticated Session**"
+ParseAPI --> MongoDB : "**Admin Query**\\n(Logged)"
+
+' Data classification legend
+rectangle "Data Classification Legend" as Legend {
+    note as DataClassification
+        **Cardholder Data (CHD) States:**
+        
+        🔴 **PLAINTEXT**: Unencrypted CHD (minimize exposure)
+        - Payment form input (seconds)
+        - Processing memory (milliseconds)
+        - Never stored unencrypted
+        
+        🔒 **ENCRYPTED**: Protected CHD storage
+        - AES-256-GCM at rest
+        - TLS 1.3 in transit
+        - Secure key management
+        
+        🎭 **MASKED**: Display-safe format
+        - First 6 + last 4 digits shown
+        - Used for user interfaces
+        - Safe for logging/display
+        
+        ⛔ **PROHIBITED**: Never allowed
+        - CHD in application logs
+        - CHD in error messages
+        - CHD in external systems
+    end note
+}
+
+' Security boundaries
+rectangle "PCI DSS Security Boundaries" as SecurityBoundary #FF6B6B {
+    note as Boundaries
+        **PCI DSS Req 1.2.3 - Network Segmentation:**
+        
+        **Cardholder Data Environment (CDE):**
+        - Application Server (Parse Server)
+        - Database (MongoDB Atlas)
+        - File Storage (S3)
+        
+        **Non-CDE Components:**
+        - Load Balancer (proxies only)
+        - Monitoring (no CHD)
+        - Logs (masked data only)
+        
+        **Security Controls:**
+        - Firewall rules between zones
+        - Encryption for all CHD
+        - Access controls and authentication
+        - Comprehensive audit logging
+    end note
+}
+
+' Compliance requirements mapping
+rectangle "PCI DSS Requirements Mapping" as ComplianceMap #95E1D3 {
+    note as Requirements
+        **Key Requirements Addressed:**
+        
+        **Req 3.1**: CHD protection policies implemented
+        **Req 3.4**: PAN masked when displayed
+        **Req 3.5**: CHD encrypted with strong cryptography
+        **Req 4.1**: Encryption for CHD transmission
+        **Req 4.2**: Strong cryptography (TLS 1.3)
+        **Req 6.2**: Secure coding (input validation)
+        **Req 7.1**: Access controls for CHD
+        **Req 8.2**: Authentication for CHD access
+        **Req 10.2**: Audit logging for CHD access
+        **Req 10.3**: Log integrity protection
+    end note
+}
+
+' Data retention and disposal
+rectangle "Data Lifecycle Management" as DataLifecycle {
+    component "Data Retention\\n(Configurable)" as Retention
+    component "Secure Deletion\\n(Cryptographic)" as Deletion
+    component "Key Rotation\\n(Annual)" as KeyRotation
+    
+    note bottom of DataLifecycle
+        **PCI DSS Req 3.2.1**
+        - Data retention policy
+        - Secure disposal methods
+        - Key lifecycle management
+        - Regular data purging
+    end note
+}
+
+Encryption --> Retention : "**Lifecycle Management**"
+Retention --> Deletion : "**Policy-Based Cleanup**"
+Encryption --> KeyRotation : "**Annual Key Rotation**"
+
+legend bottom
+    **Security Flow Legend:**
+    Red: Plaintext/high-risk data paths
+    Blue: Encrypted data storage and processing
+    Yellow: Masked/display-safe data
+    Green: Secure communication channels
+    
+    **Data Protection Principles:**
+    ✓ Minimize CHD storage and retention
+    ✓ Encrypt all CHD at rest and in transit
+    ✓ Mask CHD for display purposes
+    ✓ Log all access without exposing CHD
+    ✓ Implement secure data disposal
+    
+    **Compliance Status:**
+    All data flows comply with PCI DSS 4.0 requirements
+    Network segmentation isolates CDE components
+    Strong cryptography protects all CHD
+end legend
+
+@enduml

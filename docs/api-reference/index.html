@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>AmexingWeb</h1>
+<p>A PCI DSS 4.0 compliant e-commerce platform built with Parse Server, Node.js, and MongoDB. This project implements Clean Architecture with MVC pattern, following SOLID principles and security-first design.</p>
+<h2>✨ Key Features</h2>
+<ul>
+<li>🔒 <strong>PCI DSS 4.0 Compliant</strong> - Payment card industry standards</li>
+<li>🛡️ <strong>Security First</strong> - Comprehensive middleware with Helmet.js, rate limiting, XSS protection</li>
+<li>🏗️ <strong>Clean Architecture</strong> - MVC pattern with domain-driven design</li>
+<li>⚡ <strong>Parse Server</strong> - Powerful BaaS with cloud functions</li>
+<li>🎯 <strong>MongoDB</strong> - NoSQL database with advanced security</li>
+<li>📊 <strong>PM2 Ready</strong> - Production-ready process management</li>
+<li>📝 <strong>Comprehensive Logging</strong> - Winston logger with audit trails</li>
+</ul>
+<h2>🚀 Quick Start</h2>
+<pre class="prettyprint source lang-bash"><code># Clone and setup
+git clone &lt;your-repo-url> && cd amexing-web
+cp .env.example .env && yarn install
+
+# Start development
+yarn dev
+
+# Access application
+open http://localhost:1337
+</code></pre>
+<p><strong>Detailed setup</strong>: <a href="docs/guides/QUICK_START.md">📖 Quick Start Guide</a></p>
+<h2>📚 Documentation</h2>
+<h3>📖 Getting Started</h3>
+<ul>
+<li><a href="docs/guides/QUICK_START.md">⚡ Quick Start Guide</a> - Get running in 5 minutes</li>
+<li><a href="docs/guides/DEVELOPMENT.md">⚙️ Development Guide</a> - Development workflow and best practices</li>
+<li><a href="docs/guides/DEPLOYMENT.md">🚀 Deployment Guide</a> - Production deployment instructions</li>
+<li><a href="docs/guides/TROUBLESHOOTING.md">🔧 Troubleshooting</a> - Common issues and solutions</li>
+</ul>
+<h3>📋 Reference Documentation</h3>
+<ul>
+<li><a href="docs/reference/SCRIPTS.md">📜 Scripts Reference</a> - All 58 npm scripts documented</li>
+<li><a href="docs/reference/API_REFERENCE.md">🔌 API Reference</a> - Complete API documentation</li>
+<li><a href="docs/reference/ENVIRONMENT.md">🌍 Environment Variables</a> - Configuration options</li>
+<li><a href="docs/reference/SECURITY.md">🔒 Security Guide</a> - Security best practices and PCI DSS compliance</li>
+</ul>
+<h3>🔄 Development Workflows</h3>
+<ul>
+<li><a href="docs/workflows/TESTING.md">🧪 Testing Guide</a> - Testing strategies and best practices</li>
+<li><a href="docs/workflows/CODE_QUALITY.md">✨ Code Quality</a> - Quality standards and tools</li>
+<li><a href="docs/workflows/RELEASE.md">🎯 Release Process</a> - Release management workflow</li>
+</ul>
+<h2>🎯 Essential Commands</h2>
+<pre class="prettyprint source lang-bash"><code># Interactive help system
+yarn scripts:help              # Show all available scripts
+yarn scripts:help development  # Show development scripts
+yarn scripts:help security     # Show security scripts
+
+# Development
+yarn dev                       # Start development server
+yarn dashboard                 # Open Parse Dashboard (port 4040)
+
+# Testing & Quality
+yarn test                      # Run all tests
+yarn test:security             # Security validation suite
+yarn quality:all               # Complete quality analysis
+
+# Security & Compliance
+yarn security:all              # Complete security audit
+yarn test:full-validation      # Security + startup validation
+</code></pre>
+<h2>🌐 Application Access</h2>
+<p>Once running, access these endpoints:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>URL</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Web App</strong></td>
+<td>http://localhost:1337</td>
+<td>Main application interface</td>
+</tr>
+<tr>
+<td><strong>Parse Dashboard</strong></td>
+<td>http://localhost:4040</td>
+<td>Database management</td>
+</tr>
+<tr>
+<td><strong>API Docs</strong></td>
+<td>http://localhost:1337/docs</td>
+<td>Interactive API documentation</td>
+</tr>
+<tr>
+<td><strong>Health Check</strong></td>
+<td>http://localhost:1337/health</td>
+<td>System status and metrics</td>
+</tr>
+</tbody>
+</table>
+<h2>🛠️ Technology Stack</h2>
+<h3>Core Technologies</h3>
+<ul>
+<li><strong>Runtime</strong>: Node.js 18+ with Express.js 4.18</li>
+<li><strong>Database</strong>: MongoDB 6+ (local or Atlas)</li>
+<li><strong>Backend Framework</strong>: Parse Server 7.0 (BaaS with cloud functions)</li>
+<li><strong>Process Manager</strong>: PM2 for clustering and monitoring</li>
+<li><strong>Package Manager</strong>: Yarn 1.22+ (recommended)</li>
+</ul>
+<h3>Security &amp; Compliance</h3>
+<ul>
+<li><strong>Security Middleware</strong>: Helmet.js, express-rate-limit, express-mongo-sanitize</li>
+<li><strong>Authentication</strong>: Parse Server built-in with enhanced security policies</li>
+<li><strong>Validation</strong>: Joi for input validation and sanitization</li>
+<li><strong>Logging</strong>: Winston with daily rotation and audit trails</li>
+<li><strong>Compliance</strong>: PCI DSS 4.0, GDPR, SOX ready</li>
+</ul>
+<h3>Development &amp; Quality</h3>
+<ul>
+<li><strong>Testing</strong>: Jest with comprehensive test suites</li>
+<li><strong>Code Quality</strong>: ESLint, Prettier, SonarQube integration</li>
+<li><strong>Security Analysis</strong>: Semgrep static analysis</li>
+<li><strong>Documentation</strong>: JSDoc, OpenAPI/Swagger</li>
+<li><strong>Git Workflow</strong>: Conventional commits, automated hooks</li>
+</ul>
+<h2>🆘 Quick Help</h2>
+<h3>Common Development Tasks</h3>
+<pre class="prettyprint source lang-bash"><code># Fresh project setup
+git clone &lt;repo> && cd amexing-web && yarn install && yarn dev
+
+# Pre-deployment checklist  
+yarn quality:all && yarn security:all && yarn test:full-validation
+
+# Troubleshooting
+yarn hooks:validate        # Check git hooks
+yarn scripts:help --search &lt;term>  # Find specific scripts
+</code></pre>
+<h3>Getting Support</h3>
+<ul>
+<li>🐛 <strong>Issues</strong>: Check <a href="docs/guides/TROUBLESHOOTING.md">Troubleshooting Guide</a></li>
+<li>📜 <strong>Scripts</strong>: Run <code>yarn scripts:help</code> for interactive help</li>
+<li>📧 <strong>Support</strong>: <a href="link-to-issues">Create an issue</a></li>
+<li>📚 <strong>Docs</strong>: Explore <code>/docs</code> folder for comprehensive guides</li>
+</ul>
+<h2>🏗️ Project Structure</h2>
+<pre class="prettyprint source"><code>amexing-web/
+├── docs/                    # 📚 Organized documentation
+│   ├── guides/             # Getting started guides
+│   ├── reference/          # Technical reference docs  
+│   └── workflows/          # Development processes
+├── src/                    # 🔧 Application source code
+│   ├── application/        # Controllers, middleware, validators
+│   ├── domain/            # Business logic and entities
+│   ├── infrastructure/    # Database, security, services
+│   └── presentation/      # Views, routes, public assets
+├── config/                # ⚙️ Configuration files
+├── scripts/               # 🛠️ Development and deployment scripts
+└── tests/                 # 🧪 Test suites (unit, integration, security)
+</code></pre>
+<h2>🤝 Contributing</h2>
+<p>This project follows strict PCI DSS compliance requirements. Before contributing:</p>
+<ol>
+<li><strong>Read the documentation</strong>: <a href="docs/guides/DEVELOPMENT.md">Development Guide</a></li>
+<li><strong>Follow security practices</strong>: <a href="docs/reference/SECURITY.md">Security Guide</a></li>
+<li><strong>Use conventional commits</strong>: Enforced by git hooks</li>
+<li><strong>Maintain test coverage</strong>: All features require comprehensive tests</li>
+</ol>
+<h2>📄 License</h2>
+<p>MIT License - see the <a href="LICENSE">LICENSE</a> file for details.</p>
+<hr>
+<p><strong>🔒 Security Notice</strong>: This is a PCI DSS Level 1 compliant payment processing application. All development must follow security best practices outlined in the documentation. When in doubt, consult the <a href="docs/reference/SECURITY.md">Security Guide</a>.</p>
+<p><em>For detailed information on any aspect of the project, see the comprehensive documentation in the <code>/docs</code> folder.</em></p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="SecureSecretsManager.html">SecureSecretsManager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#crypto">crypto</a></li><li><a href="global.html#errorHandler">errorHandler</a></li><li><a href="global.html#express">express</a></li><li><a href="global.html#getErrorDetails">getErrorDetails</a></li><li><a href="global.html#getSecretsManager">getSecretsManager</a></li><li><a href="global.html#handleMongoError">handleMongoError</a></li><li><a href="global.html#handleParseError">handleParseError</a></li><li><a href="global.html#handleValidationError">handleValidationError</a></li><li><a href="global.html#logError">logError</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Aug 26 2025 22:49:38 GMT-0600 (hora estándar central)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

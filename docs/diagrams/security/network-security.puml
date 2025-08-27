@@ -1,0 +1,193 @@
+@startuml AmexingWeb Network Security Architecture
+
+title AmexingWeb Network Security Architecture\nPCI DSS 4.0 Firewall and Access Controls
+
+' Define security zones
+rectangle "Internet (Untrusted Network)" as Internet #FFE6E6 {
+    cloud "Public Internet" as PublicNet
+    actor "End Users" as Users
+    actor "Administrators" as Admins
+    node "Potential Attackers" as Attackers #FF6B6B
+}
+
+rectangle "AWS VPC (Virtual Private Cloud)" as VPC #E6F3FF {
+    
+    rectangle "Public Subnet (DMZ)" as PublicSubnet #FFE66D {
+        component "Application Load Balancer" as ALB
+        note right of ALB
+            **PCI DSS Req 1.4.1**
+            - DDoS protection
+            - SSL termination
+            - Health checks
+        end note
+        
+        component "NAT Gateway" as NAT
+        component "Internet Gateway" as IGW
+    }
+    
+    rectangle "Private Subnet (CDE)" as PrivateSubnet #4ECDC4 {
+        node "EC2 Instance" as EC2 {
+            component "Nginx (Port 80/443)" as Nginx
+            component "Parse Server (Port 1337)" as ParseServer
+            component "SSH Daemon (Port 22)" as SSH
+            component "UFW Firewall" as UFW
+        }
+        
+        note bottom of UFW
+            **PCI DSS Req 1.2.1 - Firewall Rules**
+            
+            **INBOUND RULES:**
+            - Port 443: ALB → Nginx (HTTPS)
+            - Port 80: ALB → Nginx (HTTP→HTTPS redirect)
+            - Port 1337: Nginx → Parse Server (Internal)
+            - Port 22: Admin IP ranges only (SSH)
+            - Default: DENY ALL
+            
+            **OUTBOUND RULES:**
+            - Port 443: S3 API access (HTTPS)
+            - Port 27017: MongoDB Atlas (TLS)
+            - Port 80/443: Package updates (HTTPS)
+            - Port 53: DNS resolution
+            - Default: DENY ALL others
+        end note
+    }
+}
+
+rectangle "External Services (Trusted)" as ExternalServices #D3D3D3 {
+    database "MongoDB Atlas\n(PCI DSS Compliant)" as MongoDB
+    storage "AWS S3\n(Encrypted)" as S3
+    cloud "AWS CloudWatch\nLogging" as CloudWatch
+}
+
+' Security Groups and NACLs
+rectangle "AWS Security Groups" as SecurityGroups #FF6B6B {
+    component "ALB Security Group" as ALB_SG
+    component "EC2 Security Group" as EC2_SG
+    component "Database Security Group" as DB_SG
+}
+
+rectangle "Network ACLs" as NACLs #FF9999 {
+    component "Public Subnet NACL" as Public_NACL
+    component "Private Subnet NACL" as Private_NACL
+}
+
+' AWS WAF
+component "AWS WAF\n(Web Application Firewall)" as WAF #FF6B6B
+note right of WAF
+    **PCI DSS Req 6.4.2**
+    - SQL injection protection
+    - XSS filtering
+    - Rate limiting
+    - IP whitelisting/blacklisting
+    - Country blocking
+end note
+
+' Traffic flow with security controls
+Users --> WAF : "HTTPS (443)\nHTTP (80)"
+Admins --> WAF : "HTTPS (443)\nSSH (22) via VPN"
+Attackers -[#red]-> WAF : "Malicious Traffic\n**BLOCKED**"
+
+WAF --> PublicNet : "Filtered Traffic"
+PublicNet --> IGW : "Clean Traffic Only"
+IGW --> ALB : "Load Balanced"
+
+ALB --> Nginx : "Internal HTTPS\n(443/80)"
+Nginx --> ParseServer : "Reverse Proxy\n(1337)"
+
+' Security group rules
+ALB_SG --> ALB : "Allow 80,443 from 0.0.0.0/0"
+EC2_SG --> EC2 : "Allow 1337 from ALB\nAllow 22 from Admin IPs"
+DB_SG --> MongoDB : "Allow 27017 from EC2"
+
+' NACL rules
+Public_NACL --> PublicSubnet : "Stateless Filtering"
+Private_NACL --> PrivateSubnet : "Stateless Filtering"
+
+' Outbound connections
+ParseServer --> MongoDB : "TLS 1.3\n(27017)"
+ParseServer --> S3 : "HTTPS API\n(443)"
+EC2 --> CloudWatch : "Monitoring\n(443)"
+
+' Firewall rule details
+note top of SecurityGroups
+    **Security Group Rules (Stateful)**
+    
+    **ALB Security Group:**
+    - Inbound: 80,443 from 0.0.0.0/0
+    - Outbound: 1337 to EC2 Security Group
+    
+    **EC2 Security Group:**
+    - Inbound: 1337 from ALB Security Group
+    - Inbound: 22 from Admin IP ranges
+    - Outbound: 27017 to MongoDB Atlas
+    - Outbound: 443 to S3, CloudWatch
+    
+    **MongoDB Security Group:**
+    - Inbound: 27017 from EC2 Security Group only
+    - Managed by MongoDB Atlas
+end note
+
+note bottom of NACLs
+    **Network ACL Rules (Stateless)**
+    
+    **Public Subnet NACL:**
+    - Allow inbound 80,443 from Internet
+    - Allow outbound 1024-65535 to Internet
+    - Deny all other traffic
+    
+    **Private Subnet NACL:**
+    - Allow inbound 1337 from Public Subnet
+    - Allow inbound 22 from Admin networks
+    - Allow outbound 27017,443 to Internet
+    - Deny all other traffic
+end note
+
+' PCI DSS compliance annotations
+rectangle "PCI DSS Compliance Boundaries" as PCICompliance #FF6B6B {
+    note as PCINote
+        **PCI DSS 4.0 Network Security Requirements:**
+        
+        **Requirement 1.2.1** ✓ Firewall configuration standards defined
+        **Requirement 1.2.3** ✓ Network diagram maintained and current
+        **Requirement 1.3.1** ✓ Inbound traffic restricted to necessary only
+        **Requirement 1.3.2** ✓ Outbound traffic restricted to necessary only
+        **Requirement 1.4.1** ✓ NSCs between trusted/untrusted networks
+        **Requirement 1.4.2** ✓ Inbound traffic from untrusted networks restricted
+        **Requirement 1.4.3** ✓ Anti-spoofing measures implemented
+        **Requirement 1.4.4** ✓ CHD systems not directly accessible
+        **Requirement 1.4.5** ✓ Internal IP addresses protected
+    end note
+}
+
+' Security monitoring
+rectangle "Security Monitoring" as Monitoring #95E1D3 {
+    component "VPC Flow Logs" as FlowLogs
+    component "CloudTrail" as CloudTrail
+    component "GuardDuty" as GuardDuty
+    component "Security Hub" as SecurityHub
+}
+
+EC2 --> FlowLogs : "Network traffic logs"
+ALB --> CloudTrail : "API access logs" 
+GuardDuty --> SecurityHub : "Threat detection"
+
+legend bottom
+    **Security Zone Color Coding:**
+    Red: High-risk/external threats
+    Yellow: DMZ/controlled access
+    Teal: Trusted/secure zones (CDE)
+    Gray: External trusted services
+    Pink: Security controls and monitoring
+    
+    **Traffic Flow Legend:**
+    Solid lines: Allowed traffic flows
+    Red dashed lines: Blocked malicious traffic
+    Thick lines: Encrypted connections
+    
+    **PCI DSS Scope:**
+    All components within VPC are in PCI DSS scope
+    Network segmentation isolates CDE from untrusted networks
+    Defense-in-depth security controls implemented
+end legend
+
+@enduml
