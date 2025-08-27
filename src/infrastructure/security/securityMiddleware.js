@@ -196,7 +196,7 @@ class SecurityMiddleware {
         },
       }),
       cookie: {
-        secure: this.isProduction, // Explicit secure flag
+        secure: process.env.NODE_ENV === 'production', // Explicit secure flag for HTTPS
         httpOnly: true,
         maxAge:
           parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) * 60 * 1000

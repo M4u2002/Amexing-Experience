@@ -33,7 +33,8 @@ if (process.env.NODE_ENV === 'production') {
 app.set('views', path.join(__dirname, 'presentation', 'views'));
 app.set('view engine', 'ejs');
 
-// Apply security middleware (Helmet and other security configurations)
+// Apply security middleware (Helmet, CSRF, and other security configurations)
+// Note: CSRF protection is included in securityMiddleware.getAllMiddleware()
 const securityMiddlewares = securityMiddleware.getAllMiddleware();
 securityMiddlewares.forEach((middleware) => {
   app.use(middleware);

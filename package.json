@@ -59,7 +59,7 @@
     "release:prepare": "standard-version --dry-run",
     "release:notes": "node scripts/generate-release-notes.js",
     "release:version": "standard-version",
-    "commit:validate": "commitlint --from=HEAD~1 --to=HEAD --verbose",
+    "commit:validate": "commitlint --config .config/commitlint/.commitlintrc.js --from=HEAD~1 --to=HEAD --verbose",
     "precommit": "yarn lint && yarn format:check && yarn docs:coverage",
     "prepush": "yarn quality:all",
     "postinstall": "node scripts/setup-git-hooks.js --auto"
