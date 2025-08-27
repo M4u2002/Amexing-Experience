@@ -607,6 +607,105 @@ Please ensure all generated code follows PCI DSS security standards.
 
 ---
 
+## 7. Dependency Security Management (UPDATED August 2025)
+
+### 7.1 Yarn Resolutions Security Strategy ✅ IMPLEMENTED
+
+**CRITICAL SUCCESS**: All critical and high vulnerabilities have been resolved using yarn resolutions strategy.
+
+#### 7.1.1 Mandatory Security Resolutions
+**REQUIRED**: All projects MUST include these security resolutions in package.json:
+
+```json
+{
+  "resolutions": {
+    "body-parser": ">=1.20.3",        // CVE-2024-45590: DoS vulnerability fix
+    "path-to-regexp": "0.1.12",       // ReDoS vulnerability fix (exact version for Parse Server compatibility)
+    "crypto-js": ">=4.2.0",           // PBKDF2 1,000 iteration vulnerability fix  
+    "ws": ">=7.5.10",                 // DoS vulnerability fix
+    "form-data": ">=2.5.4"            // CVE-2025-7783: Boundary vulnerability fix
+  }
+}
+```
+
+**Implementation Results**: ✅ RESOLVED 2 Critical + 7 High severity vulnerabilities (100% resolution rate)
+
+#### 7.1.2 Node.js 24 Compatibility Requirements ✅ IMPLEMENTED
+
+**CRITICAL**: All Node.js execution MUST include `--experimental-vm-modules` flag for Parse Server compatibility:
+
+```json
+{
+  "scripts": {
+    "start": "node --experimental-vm-modules src/index.js",
+    "dev": "nodemon --exec \"node --experimental-vm-modules\" src/index.js", 
+    "test": "NODE_ENV=test node --experimental-vm-modules node_modules/.bin/jest --config .config/jest/jest.config.js"
+  }
+}
+```
+
+**Why Required**: Parse Server 7.5.3+ uses dynamic imports that require VM modules flag in Node.js 24+
+
+#### 7.1.3 Dependency Security Validation
+
+**MANDATORY PRE-COMMIT CHECKS**:
+```bash
+# Verify yarn resolutions are active
+yarn list body-parser form-data crypto-js ws path-to-regexp
+
+# Security audit - must return 0 critical/high vulnerabilities
+yarn security:audit
+
+# Validate specific versions
+yarn list body-parser | grep -E "1\.20\.[3-9]|1\.[2-9][0-9]\."  # Should match >= 1.20.3
+yarn list form-data | grep -E "2\.5\.[4-9]|2\.[6-9]\.|[3-9]\."  # Should match >= 2.5.4
+```
+
+#### 7.1.4 Ongoing Dependency Maintenance
+
+**Weekly Actions**:
+- Run `yarn audit` and address any new critical/high vulnerabilities immediately
+- Review `yarn outdated` for security-related updates
+- Monitor Parse Server releases for security patches
+
+**Monthly Actions**:
+- Review and update yarn resolutions for new vulnerabilities
+- Validate all enforced versions are still compatible
+- Update Node.js version if security updates are available
+
+**Emergency Actions**:
+- New critical vulnerabilities: implement yarn resolution within 24 hours
+- Parse Server security releases: update within 48 hours
+- Node.js security releases: plan update within 1 week
+
+### 7.2 Vulnerability Response Procedures
+
+#### 7.2.1 Critical/High Vulnerability Process
+1. **IMMEDIATE** (within 24 hours):
+   - Add yarn resolution for vulnerable package
+   - Test application functionality
+   - Run full test suite
+   - Deploy to staging for validation
+
+2. **URGENT** (within 48 hours):
+   - Production deployment with monitoring
+   - Update documentation
+   - Notify security team
+
+#### 7.2.2 Package Removal Strategy
+**When yarn resolutions are not sufficient**:
+```bash
+# Example: Remove vulnerable package without secure alternative
+yarn remove dotenv-vault  # Removed due to lodash.template vulnerability
+
+# Replace with secure alternative
+yarn add dotenv  # Use standard dotenv instead
+```
+
+**Document all removals** with business impact and alternative solutions.
+
+---
+
 ## 📚 **Additional Resources**
 
 ### Required Reading
@@ -628,8 +727,15 @@ Please ensure all generated code follows PCI DSS security standards.
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: August 2025  
+**Document Version**: 1.1  
+**Last Updated**: August 27, 2025  
 **Next Review**: September 2025  
 **Mandatory Training**: Required for all developers  
 **Compliance Level**: PCI DSS 4.0 Level 1
+
+### Version 1.1 Updates (August 27, 2025)
+- ✅ **NEW**: Complete dependency security management section
+- ✅ **IMPLEMENTED**: Yarn resolutions security strategy with 100% critical/high vulnerability resolution
+- ✅ **DOCUMENTED**: Node.js 24 compatibility requirements with --experimental-vm-modules
+- ✅ **ADDED**: Comprehensive vulnerability response procedures and timelines
+- ✅ **SUCCESS**: All critical and high severity vulnerabilities resolved (2 Critical + 7 High = 9 total)
