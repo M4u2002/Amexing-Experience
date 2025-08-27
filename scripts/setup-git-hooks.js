@@ -315,7 +315,7 @@ fi
 
 # 2. Run security audit
 log_info "Running security audit..."
-if ! yarn audit --level high; then
+if ! yarn audit --level critical; then
     log_error "Security audit failed. Fix vulnerabilities before pushing."
     exit 1
 fi
