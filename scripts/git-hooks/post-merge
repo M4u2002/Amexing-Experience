@@ -39,7 +39,48 @@ fi
 
 log_info "Running post-merge automation..."
 
-# 1. Update changelog draft if package.json changed
+# 1. Check for dependency changes and notify user
+PACKAGE_CHANGED=false
+YARN_LOCK_CHANGED=false
+
+if git diff HEAD~1 --name-only | grep -q "^package.json$"; then
+    PACKAGE_CHANGED=true
+fi
+
+if git diff HEAD~1 --name-only | grep -q "^yarn.lock$"; then
+    YARN_LOCK_CHANGED=true
+fi
+
+if [ "$PACKAGE_CHANGED" = true ] || [ "$YARN_LOCK_CHANGED" = true ]; then
+    echo ""
+    log_warning "Se detectaron cambios en dependencias"
+    
+    if [ "$PACKAGE_CHANGED" = true ]; then
+        log_info "📦 package.json modificado - pueden haber nuevas dependencias"
+    fi
+    
+    if [ "$YARN_LOCK_CHANGED" = true ]; then
+        log_info "🔒 yarn.lock modificado - versiones actualizadas"
+    fi
+    
+    echo ""
+    log_info "🎯 Comandos recomendados:"
+    echo "  1. yarn deps:update-check    # Verificar qué cambió"
+    echo "  2. yarn install              # Actualizar dependencias" 
+    echo "  3. yarn after-pull           # Setup completo automático"
+    echo "  4. yarn dev                  # Probar que todo funciona"
+    
+    # Check for critical packages
+    if [ "$PACKAGE_CHANGED" = true ]; then
+        if grep -q "parse-server\|parse-dashboard" package.json; then
+            log_warning "Posibles actualizaciones críticas detectadas (Parse Server/Dashboard)"
+            log_info "💡 Ejecuta: yarn after-pull (incluye setup completo)"
+        fi
+    fi
+    echo ""
+fi
+
+# 2. Update changelog draft if package.json changed
 if git diff HEAD~1 package.json | grep '"version"' >/dev/null; then
     log_info "Version change detected. Updating changelog draft..."
     if command -v yarn >/dev/null 2>&1; then
