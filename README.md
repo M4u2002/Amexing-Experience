@@ -64,6 +64,30 @@ open http://localhost:1337
 - [✨ Code Quality](docs/project/CODE_QUALITY.md) - Quality standards and tools
 - [🎯 Release Process](docs/readme/RELEASE.md) - Release management workflow
 
+## 🔄 Después de hacer Git Pull
+
+**¿Acabas de hacer `git pull` y algo no funciona?** Sigue estos pasos:
+
+```bash
+# 1. Verificar si necesitas actualizar dependencias
+yarn deps:update-check
+
+# 2. Si hay cambios en package.json/yarn.lock, actualizar:
+yarn install
+
+# 3. Si hay actualizaciones importantes (Parse, Node.js, etc.):
+yarn after-pull
+
+# 4. Verificar que todo funciona:
+yarn dev
+```
+
+### 🚨 Casos Críticos Recientes
+- **Parse Server 8.2.4**: Requiere Node.js 20+ y `yarn install`
+- **Parse Dashboard 7.4.0**: Compatible con las nuevas versiones  
+- **Node.js 24**: Usar `--experimental-vm-modules` (ya configurado)
+- **Yarn resolutions**: Configuraciones de seguridad automáticas
+
 ## 🎯 Essential Commands
 
 ```bash
@@ -75,6 +99,11 @@ yarn scripts:help security     # Show security scripts
 # Development
 yarn dev                       # Start development server
 yarn dashboard                 # Open Parse Dashboard (port 4040)
+
+# Post-pull utilities
+yarn after-pull               # Complete post-pull setup
+yarn deps:update-check        # Check if dependencies need updating
+yarn deps:full-update         # Full dependency refresh
 
 # Testing & Quality
 yarn test                      # Run all tests

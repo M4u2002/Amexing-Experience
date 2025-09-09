@@ -43,6 +43,30 @@ yarn install
 # - Setup git hooks via postinstall script
 ```
 
+### 🔄 ¿Actualizando el proyecto existente?
+
+Si ya tienes el proyecto y acabas de hacer `git pull`, sigue estos pasos:
+
+```bash
+# 1. Verificar si hay cambios en dependencias
+yarn deps:update-check
+
+# 2. Si aparecen cambios importantes, actualizar:
+yarn install
+
+# 3. Para actualizaciones completas (Parse Server, etc.):
+yarn after-pull
+
+# 4. Verificar que todo funciona:
+yarn dev
+```
+
+**⚠️ Actualizaciones Recientes Importantes:**
+- **Parse Server 8.2.4** (desde 7.x) - Cambios significativos en API
+- **Parse Dashboard 7.4.0** (desde 5.x) - Nueva interfaz y features  
+- **Node.js 24** - Usa `--experimental-vm-modules` automáticamente
+- **Security Resolutions** - 86% reducción de vulnerabilidades
+
 ### 3. Git Hooks Setup (PCI DSS Compliance)
 
 Git hooks are automatically installed during `yarn install`, but you should verify they're working:
