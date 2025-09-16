@@ -1,0 +1,106 @@
+/**
+ * Apple Token Exchanger
+ * Handles exchanging authorization codes for access tokens.
+ */
+
+const https = require('https');
+const jwt = require('jsonwebtoken');
+
+class AppleTokenExchanger {
+  constructor(config, privateKey) {
+    this.config = config;
+    this.privateKey = privateKey;
+  }
+
+  /**
+   * Generates client secret for Apple OAuth.
+   * @returns {string} Signed JWT client secret.
+   * @example
+   * const exchanger = new AppleTokenExchanger(config, privateKey);
+   * const clientSecret = exchanger.generateClientSecret();
+   */
+  generateClientSecret() {
+    const now = Math.floor(Date.now() / 1000);
+
+    const payload = {
+      iss: this.config.teamId,
+      iat: now,
+      exp: now + 3600, // 1 hour expiration
+      aud: 'https://appleid.apple.com',
+      sub: this.config.clientId,
+    };
+
+    const headers = {
+      kid: this.config.keyId,
+      alg: 'ES256',
+    };
+
+    return jwt.sign(payload, this.privateKey, {
+      algorithm: 'ES256',
+      header: headers,
+    });
+  }
+
+  /**
+   * Exchanges authorization code for tokens.
+   * @param {string} authorizationCode - Authorization code from Apple.
+   * @returns {Promise<object>} Token data.
+   * @example
+   * const exchanger = new AppleTokenExchanger(config, privateKey);
+   * const tokens = await exchanger.exchangeCodeForTokens('authorization_code_here');
+   */
+  async exchangeCodeForTokens(authorizationCode) {
+    const clientSecret = this.generateClientSecret();
+
+    const params = new URLSearchParams({
+      client_id: this.config.clientId,
+      client_secret: clientSecret,
+      code: authorizationCode,
+      grant_type: 'authorization_code',
+      redirect_uri: this.config.redirectUri,
+    });
+
+    return new Promise((resolve, reject) => {
+      const data = params.toString();
+
+      const options = {
+        hostname: 'appleid.apple.com',
+        port: 443,
+        path: '/auth/token',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(data),
+        },
+      };
+
+      const req = https.request(options, (response) => {
+        let responseData = '';
+
+        response.on('data', (chunk) => {
+          responseData += chunk;
+        });
+
+        response.on('end', () => {
+          try {
+            const result = JSON.parse(responseData);
+
+            if (response.statusCode !== 200) {
+              reject(new Error(`Token exchange failed: ${result.error_description || result.error}`));
+            } else {
+              resolve(result);
+            }
+          } catch (exchangeError) {
+            reject(exchangeError);
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.write(data);
+      req.end();
+    });
+  }
+}
+
+module.exports = { AppleTokenExchanger };

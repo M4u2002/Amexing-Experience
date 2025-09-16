@@ -2,14 +2,29 @@ const Parse = require('parse/node');
 const logger = require('../../infrastructure/logger');
 const securityMiddlewares = require('../../infrastructure/security/securityMiddleware');
 
+/**
+ * Controller for handling authentication operations including login, registration, and logout.
+ * Provides both web interface and JSON API endpoints for authentication flows.
+ * @class AuthController
+ */
 class AuthController {
   async showLogin(req, res) {
     const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
+
+    // Get OAuth providers for login form
+    let oauthProviders = [];
+    try {
+      const providersResult = await Parse.Cloud.run('getOAuthProviders');
+      oauthProviders = providersResult.providers || [];
+    } catch (error) {
+      logger.error('Error getting OAuth providers for login:', error);
+    }
     res.render('auth/login', {
       title: 'Login - AmexingWeb',
       error: req.query.error || null,
       csrfToken: csrf,
       parseAppId: process.env.PARSE_APP_ID,
+      oauthProviders,
     });
   }
 
@@ -226,6 +241,32 @@ class AuthController {
 
       res.redirect('/');
     }
+  }
+
+  async showForgotPassword(req, res) {
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
+    res.render('auth/forgot-password', {
+      title: 'Forgot Password - AmexingWeb',
+      error: req.query.error || null,
+      success: req.query.success || null,
+      csrfToken: csrf,
+    });
+  }
+
+  async showResetPassword(req, res) {
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
+    const { token } = req.query;
+
+    if (!token) {
+      return res.redirect(`/auth/forgot-password?error=${encodeURIComponent('Invalid or missing reset token')}`);
+    }
+
+    res.render('auth/reset-password', {
+      title: 'Reset Password - AmexingWeb',
+      error: req.query.error || null,
+      token,
+      csrfToken: csrf,
+    });
   }
 }
 

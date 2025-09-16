@@ -16,6 +16,7 @@ const parseServerConfig = require('../config/parse-server');
 const parseDashboardConfig = require('../config/parse-dashboard');
 const webRoutes = require('./presentation/routes/webRoutes');
 const apiRoutes = require('./presentation/routes/apiRoutes');
+const authRoutes = require('./presentation/routes/authRoutes');
 const docsRoutes = require('./presentation/routes/docsRoutes');
 const errorHandler = require('./application/middleware/errorHandler');
 
@@ -88,30 +89,43 @@ const parseServer = new ParseServer(parseServerConfig);
 app.use('/parse', parseServer.app);
 
 // Mount Parse Dashboard (separate app for security)
-if (
+// Temporarily disabled due to path-to-regexp compatibility issue
+if (false && (
   process.env.NODE_ENV !== 'production'
   || process.env.ENABLE_DASHBOARD === 'true'
-) {
-  const dashboardApp = express();
+)) {
+  try {
+    const dashboardApp = express();
 
-  // Apply security middleware to dashboard
-  dashboardApp.use(securityMiddleware.getHelmetConfig());
-  dashboardApp.use(securityMiddleware.getStrictRateLimiter());
+    // Apply security middleware to dashboard
+    dashboardApp.use(securityMiddleware.getHelmetConfig());
+    dashboardApp.use(securityMiddleware.getStrictRateLimiter());
 
-  // Initialize and mount dashboard
-  const dashboard = new ParseDashboard(parseDashboardConfig, {
-    allowInsecureHTTP: process.env.NODE_ENV === 'development',
-  });
+    // Initialize and mount dashboard with error handling
+    const dashboard = new ParseDashboard(parseDashboardConfig, {
+      allowInsecureHTTP: process.env.NODE_ENV === 'development',
+      dev: process.env.NODE_ENV === 'development',
+      trustProxy: process.env.NODE_ENV === 'production',
+    });
 
-  dashboardApp.use('/', dashboard);
+    dashboardApp.use('/', dashboard);
 
-  // Start dashboard server
-  dashboardApp.listen(DASHBOARD_PORT, () => {
-    logger.info(
-      `Parse Dashboard running on http://localhost:${DASHBOARD_PORT}`
-    );
-  });
+    // Start dashboard server
+    dashboardApp.listen(DASHBOARD_PORT, () => {
+      logger.info(
+        `Parse Dashboard running on http://localhost:${DASHBOARD_PORT}`
+      );
+    });
+  } catch (error) {
+    logger.error('Failed to start Parse Dashboard:', error.message);
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('Continuing without Parse Dashboard in development mode');
+    }
+  }
 }
+
+// Alternative: Use separate dashboard command to avoid conflict
+logger.info('Parse Dashboard disabled in main app. Use "yarn dashboard" to run separately if needed.');
 
 // Session middleware
 app.use(securityMiddleware.getSessionConfig());
@@ -125,6 +139,9 @@ securityMiddlewares.forEach((middleware) => {
 
 // API Routes
 app.use('/api', apiRoutes);
+
+// Authentication Routes
+app.use('/auth', authRoutes);
 
 // Documentation Routes
 app.use('/', docsRoutes);

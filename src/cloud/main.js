@@ -1,15 +1,311 @@
 /* eslint-disable no-unused-vars */
 const logger = require('../infrastructure/logger');
 
+// Import models and services
+const AmexingUser = require('../domain/models/AmexingUser');
+const AuthenticationService = require('../application/services/AuthenticationService');
+const OAuthService = require('../application/services/OAuthService');
+
 // Import cloud functions
 const helloWorldFunction = require('./functions/helloWorld');
 const testFunction = require('./functions/test');
+const oauthAdminFunctions = require('./functions/oauth-admin');
+const corporateLandingFunctions = require('./functions/corporate-landing');
+const corporateSyncFunctions = require('./functions/corporate-sync');
+const oauthPermissionsFunctions = require('./functions/oauth-permissions');
 
 // Register Cloud Functions
 Parse.Cloud.define('hello', helloWorldFunction);
 Parse.Cloud.define('test', testFunction);
 
-// Before Save Triggers
+// Authentication Cloud Functions
+Parse.Cloud.define('registerUser', async (request) => {
+  const { params, ip } = request;
+
+  try {
+    logger.info(`User registration attempt from IP: ${ip}`);
+
+    const result = await AuthenticationService.registerUser(params);
+
+    return result;
+  } catch (error) {
+    logger.error('Registration cloud function error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('loginUser', async (request) => {
+  const { params, ip } = request;
+  const { identifier, password } = params;
+
+  try {
+    logger.info(`Login attempt for ${identifier} from IP: ${ip}`);
+
+    const result = await AuthenticationService.loginUser(identifier, password);
+
+    return result;
+  } catch (error) {
+    logger.error('Login cloud function error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('refreshToken', async (request) => {
+  const { params } = request;
+  const { refreshToken } = params;
+
+  try {
+    const result = await AuthenticationService.refreshToken(refreshToken);
+    return result;
+  } catch (error) {
+    logger.error('Token refresh cloud function error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('changePassword', async (request) => {
+  const { params, user } = request;
+  const { currentPassword, newPassword } = params;
+
+  if (!user) {
+    throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Authentication required');
+  }
+
+  try {
+    const result = await AuthenticationService.changePassword(
+      user.id,
+      currentPassword,
+      newPassword
+    );
+    return result;
+  } catch (error) {
+    logger.error('Password change cloud function error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('initiatePasswordReset', async (request) => {
+  const { params } = request;
+  const { email } = params;
+
+  try {
+    const result = await AuthenticationService.initiatePasswordReset(email);
+    return result;
+  } catch (error) {
+    logger.error('Password reset initiation error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('resetPassword', async (request) => {
+  const { params } = request;
+  const { resetToken, newPassword } = params;
+
+  try {
+    const result = await AuthenticationService.resetPassword(resetToken, newPassword);
+    return result;
+  } catch (error) {
+    logger.error('Password reset error:', error);
+    throw error;
+  }
+});
+
+// OAuth Cloud Functions
+Parse.Cloud.define('generateOAuthUrl', async (request) => {
+  const { params } = request;
+  const { provider, state } = params;
+
+  try {
+    const authUrl = await OAuthService.generateAuthorizationUrl(provider, state);
+    return { authUrl };
+  } catch (error) {
+    logger.error('OAuth URL generation error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('handleOAuthCallback', async (request) => {
+  const { params, ip } = request;
+  const { provider, code, state } = params;
+
+  try {
+    logger.info(`OAuth ${provider} callback from IP: ${ip}`);
+
+    const result = await OAuthService.handleCallback(provider, code, state);
+    return result;
+  } catch (error) {
+    logger.error('OAuth callback error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('linkOAuthAccount', async (request) => {
+  const { params, user } = request;
+  const { provider, oauthData } = params;
+
+  if (!user) {
+    throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Authentication required');
+  }
+
+  try {
+    const result = await OAuthService.linkOAuthAccount(user.id, provider, oauthData);
+    return result;
+  } catch (error) {
+    logger.error('OAuth account linking error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('unlinkOAuthAccount', async (request) => {
+  const { params, user } = request;
+  const { provider } = params;
+
+  if (!user) {
+    throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Authentication required');
+  }
+
+  try {
+    const result = await OAuthService.unlinkOAuthAccount(user.id, provider);
+    return result;
+  } catch (error) {
+    logger.error('OAuth account unlinking error:', error);
+    throw error;
+  }
+});
+
+Parse.Cloud.define('getOAuthProviders', async (request) => {
+  try {
+    const providers = OAuthService.getAvailableProviders();
+    const providerConfigs = providers.map((provider) => OAuthService.getProviderConfig(provider));
+
+    return { providers: providerConfigs };
+  } catch (error) {
+    logger.error('Get OAuth providers error:', error);
+    throw error;
+  }
+});
+
+// AmexingUser Triggers
+Parse.Cloud.beforeSave(AmexingUser, async (request) => {
+  const { object: user, master } = request;
+
+  // Skip validation for master key requests
+  if (master) {
+    return;
+  }
+
+  // Set default values for new users
+  if (!user.existed()) {
+    // Set createdAt and updatedAt if not set
+    if (!user.get('createdAt')) {
+      user.set('createdAt', new Date());
+    }
+    user.set('updatedAt', new Date());
+
+    // Log user registration
+    logger.logSecurityEvent('AMEXING_USER_REGISTRATION', {
+      username: user.get('username'),
+      email: user.get('email') ? `${user.get('email').substring(0, 3)}***` : undefined,
+      role: user.get('role'),
+      authMethod: user.get('primaryOAuthProvider') || 'password',
+    });
+  } else {
+    // Update the updatedAt field
+    user.set('updatedAt', new Date());
+
+    logger.logSecurityEvent('AMEXING_USER_UPDATE', {
+      userId: user.id,
+      username: user.get('username'),
+    });
+  }
+
+  // Validate required fields
+  const requiredFields = ['username', 'email', 'firstName', 'lastName', 'role'];
+  for (const field of requiredFields) {
+    if (!user.get(field)) {
+      throw new Parse.Error(Parse.Error.VALIDATION_ERROR, `${field} is required`);
+    }
+  }
+
+  // Validate email format
+  const email = user.get('email');
+  if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new Parse.Error(Parse.Error.VALIDATION_ERROR, 'Invalid email format');
+    }
+    // Normalize email to lowercase
+    user.set('email', email.toLowerCase());
+  }
+
+  // Validate username format
+  const username = user.get('username');
+  if (username) {
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      throw new Parse.Error(
+        Parse.Error.VALIDATION_ERROR,
+        'Username must be 3-20 characters, alphanumeric and underscores only'
+      );
+    }
+    // Normalize username to lowercase
+    user.set('username', username.toLowerCase());
+  }
+
+  // Validate role
+  const validRoles = ['user', 'client', 'employee', 'admin', 'superadmin'];
+  const role = user.get('role');
+  if (role && !validRoles.includes(role)) {
+    throw new Parse.Error(
+      Parse.Error.VALIDATION_ERROR,
+      `Invalid role. Must be one of: ${validRoles.join(', ')}`
+    );
+  }
+
+  // Validate OAuth accounts format
+  const oauthAccounts = user.get('oauthAccounts');
+  if (oauthAccounts && Array.isArray(oauthAccounts)) {
+    for (const account of oauthAccounts) {
+      if (!account.provider || !account.providerId) {
+        throw new Parse.Error(
+          Parse.Error.VALIDATION_ERROR,
+          'OAuth accounts must have provider and providerId'
+        );
+      }
+    }
+  }
+});
+
+Parse.Cloud.afterSave(AmexingUser, async (request) => {
+  const { object: user } = request;
+
+  if (!user.existed()) {
+    logger.info(`New AmexingUser created: ${user.id} (${user.get('username')})`);
+
+    // Initialize any additional setup for new users
+    // This could include creating related objects, sending welcome emails, etc.
+  }
+});
+
+Parse.Cloud.beforeDelete(AmexingUser, async (request) => {
+  const { object: user, master } = request;
+
+  // Only allow user deletion with master key
+  if (!master) {
+    throw new Parse.Error(
+      Parse.Error.OPERATION_FORBIDDEN,
+      'AmexingUser can only be deleted with master key'
+    );
+  }
+
+  logger.logSecurityEvent('AMEXING_USER_DELETION', {
+    userId: user.id,
+    username: user.get('username'),
+    email: user.get('email') ? `${user.get('email').substring(0, 3)}***` : undefined,
+  });
+});
+
+// Legacy Parse.User triggers (for backward compatibility if needed)
 Parse.Cloud.beforeSave(Parse.User, async (request) => {
   const { object: user, master } = request;
 
@@ -18,36 +314,25 @@ Parse.Cloud.beforeSave(Parse.User, async (request) => {
     return;
   }
 
-  // Log user registration/update
+  // Log legacy user operations
   if (!user.existed()) {
-    logger.logSecurityEvent('USER_REGISTRATION', {
+    logger.logSecurityEvent('LEGACY_USER_REGISTRATION', {
       username: user.get('username'),
-      email: user.get('email')
-        ? `${user.get('email').substring(0, 3)}***`
-        : undefined,
-    });
-  } else {
-    logger.logSecurityEvent('USER_UPDATE', {
-      userId: user.id,
-      username: user.get('username'),
+      email: user.get('email') ? `${user.get('email').substring(0, 3)}***` : undefined,
     });
   }
 
-  // Validate email format if provided
+  // Basic validation for legacy users
+  if (!user.get('username')) {
+    throw new Parse.Error(Parse.Error.VALIDATION_ERROR, 'Username is required');
+  }
+
   const email = user.get('email');
   if (email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      throw new Parse.Error(
-        Parse.Error.VALIDATION_ERROR,
-        'Invalid email format'
-      );
+      throw new Parse.Error(Parse.Error.VALIDATION_ERROR, 'Invalid email format');
     }
-  }
-
-  // Ensure username is provided
-  if (!user.get('username')) {
-    throw new Parse.Error(Parse.Error.VALIDATION_ERROR, 'Username is required');
   }
 });
 

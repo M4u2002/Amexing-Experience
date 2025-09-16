@@ -78,3 +78,13 @@ public/uploads/
 claude.md
 CLAUDE.md
 planning/
+
+# OAuth Real Testing - NO COMMIT
+scripts/oauth-real-*.js
+tests/oauth/real-flow/
+reports/oauth-real-*.html
+reports/oauth-real-*.json
+reports/oauth-real-*.pdf
+reports/performance-metrics-real.json
+reports/security-validation-real.*
+reports/
