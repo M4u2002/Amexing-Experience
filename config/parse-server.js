@@ -17,7 +17,6 @@ const parseServerConfig = {
   
   // Parse Server 7.0 specific options
   encodeParseObjectInCloudFunction: true,
-  enableInsecureAuthAdapters: false,
   
   // Session Configuration
   sessionLength: parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) * 60 || 900,

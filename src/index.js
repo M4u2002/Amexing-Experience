@@ -89,11 +89,10 @@ const parseServer = new ParseServer(parseServerConfig);
 app.use('/parse', parseServer.app);
 
 // Mount Parse Dashboard (separate app for security)
-// Temporarily disabled due to path-to-regexp compatibility issue
-if (false && (
+if (
   process.env.NODE_ENV !== 'production'
   || process.env.ENABLE_DASHBOARD === 'true'
-)) {
+) {
   try {
     const dashboardApp = express();
 
