@@ -18,15 +18,25 @@ jest.mock('parse/node', () => {
     count: jest.fn()
   };
 
+  // Mock Parse.Error class
+  class ParseError extends Error {
+    constructor(code, message) {
+      super(message);
+      this.code = code;
+      this.name = 'ParseError';
+    }
+  }
+
+  // Add static properties to ParseError
+  ParseError.VALIDATION_ERROR = 142;
+  ParseError.USERNAME_TAKEN = 202;
+  ParseError.OBJECT_NOT_FOUND = 101;
+  ParseError.INVALID_REQUEST = 104;
+
   // Mock the Parse object
   const Parse = {
     Query: jest.fn(() => mockQuery),
-    Error: {
-      VALIDATION_ERROR: 142,
-      USERNAME_TAKEN: 202,
-      OBJECT_NOT_FOUND: 101,
-      INVALID_REQUEST: 104
-    },
+    Error: ParseError,
     Cloud: {
       run: jest.fn()
     },
@@ -102,6 +112,7 @@ describe('AuthenticationService', () => {
       id: 'test-user-id',
       get: jest.fn(),
       set: jest.fn(),
+      unset: jest.fn(),
       save: jest.fn(),
       setPassword: jest.fn(),
       validatePassword: jest.fn(),
