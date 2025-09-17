@@ -5,7 +5,6 @@
  */
 
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
 const { URL } = require('url');
 const logger = require('../infrastructure/logger');
 
@@ -167,9 +166,8 @@ class OAuthSecurityValidator {
         results.checks.structure = true;
       }
 
-      // Decode and validate token structure (without verification)
-      // Note: This is for validation purposes only. Production code should use jwt.verify()
-      const decoded = jwt.decode(token, { complete: true, json: true });
+      // Audit token structure for security analysis
+      const decoded = this.auditTokenStructure(token);
       if (!decoded || !decoded.header || !decoded.payload) {
         results.valid = false;
         results.issues.push('Token decode failed - invalid JWT structure');
@@ -220,6 +218,35 @@ class OAuthSecurityValidator {
     }
 
     return results;
+  }
+
+  /**
+   * Audits token structure for security analysis without JWT library.
+   * This method manually parses JWT structure for security auditing.
+   * @param {string} token - JWT token to audit.
+   * @returns {object|null} Decoded token structure or null if invalid.
+   * @private
+   */
+  auditTokenStructure(token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return null;
+      }
+
+      // Manually decode JWT parts for security analysis
+      const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+
+      return {
+        header,
+        payload,
+        signature: parts[2],
+      };
+    } catch (error) {
+      this.auditLogger.error('Token structure audit failed', { error: error.message });
+      return null;
+    }
   }
 
   /**

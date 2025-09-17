@@ -855,6 +855,67 @@ class OAuthService {
   }
 
   /**
+   * Gets Apple's public key for JWT verification.
+   * @param {string} idToken - Apple ID token to get key ID from.
+   * @returns {Promise<string>} Public key in PEM format.
+   * @private
+   */
+  async getApplePublicKey(idToken) {
+    try {
+      const https = require('https');
+
+      // Extract key ID from JWT header without full decode
+      const headerB64 = idToken.split('.')[0];
+      if (!headerB64) {
+        throw new Error('Invalid JWT format - missing header');
+      }
+
+      const header = JSON.parse(Buffer.from(headerB64, 'base64').toString());
+      if (!header.kid) {
+        throw new Error('Unable to get key ID from token header');
+      }
+
+      const keyId = header.kid;
+
+      // Fetch Apple's public keys
+      return new Promise((resolve, reject) => {
+        https.get('https://appleid.apple.com/auth/keys', (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => {
+            try {
+              const keys = JSON.parse(data);
+              const key = keys.keys.find((k) => k.kid === keyId);
+
+              if (!key) {
+                throw new Error(`No public key found for key ID: ${keyId}`);
+              }
+
+              // Convert JWK to PEM format using crypto
+              const nodeCrypto = require('crypto');
+              const keyObject = nodeCrypto.createPublicKey({
+                key,
+                format: 'jwk',
+              });
+              const publicKey = keyObject.export({
+                type: 'spki',
+                format: 'pem',
+              });
+              resolve(publicKey);
+            } catch (error) {
+              reject(new Error(`Failed to parse Apple public keys: ${error.message}`));
+            }
+          });
+        }).on('error', (error) => {
+          reject(new Error(`Failed to fetch Apple public keys: ${error.message}`));
+        });
+      });
+    } catch (error) {
+      throw new Error(`Failed to get Apple public key: ${error.message}`);
+    }
+  }
+
+  /**
    * Parses Apple ID token to extract user information.
    * @param {string} idToken - Apple ID token JWT.
    * @returns {Promise<object>} User information from ID token.
@@ -867,28 +928,15 @@ class OAuthService {
       // Apple ID tokens are JWTs that contain user information
       const jwtLib = require('jsonwebtoken');
 
-      // Note: In production, we should verify with Apple's public keys
-      // For now, we'll decode and validate basic structure only
-      // TODO: Implement proper JWT verification with Apple's public keys
-      const decoded = jwtLib.decode(idToken, { complete: true, json: true });
+      // Get Apple's public key for verification
+      const publicKey = await this.getApplePublicKey(idToken);
 
-      // Basic validation - check if token has required structure
-      if (!decoded || !decoded.header || !decoded.payload) {
-        throw new Error('Invalid JWT token structure');
-      }
-
-      // Additional validation - check issuer
-      if (decoded.payload.iss !== 'https://appleid.apple.com') {
-        throw new Error('Invalid token issuer');
-      }
-
-      // Check if token is expired
-      const now = Math.floor(Date.now() / 1000);
-      if (decoded.payload.exp && decoded.payload.exp < now) {
-        throw new Error('Token has expired');
-      }
-
-      const { payload } = decoded;
+      // Verify JWT signature and validate claims
+      const payload = jwtLib.verify(idToken, publicKey, {
+        issuer: 'https://appleid.apple.com',
+        audience: process.env.APPLE_CLIENT_ID,
+        algorithms: ['RS256'],
+      });
 
       // Extract user information from token payload
       const userInfo = {
@@ -904,14 +952,7 @@ class OAuthService {
         iat: payload.iat,
       };
 
-      // Validate token claims
-      if (payload.iss !== 'https://appleid.apple.com') {
-        throw new Error('Invalid Apple ID token issuer');
-      }
-
-      if (payload.exp && payload.exp < Date.now() / 1000) {
-        throw new Error('Apple ID token has expired');
-      }
+      // Additional validation is performed by jwt.verify() above
 
       logger.logSecurityEvent('APPLE_ID_TOKEN_PARSED', null, {
         userId: userInfo.sub,

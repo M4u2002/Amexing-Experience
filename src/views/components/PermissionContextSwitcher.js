@@ -93,61 +93,93 @@ class PermissionContextSwitcher {
       return;
     }
 
-    const html = `
-      <div class="permission-context-switcher ${this.options.theme}" data-position="${this.options.position}">
-        <div class="context-switcher-header">
-          <h3>
-            ${this.options.showIcons ? '<i class="icon-context"></i>' : ''}
-            Context de Permisos
-          </h3>
-          <button class="refresh-btn" title="Actualizar contextos">
-            <i class="icon-refresh"></i>
-          </button>
-        </div>
-        
-        <div class="current-context">
-          <label>Contexto Actual:</label>
-          <div class="current-context-display">
-            ${this.renderCurrentContext()}
-          </div>
-        </div>
-
-        <div class="available-contexts">
-          <label>Cambiar a:</label>
-          <div class="context-list">
-            ${this.renderContextList()}
-          </div>
-        </div>
-
-        <div class="context-info">
-          ${this.renderContextInfo()}
-        </div>
-
-        <div class="context-actions">
-          <button class="switch-btn" disabled>Cambiar Contexto</button>
-          <button class="view-permissions-btn">Ver Permisos</button>
-        </div>
-      </div>
-    `;
-
     // Clear container and create DOM elements securely
     while (this.container.firstChild) {
       this.container.removeChild(this.container.firstChild);
     }
 
-    // Create main container element
+    // Create main container element using DOM methods
     const mainDiv = document.createElement('div');
     mainDiv.className = `permission-context-switcher ${this.options.theme}`;
     mainDiv.setAttribute('data-position', this.options.position);
 
-    // Create DOM elements securely instead of innerHTML
-    // Note: html variable contains template string - this should be refactored to use DOM methods
-    // For now, we'll parse and create elements safely
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html; // Safe: html is constructed from trusted static template
-    while (tempDiv.firstChild) {
-      mainDiv.appendChild(tempDiv.firstChild);
+    // Create header section
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'context-switcher-header';
+
+    const h3 = document.createElement('h3');
+    if (this.options.showIcons) {
+      const iconEl = document.createElement('i');
+      iconEl.className = 'icon-context';
+      h3.appendChild(iconEl);
     }
+    h3.appendChild(document.createTextNode('Context de Permisos'));
+
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'refresh-btn';
+    refreshBtn.title = 'Actualizar contextos';
+    const refreshIcon = document.createElement('i');
+    refreshIcon.className = 'icon-refresh';
+    refreshBtn.appendChild(refreshIcon);
+
+    headerDiv.appendChild(h3);
+    headerDiv.appendChild(refreshBtn);
+
+    // Create current context section
+    const currentContextDiv = document.createElement('div');
+    currentContextDiv.className = 'current-context';
+
+    const currentLabel = document.createElement('label');
+    currentLabel.textContent = 'Contexto Actual:';
+
+    const currentDisplay = document.createElement('div');
+    currentDisplay.className = 'current-context-display';
+    currentDisplay.textContent = this.getCurrentContextText();
+
+    currentContextDiv.appendChild(currentLabel);
+    currentContextDiv.appendChild(currentDisplay);
+
+    // Create available contexts section
+    const availableContextsDiv = document.createElement('div');
+    availableContextsDiv.className = 'available-contexts';
+
+    const availableLabel = document.createElement('label');
+    availableLabel.textContent = 'Cambiar a:';
+
+    const contextList = document.createElement('div');
+    contextList.className = 'context-list';
+    this.appendContextListElements(contextList);
+
+    availableContextsDiv.appendChild(availableLabel);
+    availableContextsDiv.appendChild(contextList);
+
+    // Create context info section
+    const contextInfoDiv = document.createElement('div');
+    contextInfoDiv.className = 'context-info';
+    this.appendContextInfoElements(contextInfoDiv);
+
+    // Create actions section
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'context-actions';
+
+    const switchBtn = document.createElement('button');
+    switchBtn.className = 'switch-btn';
+    switchBtn.disabled = true;
+    switchBtn.textContent = 'Cambiar Contexto';
+
+    const viewPermissionsBtn = document.createElement('button');
+    viewPermissionsBtn.className = 'view-permissions-btn';
+    viewPermissionsBtn.textContent = 'Ver Permisos';
+
+    actionsDiv.appendChild(switchBtn);
+    actionsDiv.appendChild(viewPermissionsBtn);
+
+    // Assemble the complete component
+    mainDiv.appendChild(headerDiv);
+    mainDiv.appendChild(currentContextDiv);
+    mainDiv.appendChild(availableContextsDiv);
+    mainDiv.appendChild(contextInfoDiv);
+    mainDiv.appendChild(actionsDiv);
     this.container.appendChild(mainDiv);
     this.applyStyles();
   }
@@ -812,6 +844,82 @@ class PermissionContextSwitcher {
     if (styles) {
       styles.remove();
     }
+  }
+
+  /**
+   * Gets current context as plain text.
+   * @returns {string} Current context text.
+   */
+  getCurrentContextText() {
+    if (this.currentContext) {
+      return `${this.currentContext.name} (${this.currentContext.type})`;
+    }
+    return 'No context selected';
+  }
+
+  /**
+   * Appends context list elements to a container.
+   * @param {HTMLElement} container - Container to append elements to.
+   */
+  appendContextListElements(container) {
+    if (!this.availableContexts || this.availableContexts.length === 0) {
+      const noContextsMsg = document.createElement('p');
+      noContextsMsg.textContent = 'No contexts available';
+      container.appendChild(noContextsMsg);
+      return;
+    }
+
+    this.availableContexts.forEach((context) => {
+      const contextItem = document.createElement('div');
+      contextItem.className = 'context-item';
+      contextItem.setAttribute('data-context-id', context.id);
+
+      const contextName = document.createElement('span');
+      contextName.className = 'context-name';
+      contextName.textContent = context.name;
+
+      const contextType = document.createElement('span');
+      contextType.className = 'context-type';
+      contextType.textContent = context.type;
+
+      contextItem.appendChild(contextName);
+      contextItem.appendChild(contextType);
+      container.appendChild(contextItem);
+    });
+  }
+
+  /**
+   * Appends context info elements to a container.
+   * @param {HTMLElement} container - Container to append elements to.
+   */
+  appendContextInfoElements(container) {
+    if (!this.currentContext) {
+      const noInfoMsg = document.createElement('p');
+      noInfoMsg.textContent = 'No context information available';
+      container.appendChild(noInfoMsg);
+      return;
+    }
+
+    const infoTitle = document.createElement('h4');
+    infoTitle.textContent = 'Context Information';
+
+    const infoList = document.createElement('ul');
+
+    const nameItem = document.createElement('li');
+    nameItem.textContent = `Name: ${this.currentContext.name}`;
+
+    const typeItem = document.createElement('li');
+    typeItem.textContent = `Type: ${this.currentContext.type}`;
+
+    const permissionsItem = document.createElement('li');
+    permissionsItem.textContent = `Permissions: ${this.currentContext.permissions?.length || 0}`;
+
+    infoList.appendChild(nameItem);
+    infoList.appendChild(typeItem);
+    infoList.appendChild(permissionsItem);
+
+    container.appendChild(infoTitle);
+    container.appendChild(infoList);
   }
 }
 
