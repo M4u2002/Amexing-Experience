@@ -8,6 +8,57 @@ const crypto = require('crypto');
 const { URL } = require('url');
 const logger = require('../infrastructure/logger');
 
+/**
+ * OAuth Security Validator - Comprehensive security validation for OAuth implementations.
+ * Provides PCI DSS Level 1 compliance validation, security policy enforcement, and
+ * comprehensive audit capabilities for OAuth flows and token management.
+ *
+ * This validator implements industry-standard OAuth security practices, including
+ * PKCE validation, token security analysis, flow validation, and comprehensive
+ * security compliance checking for enterprise-grade OAuth implementations.
+ *
+ * Features:
+ * - PCI DSS Level 1 compliance validation
+ * - OAuth 2.0 and OpenID Connect security validation
+ * - PKCE (Proof Key for Code Exchange) implementation validation
+ * - Token security and encryption validation
+ * - Authentication flow security analysis
+ * - Redirect URI validation and whitelist enforcement
+ * - State parameter validation for CSRF protection
+ * - Comprehensive security audit logging
+ * - Real-time security monitoring and alerting
+ * - Security policy enforcement and compliance reporting
+ *
+ * @class OAuthSecurityValidator
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize OAuth security validator
+ * const securityValidator = new OAuthSecurityValidator();
+ *
+ * // Validate OAuth flow security
+ * const flowValidation = await securityValidator.validateOAuthFlow({
+ *   provider: 'google',
+ *   redirectUri: 'https://app.com/callback',
+ *   state: 'csrf_protection_token',
+ *   codeChallenge: 'pkce_challenge',
+ *   codeChallengeMethod: 'S256'
+ * });
+ *
+ * // Validate token security
+ * const tokenValidation = await securityValidator.validateTokenSecurity({
+ *   accessToken: 'access_token_jwt',
+ *   refreshToken: 'refresh_token_jwt',
+ *   idToken: 'id_token_jwt'
+ * });
+ *
+ * // Run PCI DSS compliance check
+ * const complianceResult = await securityValidator.validatePCICompliance();
+ *
+ * // Generate security audit report
+ * const auditReport = securityValidator.generateSecurityAuditReport();
+ */
 class OAuthSecurityValidator {
   constructor() {
     this.validationRules = this.initializeValidationRules();
@@ -226,6 +277,7 @@ class OAuthSecurityValidator {
    * @param {string} token - JWT token to audit.
    * @returns {object|null} Decoded token structure or null if invalid.
    * @private
+   * @example
    */
   auditTokenStructure(token) {
     try {

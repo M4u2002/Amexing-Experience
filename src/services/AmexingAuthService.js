@@ -22,6 +22,50 @@ const logger = require('../infrastructure/logger');
 // const PermissionService = require('./PermissionService');
 // const OAuthProviderFactory = require('./oauth/OAuthProviderFactory');
 
+/**
+ * Amexing Authentication Service - Complete authentication and authorization system.
+ * Provides comprehensive authentication services including custom user management,
+ * OAuth 2.0 integration, JWT session handling, and corporate SSO capabilities.
+ *
+ * This service replaces the standard Parse User system with a custom AmexingUser
+ * implementation that supports advanced features like OAuth integration, dynamic
+ * permissions, and corporate authentication workflows.
+ *
+ * Features:
+ * - Custom user management with AmexingUser model
+ * - Multi-provider OAuth 2.0 integration (Google, Microsoft, Apple)
+ * - JWT-based session management with refresh tokens
+ * - Dynamic permission system integration
+ * - Corporate SSO with automatic employee provisioning
+ * - PCI DSS compliant password handling
+ * - Comprehensive audit logging
+ * - Account lockout and security features
+ *
+ * @class AmexingAuthService
+ * @author Claude Code + Technical Team
+ * @version 2.0
+ * @since 2025-09-11
+ * @example
+ * // Initialize authentication service
+ * const authService = new AmexingAuthService();
+ * authService.initialize();
+ *
+ * // Register new user
+ * const userData = {
+ *   username: 'johndoe',
+ *   email: 'john@example.com',
+ *   password: 'securePass123!',
+ *   firstName: 'John',
+ *   lastName: 'Doe'
+ * };
+ * const user = await authService.registerUser(userData);
+ *
+ * // Authenticate user
+ * const loginResult = await authService.authenticateUser('john@example.com', 'securePass123!');
+ *
+ * // OAuth login
+ * const oauthResult = await authService.authenticateWithOAuth('google', oauthToken);
+ */
 class AmexingAuthService {
   constructor() {
     // Parse Objects - no need for direct MongoDB connection
@@ -658,6 +702,7 @@ class AmexingAuthService {
   /**
    * Get user's effective permissions (role + department + individual).
    * @param {string} userId - User ID.
+   * @param _userId
    * @returns {Array} Array of permission codes.
    * @example
    */
@@ -672,6 +717,9 @@ class AmexingAuthService {
    * @param {string} userId - User ID.
    * @param {string} permissionCode - Permission code to check.
    * @param {object} context - Optional context (department, client, etc.).
+   * @param _userId
+   * @param _permissionCode
+   * @param _context
    * @returns {boolean} Has permission.
    * @example
    */
@@ -1052,6 +1100,7 @@ class AmexingAuthService {
    * @param {object} user - User object.
    * @param {object} client - Corporate client.
    * @param {object} profile - OAuth profile.
+   * @param _profile
    * @example
    */
   async provisionCorporateEmployee(user, client, _profile) {

@@ -6,9 +6,15 @@
 const baseConfig = require('./jest.config');
 const path = require('path');
 
+// Resolve project root directory (two levels up from .config/jest/)
+const projectRoot = path.resolve(__dirname, '../../');
+
 module.exports = {
   ...baseConfig,
-  
+
+  // Set correct rootDir
+  rootDir: projectRoot,
+
   // Test environment
   displayName: {
     name: 'OAuth Tests',
@@ -88,12 +94,11 @@ module.exports = {
   ],
   
   // Global setup and teardown for OAuth testing
-  globalSetup: '<rootDir>/tests/oauth/helpers/oauth-global-setup.js',
-  globalTeardown: '<rootDir>/tests/oauth/helpers/oauth-global-teardown.js',
+  globalSetup: path.join(projectRoot, 'tests/oauth/helpers/oauth-global-setup.js'),
+  globalTeardown: path.join(projectRoot, 'tests/oauth/helpers/oauth-global-teardown.js'),
   
-  // Module name mapping for OAuth dependencies
+  // Module name mapping for OAuth dependencies (only custom mappings)
   moduleNameMapper: {
-    '^@oauth/(.*)$': '<rootDir>/src/oauth/$1',
     '^@oauth-tests/(.*)$': '<rootDir>/tests/oauth/$1',
     '^@oauth-mocks/(.*)$': '<rootDir>/tests/oauth/helpers/oauth-mocks/$1',
     '^@synthetic-data/(.*)$': '<rootDir>/tests/oauth/helpers/synthetic-data/$1'
@@ -148,40 +153,4 @@ module.exports = {
     '<rootDir>/tests/oauth/helpers/custom-matchers.js'
   ],
   
-  // Test categorization using projects
-  projects: [
-    {
-      displayName: 'OAuth Unit Tests',
-      testMatch: ['**/tests/oauth/unit/**/*.test.js'],
-      testTimeout: 15000
-    },
-    {
-      displayName: 'OAuth Integration Tests',
-      testMatch: ['**/tests/oauth/integration/**/*.test.js'],
-      testTimeout: 60000,
-      globalSetup: '<rootDir>/tests/oauth/helpers/oauth-global-setup.js',
-      globalTeardown: '<rootDir>/tests/oauth/helpers/oauth-global-teardown.js'
-    },
-    {
-      displayName: 'OAuth E2E Tests',
-      testMatch: ['**/tests/oauth/e2e/**/*.test.js'],
-      testTimeout: 120000,
-      globalSetup: '<rootDir>/tests/oauth/helpers/oauth-global-setup.js',
-      globalTeardown: '<rootDir>/tests/oauth/helpers/oauth-global-teardown.js'
-    },
-    {
-      displayName: 'OAuth Performance Tests',
-      testMatch: ['**/tests/oauth/performance/**/*.test.js'],
-      testTimeout: 300000,
-      maxWorkers: 1 // Performance tests should run sequentially
-    },
-    {
-      displayName: 'PCI DSS Compliance Tests',
-      testMatch: ['**/tests/oauth/integration/pci-compliance/**/*.test.js'],
-      testTimeout: 30000,
-      setupFilesAfterEnv: [
-        '<rootDir>/tests/oauth/helpers/pci-compliance-setup.js'
-      ]
-    }
-  ]
 };

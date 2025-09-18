@@ -13,8 +13,41 @@ const AmexingUser = require('../../domain/models/AmexingUser');
 // const logger = require('../../infrastructure/logger'); // Not used in this file
 
 /**
- * Authentication Service Core Class.
- * Provides base authentication functionality.
+ * Authentication Service Core - Base functionality for authentication operations.
+ * Provides core authentication utilities including JWT token management, user validation,
+ * and common authentication helpers that are shared across different authentication services.
+ *
+ * This class serves as the foundation for authentication services, containing
+ * common functionality for user registration validation, JWT token generation,
+ * and user lookup operations.
+ *
+ * Features:
+ * - User registration data validation
+ * - JWT token generation and management
+ * - User lookup and verification utilities
+ * - Email and username validation
+ * - Password strength enforcement
+ * - Token expiration handling
+ * - Common authentication helpers
+ *
+ * @class AuthenticationServiceCore
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 1.0.0
+ * @example
+ * // Extend for specific authentication functionality
+ * class AuthenticationService extends AuthenticationServiceCore {
+ *   async loginUser(email, password) {
+ *     const user = await this.findUserByEmail(email);
+ *     const tokens = await this.generateTokens(user);
+ *     return { user, tokens };
+ *   }
+ * }
+ *
+ * // Direct usage for core operations
+ * const core = new AuthenticationServiceCore();
+ * core.validateRegistrationData(userData);
+ * const tokens = await core.generateTokens(user);
  */
 class AuthenticationServiceCore {
   constructor() {
@@ -115,11 +148,19 @@ class AuthenticationServiceCore {
   }
 
   /**
-   * Finds user by ID.
-   * @param {string} userId - User ID.
-   * @returns {Promise<AmexingUser|null>} User object or null.
+   * Retrieves user by unique identifier with Parse Server query optimization.
+   * Performs direct user lookup using Parse Server's get method with master key
+   * privileges for administrative operations and user data retrieval.
+   *
+   * @method findUserById
+   * @param {string} userId - Unique Parse Server user identifier
+   * @returns {Promise<AmexingUser|null>} User object or null if not found
    * @example
+   * // Find user by Parse Server ID
    * const user = await authService.findUserById('user123');
+   * if (user) {
+   *   console.log('User found:', user.get('username'));
+   * }
    */
   async findUserById(userId) {
     const query = new Parse.Query(AmexingUser);
@@ -127,11 +168,18 @@ class AuthenticationServiceCore {
   }
 
   /**
-   * Generates JWT access and refresh tokens.
-   * @param {AmexingUser} user - User object.
-   * @returns {Promise<object>} Token object.
+   * Generates secure JWT access and refresh token pairs for authenticated sessions.
+   * Creates cryptographically signed tokens with appropriate expiration times and
+   * user claims for secure session management and API access authorization.
+   *
+   * @method generateTokens
+   * @param {AmexingUser} user - Authenticated Parse Server user object
+   * @returns {Promise<object>} Token object containing access_token, refresh_token, and metadata
    * @example
+   * // Generate tokens for authenticated user
    * const tokens = await authService.generateTokens(user);
+   * console.log('Access Token:', tokens.access_token);
+   * console.log('Expires In:', tokens.expires_in);
    */
   async generateTokens(user) {
     const payload = {

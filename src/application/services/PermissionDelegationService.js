@@ -13,6 +13,53 @@ const PermissionInheritanceService = require('./PermissionInheritanceService');
 // const AmexingUser = require('../../domain/models/AmexingUser'); // Reserved for future validation implementation
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Permission Delegation Service - Manages delegation of permissions between users.
+ * Handles manager-to-employee delegation, temporary permission elevation, and
+ * emergency access scenarios with comprehensive audit trails and security controls.
+ *
+ * This service implements sophisticated delegation workflows that support organizational
+ * hierarchies, temporary access needs, and emergency situations while maintaining
+ * security and compliance requirements.
+ *
+ * Features:
+ * - Manager-to-employee permission delegation
+ * - Temporary permission elevation and emergency access
+ * - Multiple delegation types (temporary, project, emergency, coverage)
+ * - Automatic expiration and cleanup
+ * - Approval workflows for sensitive delegations
+ * - Comprehensive audit logging
+ * - Delegation validation and security checks
+ * - Integration with permission inheritance
+ *
+ * @class PermissionDelegationService
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize delegation service
+ * const delegationService = new PermissionDelegationService();
+ *
+ * // Create temporary delegation from manager to employee
+ * const delegation = await delegationService.createDelegation({
+ *   fromUserId: 'manager123',
+ *   toUserId: 'employee456',
+ *   permissions: ['team_management', 'department_admin'],
+ *   type: 'temporary',
+ *   duration: 86400000, // 24 hours
+ *   reason: 'Manager vacation coverage'
+ * });
+ *
+ * // Create emergency access delegation
+ * const emergencyDelegation = await delegationService.createEmergencyDelegation(
+ *   'user123', ['admin_access'], 'System outage response'
+ * );
+ *
+ * // Validate delegated permissions
+ * const hasAccess = await delegationService.validateDelegatedPermission(
+ *   'employee456', 'team_management'
+ * );
+ */
 class PermissionDelegationService {
   constructor() {
     // Delegation types and their rules
@@ -149,7 +196,7 @@ class PermissionDelegationService {
    * @param {string} employeeId - Employee user ID.
    * @param {Array} permissions - Permissions to delegate.
    * @param {string} delegationType - Type of delegation.
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionDelegationService();
    * await service.validateDelegationRequest('mgr123', 'emp456', ['team_management'], 'temporary');
@@ -196,7 +243,7 @@ class PermissionDelegationService {
    * Validates manager-employee relationship.
    * @param {string} managerId - Manager user ID.
    * @param {string} employeeId - Employee user ID.
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionDelegationService();
    * await service.validateManagerEmployeeRelationship('mgr123', 'emp456');
@@ -264,7 +311,7 @@ class PermissionDelegationService {
    * Validates delegation limits for manager.
    * @param {string} managerId - Manager user ID.
    * @param {string} delegationType - Delegation type.
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionDelegationService();
    * await service.validateDelegationLimits('mgr123', 'temporary');
@@ -356,7 +403,7 @@ class PermissionDelegationService {
    * @param {Array} permissions - Permissions to apply.
    * @param {string} delegationId - Delegation record ID.
    * @param {Date} expiresAt - Expiration date.
-   * @returns {Promise<void>} Completes when permissions are applied
+   * @returns {Promise<void>} Completes when permissions are applied.
    * @example
    * const service = new PermissionDelegationService();
    * await service.applyDelegatedPermissions('emp456', ['team_management'], 'del123', expirationDate);
@@ -392,7 +439,7 @@ class PermissionDelegationService {
    * Schedules delegation expiration.
    * @param {string} delegationId - Delegation record ID.
    * @param {Date} expiresAt - Expiration date.
-   * @returns {Promise<void>} Completes when expiration is scheduled
+   * @returns {Promise<void>} Completes when expiration is scheduled.
    * @example
    * const service = new PermissionDelegationService();
    * await service.scheduleExpiration('del123', expirationDate);
@@ -418,7 +465,7 @@ class PermissionDelegationService {
   /**
    * Expires a delegation and removes delegated permissions.
    * @param {string} delegationId - Delegation record ID.
-   * @returns {Promise<void>} Completes when delegation is expired
+   * @returns {Promise<void>} Completes when delegation is expired.
    * @example
    * const service = new PermissionDelegationService();
    * await service.expireDelegation('del123');
@@ -474,7 +521,7 @@ class PermissionDelegationService {
    * @param {string} delegationId - Delegation record ID.
    * @param {string} revokedBy - User ID who revoked the delegation.
    * @param {string} reason - Reason for revocation.
-   * @returns {Promise<object>} Revocation result
+   * @returns {Promise<object>} Revocation result.
    * @example
    * const service = new PermissionDelegationService();
    * const result = await service.revokeDelegation('del123', 'mgr123', 'No longer needed');

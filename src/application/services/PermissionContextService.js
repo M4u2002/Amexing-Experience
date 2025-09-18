@@ -12,6 +12,53 @@ const OAuthPermissionService = require('./OAuthPermissionService');
 // const AmexingUser = require('../../domain/models/AmexingUser'); // Unused import
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Permission Context Service - Manages context-specific permissions and access control.
+ * Handles multi-departmental permissions, project-based access, and dynamic context
+ * switching within OAuth sessions. Implements sophisticated context-aware authorization.
+ *
+ * This service provides the foundation for context-sensitive permission management,
+ * allowing users to operate under different permission contexts (departments, projects,
+ * clients) with appropriate access control and validation.
+ *
+ * Features:
+ * - Multi-context permission management (department, project, client, temporary)
+ * - Dynamic context switching and validation
+ * - Context-specific permission inheritance
+ * - Permission caching and performance optimization
+ * - Audit logging for context changes
+ * - Context metadata and UI integration
+ * - Temporary permission elevation
+ *
+ * @class PermissionContextService
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize context service
+ * const contextService = new PermissionContextService();
+ *
+ * // Get user's available contexts
+ * const contexts = await contextService.getUserContexts(user);
+ *
+ * // Switch to department context
+ * const departmentContext = {
+ *   type: 'department',
+ *   id: 'dept_sistemas',
+ *   name: 'Sistemas'
+ * };
+ * await contextService.switchContext(user, departmentContext);
+ *
+ * // Validate context permissions
+ * const hasAccess = await contextService.validateContextPermission(
+ *   user, 'admin_access', 'department'
+ * );
+ *
+ * // Create temporary context for specific operation
+ * const tempContext = await contextService.createTemporaryContext(
+ *   user, 'emergency_access', 3600
+ * );
+ */
 class PermissionContextService {
   constructor() {
     // Context types and their metadata
@@ -426,7 +473,7 @@ class PermissionContextService {
    * Validates user access to a context.
    * @param {string} userId - User ID.
    * @param {object} context - Context to validate.
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionContextService();
    * await service.validateContextAccess('user123', contextObject);
@@ -459,7 +506,7 @@ class PermissionContextService {
    * Validates department access.
    * @param {string} userId - User ID.
    * @param {string} departmentId - Department ID.
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionContextService();
    * await service.validateDepartmentAccess('user123', 'dept456');
@@ -479,9 +526,9 @@ class PermissionContextService {
 
   /**
    * Validates project access.
-   * @param {string} userId - User ID
-   * @param {string} projectId - Project ID
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @param {string} userId - User ID.
+   * @param {string} projectId - Project ID.
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionContextService();
    * await service.validateProjectAccess('user123', 'project456');
@@ -503,7 +550,7 @@ class PermissionContextService {
    * Validates client access.
    * @param {string} userId - User ID.
    * @param {string} clientId - Client ID.
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionContextService();
    * await service.validateClientAccess('user123', 'client456');
@@ -525,7 +572,7 @@ class PermissionContextService {
    * Validates temporary access.
    * @param {string} userId - User ID.
    * @param {object} context - Temporary context.
-   * @returns {Promise<void>} Completes when validation passes, throws if fails
+   * @returns {Promise<void>} Completes when validation passes, throws if fails.
    * @example
    * const service = new PermissionContextService();
    * await service.validateTemporaryAccess('user123', tempContext);
@@ -541,7 +588,7 @@ class PermissionContextService {
    * @param {string} userId - User ID.
    * @param {string} sessionId - Session ID.
    * @param {object} context - Context with permissions.
-   * @returns {Promise<void>} Completes when permissions are applied
+   * @returns {Promise<void>} Completes when permissions are applied.
    * @example
    * const service = new PermissionContextService();
    * await service.applyContextPermissions('user123', 'session456', contextObject);
@@ -739,7 +786,7 @@ class PermissionContextService {
   /**
    * Clears context permissions cache.
    * @param {string} userId - User ID (optional, clears all if not provided).
-   * @returns {void} No return value
+   * @returns {void} No return value.
    * @example
    * const service = new PermissionContextService();
    * service.clearContextCache('user123'); // Clear specific user cache

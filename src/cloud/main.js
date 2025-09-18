@@ -17,7 +17,29 @@ const oauthPermissionsFunctions = require('./functions/oauth-permissions');
 const departmentOAuthFunctions = require('./functions/department-oauth');
 const appleOAuthFunctions = require('./functions/apple-oauth');
 
-// Function to register all cloud functions
+/**
+ * Registers all Parse Cloud Functions for the Amexing platform.
+ * Centralizes the registration of OAuth authentication, corporate synchronization,
+ * department management, and administrative functions with comprehensive error handling
+ * and security logging for Parse Server integration.
+ *
+ * This function orchestrates the registration of all cloud functions including OAuth
+ * admin operations, corporate landing configuration, sync management, permission
+ * handling, department OAuth flows, and Apple authentication integration.
+ *
+ * @function registerCloudFunctions
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Register all cloud functions during Parse Server initialization
+ * registerCloudFunctions();
+ *
+ * // Cloud functions become available via Parse SDK
+ * const result = await Parse.Cloud.run('getAvailableCorporateDomains');
+ * const oauthUrl = await Parse.Cloud.run('generateCorporateOAuthURL', { domain: 'example.com' });
+ * const syncStatus = await Parse.Cloud.run('triggerCorporateSync', { domain: 'company.com' });
+ */
 function registerCloudFunctions() {
   try {
     // Register Cloud Functions
@@ -520,6 +542,7 @@ function registerCloudFunctions() {
 if (typeof Parse.Cloud !== 'undefined' && typeof Parse.Cloud.define === 'function') {
   registerCloudFunctions();
 } else {
+  /* eslint-disable no-console */
   console.warn('Parse.Cloud not available, deferring cloud function registration');
   // Try again after a delay
   setTimeout(() => {
@@ -528,5 +551,6 @@ if (typeof Parse.Cloud !== 'undefined' && typeof Parse.Cloud.define === 'functio
     } else {
       console.error('Parse.Cloud still not available after delay');
     }
+    /* eslint-enable no-console */
   }, 1000);
 }

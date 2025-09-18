@@ -6,6 +6,45 @@
 const https = require('https');
 const jwt = require('jsonwebtoken');
 
+/**
+ * Apple Token Exchanger - Handles Apple OAuth token exchange operations.
+ * Manages the secure exchange of authorization codes for access tokens and
+ * generates the required client secrets for Apple's OAuth flow.
+ *
+ * This class implements Apple's specific requirements for token exchange,
+ * including the generation of JWT-based client secrets using ES256 algorithm
+ * and the proper handling of authorization code to token conversion.
+ *
+ * Features:
+ * - JWT client secret generation using ES256 algorithm
+ * - Secure authorization code to token exchange
+ * - Automatic token expiration handling
+ * - Apple-specific OAuth flow compliance
+ * - Error handling and validation
+ * - Private key based authentication
+ *
+ * @class AppleTokenExchanger
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize token exchanger with Apple config and private key
+ * const config = {
+ *   teamId: 'APPLE_TEAM_ID',
+ *   clientId: 'com.company.app',
+ *   keyId: 'KEY_ID_FROM_APPLE'
+ * };
+ * const privateKey = fs.readFileSync('apple_private_key.p8', 'utf8');
+ * const exchanger = new AppleTokenExchanger(config, privateKey);
+ *
+ * // Generate client secret for token exchange
+ * const clientSecret = exchanger.generateClientSecret();
+ *
+ * // Exchange authorization code for tokens
+ * const tokens = await exchanger.exchangeCodeForTokens(authorizationCode);
+ * console.log('Access token:', tokens.access_token);
+ * console.log('Refresh token:', tokens.refresh_token);
+ */
 class AppleTokenExchanger {
   constructor(config, privateKey) {
     this.config = config;
@@ -85,6 +124,11 @@ class AppleTokenExchanger {
           try {
             const result = JSON.parse(responseData);
 
+            /**
+             * Handles Apple token exchange response with comprehensive error checking.
+             * Validates HTTP status codes and Apple API error responses to ensure
+             * successful token exchange or proper error propagation.
+             */
             if (response.statusCode !== 200) {
               reject(new Error(`Token exchange failed: ${result.error_description || result.error}`));
             } else {

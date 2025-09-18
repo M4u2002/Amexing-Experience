@@ -12,6 +12,40 @@ const logger = require('../../infrastructure/logger');
 const { AppleIdTokenValidator } = require('./AppleIdTokenValidator');
 const { AppleTokenExchanger } = require('./AppleTokenExchanger');
 
+/**
+ * Apple OAuth Service Core - Core functionality for Apple Sign In integration.
+ * Provides the foundational components for Apple OAuth authentication including
+ * configuration management, private key handling, and core OAuth flow logic.
+ *
+ * This is the base class that contains shared functionality for Apple OAuth operations.
+ * It manages Apple-specific configurations, validates ID tokens, and handles
+ * the core authentication flow components.
+ *
+ * Features:
+ * - Apple OAuth configuration validation
+ * - Private key management for JWT signing
+ * - ID token validation and verification
+ * - Token exchange functionality
+ * - User data parsing and validation
+ * - Error handling and logging
+ *
+ * @class AppleOAuthServiceCore
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Extend for specific Apple OAuth functionality
+ * class AppleOAuthService extends AppleOAuthServiceCore {
+ *   async handleCallback(callbackData) {
+ *     return super.processAuthentication(callbackData);
+ *   }
+ * }
+ *
+ * // Direct usage for core operations
+ * const core = new AppleOAuthServiceCore();
+ * const isValid = core.validateConfig();
+ * const tokenData = await core.exchangeCodeForTokens(authCode);
+ */
 class AppleOAuthServiceCore {
   constructor() {
     this.config = {
@@ -39,6 +73,11 @@ class AppleOAuthServiceCore {
     // eslint-disable-next-line security/detect-object-injection
     const missing = required.filter((key) => !this.config[key]);
 
+    /**
+     * Handles missing configuration with environment-aware behavior.
+     * In development: warns and disables service gracefully.
+     * In production: throws error to prevent silent failures.
+     */
     if (missing.length > 0) {
       if (process.env.NODE_ENV === 'development') {
         logger.warn(`Apple OAuth not configured in development: ${missing.join(', ')}`);
@@ -50,10 +89,22 @@ class AppleOAuthServiceCore {
   }
 
   /**
-   * Loads Apple private key from filesystem.
+   * Loads Apple private key from filesystem with error handling and validation.
+   * Reads the private key file for JWT signing in Apple OAuth flow with
+   * proper error handling and security validation for key format.
+   *
+   * @method loadPrivateKey
+   * @returns {void} Loads private key into service instance
+   * @throws {Error} If private key file cannot be read or is invalid
    * @example
+   * // Load private key during service initialization
+   * appleOAuthService.loadPrivateKey();
    */
   loadPrivateKey() {
+    /**
+     * Skips key loading if service is disabled due to missing configuration.
+     * Prevents errors in development environments with incomplete setup.
+     */
     if (this.disabled) {
       return;
     }

@@ -13,6 +13,48 @@ const CorporateOAuthService = require('./CorporateOAuthService');
 const AmexingUser = require('../../domain/models/AmexingUser');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Corporate Sync Service - Manages periodic synchronization of corporate employee data.
+ * Handles automated synchronization of employee information, permissions, and organizational
+ * structure from corporate OAuth providers (Google Workspace, Microsoft Azure AD).
+ *
+ * This service ensures that the Amexing platform stays synchronized with corporate
+ * directory changes, automatically updating user permissions, department assignments,
+ * and employee status based on changes in the corporate systems.
+ *
+ * Features:
+ * - Periodic employee data synchronization
+ * - Automated permission updates based on corporate changes
+ * - Department and organizational structure sync
+ * - Employee onboarding and offboarding automation
+ * - Sync scheduling and interval management
+ * - Comprehensive sync reporting and logging
+ * - Error handling and retry mechanisms
+ * - Incremental and full sync capabilities
+ *
+ * @class CorporateSyncService
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 2.0.0
+ * @example
+ * // Initialize corporate sync service
+ * const syncService = new CorporateSyncService();
+ *
+ * // Start periodic sync for a corporate client
+ * const corporateClient = await Parse.Query('CorporateClient').get('client123');
+ * await syncService.startPeriodicSync(corporateClient, 30); // Sync every 30 minutes
+ *
+ * // Perform manual sync
+ * const syncResult = await syncService.syncCorporateClient('client123');
+ *
+ * // Sync specific employee
+ * const employeeSync = await syncService.syncSingleEmployee(
+ *   'user123', 'microsoft', corporateConfig
+ * );
+ *
+ * // Get sync status and statistics
+ * const syncStatus = await syncService.getSyncStatus('client123');
+ */
 class CorporateSyncService {
   constructor() {
     this.syncIntervals = new Map(); // Track running sync intervals

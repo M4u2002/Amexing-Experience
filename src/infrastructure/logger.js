@@ -1,3 +1,50 @@
+/**
+ * Logger Infrastructure - Comprehensive logging system for Amexing platform.
+ * Provides centralized logging with Winston, daily rotation, PCI DSS compliance,
+ * and specialized security event logging for comprehensive audit trails.
+ *
+ * This logging system implements enterprise-grade logging with multiple transports,
+ * structured logging, automatic rotation, and PCI DSS compliant security event
+ * tracking for compliance and security monitoring requirements.
+ *
+ * Features:
+ * - Winston-based structured logging with custom formatters
+ * - Daily log rotation with compression and retention policies
+ * - Separate error and audit log streams
+ * - PCI DSS compliant security event logging
+ * - Development-friendly console output with colors
+ * - Automatic directory creation and file management
+ * - HTTP request logging integration with Morgan
+ * - Uncaught exception and rejection handling
+ * - Configurable log levels and retention periods
+ * - JSON audit logs for compliance reporting
+ *
+ * @fileoverview Infrastructure logging system for Amexing platform
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Basic logging
+ * const logger = require('./infrastructure/logger');
+ * logger.info('Application started', { port: 3000, env: 'production' });
+ * logger.error('Database connection failed', { error: dbError });
+ *
+ * // Security event logging
+ * logger.logSecurityEvent('FAILED_LOGIN', {
+ *   username: 'user@example.com',
+ *   ip: '192.168.1.1',
+ *   attempts: 3
+ * });
+ *
+ * // Access attempt logging
+ * logger.logAccessAttempt(false, 'john.doe', '10.0.0.1', 'Invalid password');
+ * logger.logAccessAttempt(true, 'jane.smith', '10.0.0.2');
+ *
+ * // Data access auditing
+ * logger.logDataAccess('user123', 'customer_data', 'READ', true);
+ * logger.logSystemChange('admin456', 'user_permissions', 'read', 'read,write');
+ */
+
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
@@ -100,7 +147,41 @@ if (process.env.ENABLE_AUDIT_LOGGING === 'true') {
   );
 }
 
-// PCI DSS compliant logging functions
+/**
+ * Logs security events for PCI DSS compliance and security monitoring.
+ * Creates structured security event logs with standardized format for
+ * compliance reporting, security analysis, and incident investigation.
+ *
+ * @function logSecurityEvent
+ * @param {string} event - Security event type (e.g., 'FAILED_LOGIN', 'ACCOUNT_LOCKED', 'PERMISSION_DENIED')
+ * @param {object} details - Additional event details and context
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Log failed login attempt
+ * logger.logSecurityEvent('FAILED_LOGIN', {
+ *   username: 'user@example.com',
+ *   ip: '192.168.1.100',
+ *   userAgent: 'Mozilla/5.0...',
+ *   attempts: 3
+ * });
+ *
+ * // Log account lockout
+ * logger.logSecurityEvent('ACCOUNT_LOCKED', {
+ *   userId: 'user123',
+ *   reason: 'Too many failed attempts',
+ *   lockoutDuration: '30 minutes'
+ * });
+ *
+ * // Log permission violation
+ * logger.logSecurityEvent('PERMISSION_DENIED', {
+ *   userId: 'user456',
+ *   resource: '/api/admin/users',
+ *   action: 'DELETE',
+ *   requiredRole: 'admin'
+ * });
+ */
 logger.logSecurityEvent = (event, details) => {
   logger.info('SECURITY_EVENT', {
     event,
@@ -109,6 +190,29 @@ logger.logSecurityEvent = (event, details) => {
   });
 };
 
+/**
+ * Logs authentication access attempts with privacy protection and PCI DSS compliance.
+ * Tracks both successful and failed login attempts with partial username masking
+ * for security while maintaining audit trail requirements.
+ *
+ * @function logAccessAttempt
+ * @param {boolean} success - Whether the access attempt was successful
+ * @param {string} username - Username attempting access (will be partially masked)
+ * @param {string} ip - IP address of the access attempt
+ * @param {string|null} [reason=null] - Reason for failure (if applicable)
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Log successful login
+ * logger.logAccessAttempt(true, 'john.doe@company.com', '192.168.1.10');
+ *
+ * // Log failed login with reason
+ * logger.logAccessAttempt(false, 'user@example.com', '10.0.0.1', 'Invalid password');
+ *
+ * // Log failed login with account lockout
+ * logger.logAccessAttempt(false, 'admin@domain.com', '172.16.0.5', 'Account locked');
+ */
 logger.logAccessAttempt = (success, username, ip, reason = null) => {
   const logData = {
     type: 'ACCESS_ATTEMPT',
@@ -129,6 +233,29 @@ logger.logAccessAttempt = (success, username, ip, reason = null) => {
   }
 };
 
+/**
+ * Logs data access events for compliance and audit requirements.
+ * Tracks all data access operations including reads, writes, updates, and deletions
+ * with user attribution for PCI DSS and regulatory compliance.
+ *
+ * @function logDataAccess
+ * @param {string} userId - Unique identifier of the user accessing the data
+ * @param {string} resource - Resource or data type being accessed (e.g., 'customer_data', 'payment_info')
+ * @param {string} action - Action performed (READ, WRITE, UPDATE, DELETE)
+ * @param {boolean} success - Whether the data access was successful
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Log successful customer data read
+ * logger.logDataAccess('user123', 'customer_data', 'READ', true);
+ *
+ * // Log failed attempt to access payment information
+ * logger.logDataAccess('user456', 'payment_info', 'READ', false);
+ *
+ * // Log successful update to user profile
+ * logger.logDataAccess('admin789', 'user_profile', 'UPDATE', true);
+ */
 logger.logDataAccess = (userId, resource, action, success) => {
   logger.info('DATA_ACCESS', {
     userId,
@@ -139,6 +266,29 @@ logger.logDataAccess = (userId, resource, action, success) => {
   });
 };
 
+/**
+ * Logs system configuration and data changes for audit trails and compliance.
+ * Tracks modifications to system settings, user permissions, and critical data
+ * with privacy protection for sensitive values while maintaining audit requirements.
+ *
+ * @function logSystemChange
+ * @param {string} userId - Unique identifier of the user making the change
+ * @param {string} change - Description of what was changed (e.g., 'user_permissions', 'system_config')
+ * @param {string|null} oldValue - Previous value (will be masked with *** for privacy)
+ * @param {string|null} newValue - New value (will be masked with *** for privacy)
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Log permission change
+ * logger.logSystemChange('admin123', 'user_permissions', 'read', 'read,write,delete');
+ *
+ * // Log configuration update
+ * logger.logSystemChange('sysadmin456', 'max_login_attempts', '3', '5');
+ *
+ * // Log user role change
+ * logger.logSystemChange('hr789', 'user_role', 'employee', 'manager');
+ */
 logger.logSystemChange = (userId, change, oldValue, newValue) => {
   logger.info('SYSTEM_CHANGE', {
     userId,

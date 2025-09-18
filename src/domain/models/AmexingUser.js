@@ -10,6 +10,63 @@ const Parse = require('parse/node');
 const bcrypt = require('bcrypt');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * AmexingUser Model - Extended Parse User with comprehensive PCI DSS compliance features.
+ * Provides secure authentication, password management, OAuth integration, account lockout
+ * protection, and comprehensive audit capabilities for the Amexing platform.
+ *
+ * This model replaces Parse.User with enhanced security features including bcrypt password
+ * hashing, failed login attempt tracking, account lockout mechanisms, OAuth account
+ * management, and detailed audit logging for PCI DSS compliance.
+ *
+ * Features:
+ * - PCI DSS compliant password hashing with bcrypt
+ * - Account lockout protection with configurable thresholds
+ * - Multi-provider OAuth account management (Google, Microsoft, Apple)
+ * - Failed login attempt tracking and security logging
+ * - Password strength validation with customizable requirements
+ * - Safe JSON serialization excluding sensitive data
+ * - Comprehensive audit trails for security monitoring
+ * - Email verification and user activation workflows
+ * - Role-based access control integration
+ * - Session management and authentication tracking
+ *
+ * @class AmexingUser
+ * @extends Parse.Object
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Create new user with secure password
+ * const userData = {
+ *   username: 'john.doe',
+ *   email: 'john@example.com',
+ *   firstName: 'John',
+ *   lastName: 'Doe'
+ * };
+ * const user = AmexingUser.create(userData);
+ * await user.setPassword('SecurePass123!');
+ * await user.save();
+ *
+ * // Validate user password
+ * const isValid = await user.validatePassword('SecurePass123!');
+ * if (isValid) {
+ *   await user.recordSuccessfulLogin('password');
+ * } else {
+ *   const isLocked = await user.recordFailedLogin();
+ * }
+ *
+ * // OAuth account management
+ * user.addOAuthAccount({
+ *   provider: 'google',
+ *   providerId: '123456789',
+ *   email: 'john@gmail.com',
+ *   accessToken: 'oauth_token'
+ * });
+ *
+ * // Safe user data for API responses
+ * const safeUserData = user.toSafeJSON();
+ */
 class AmexingUser extends Parse.Object {
   constructor() {
     super('AmexingUser');
@@ -63,7 +120,7 @@ class AmexingUser extends Parse.Object {
       this.validatePasswordStrength(password);
     }
 
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS, 10) || 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     this.set('passwordHash', hashedPassword);
@@ -79,12 +136,27 @@ class AmexingUser extends Parse.Object {
    * @returns {boolean} True if password matches.
    * @example
    */
+  /**
+   * Validates user password against stored hash with bcrypt comparison.
+   * Performs secure password verification using bcrypt hashing algorithm
+   * for authentication validation with timing attack protection.
+   *
+   * @method validatePassword
+   * @param {string} password - Plain text password to validate
+   * @returns {Promise<boolean>} True if password matches stored hash, false otherwise
+   * @example
+   * // Validate user password during login
+   * const isValid = await user.validatePassword('userPassword123!');
+   * if (isValid) {
+   *   // Proceed with authentication
+   * }
+   */
   async validatePassword(password) {
     const hashedPassword = this.get('passwordHash');
     if (!hashedPassword) {
       return false;
     }
-    return await bcrypt.compare(password, hashedPassword);
+    return bcrypt.compare(password, hashedPassword);
   }
 
   /**
@@ -94,7 +166,7 @@ class AmexingUser extends Parse.Object {
    * @example
    */
   validatePasswordStrength(password) {
-    const minLength = parseInt(process.env.PASSWORD_MIN_LENGTH) || 12;
+    const minLength = parseInt(process.env.PASSWORD_MIN_LENGTH, 10) || 12;
     const requireUppercase = process.env.PASSWORD_REQUIRE_UPPERCASE === 'true';
     const requireLowercase = process.env.PASSWORD_REQUIRE_LOWERCASE === 'true';
     const requireNumbers = process.env.PASSWORD_REQUIRE_NUMBERS === 'true';
@@ -102,26 +174,50 @@ class AmexingUser extends Parse.Object {
 
     const errors = [];
 
+    /**
+     * Validates minimum password length according to PCI DSS requirements.
+     * Ensures password meets configured minimum length for security compliance.
+     */
     if (password.length < minLength) {
       errors.push(`Password must be at least ${minLength} characters long`);
     }
 
+    /**
+     * Validates password contains required uppercase letters for security.
+     * Ensures compliance with uppercase letter requirements when enabled.
+     */
     if (requireUppercase && !/[A-Z]/.test(password)) {
       errors.push('Password must contain at least one uppercase letter');
     }
 
+    /**
+     * Validates password contains required lowercase letters for security.
+     * Ensures compliance with lowercase letter requirements when enabled.
+     */
     if (requireLowercase && !/[a-z]/.test(password)) {
       errors.push('Password must contain at least one lowercase letter');
     }
 
+    /**
+     * Validates password contains required numeric characters for security.
+     * Ensures compliance with number requirements when enabled.
+     */
     if (requireNumbers && !/\d/.test(password)) {
       errors.push('Password must contain at least one number');
     }
 
+    /**
+     * Validates password contains required special characters for security.
+     * Ensures compliance with special character requirements when enabled.
+     */
     if (requireSpecial && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       errors.push('Password must contain at least one special character');
     }
 
+    /**
+     * Throws Parse validation error if any password requirements fail.
+     * Aggregates all validation errors into comprehensive error message.
+     */
     if (errors.length > 0) {
       throw new Parse.Error(
         Parse.Error.VALIDATION_ERROR,
@@ -136,13 +232,18 @@ class AmexingUser extends Parse.Object {
    * @example
    */
   async recordFailedLogin() {
-    const maxAttempts = parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5;
-    const lockoutDuration = parseInt(process.env.ACCOUNT_LOCKOUT_DURATION_MINUTES) || 30;
+    const maxAttempts = parseInt(process.env.MAX_LOGIN_ATTEMPTS, 10) || 5;
+    const lockoutDuration = parseInt(process.env.ACCOUNT_LOCKOUT_DURATION_MINUTES, 10) || 30;
 
     let attempts = this.get('loginAttempts') || 0;
-    attempts++;
+    attempts += 1;
     this.set('loginAttempts', attempts);
 
+    /**
+     * Implements account lockout mechanism when max attempts exceeded.
+     * Locks user account for configured duration and logs security event
+     * for compliance and monitoring purposes.
+     */
     if (attempts >= maxAttempts) {
       const lockoutTime = new Date();
       lockoutTime.setMinutes(lockoutTime.getMinutes() + lockoutDuration);
@@ -163,9 +264,19 @@ class AmexingUser extends Parse.Object {
   }
 
   /**
-   * Records a successful login.
-   * @param authMethod
+   * Records successful login with authentication method tracking and security logging.
+   * Resets failed login attempts, updates last login timestamp, and logs successful
+   * authentication event for audit trail and user activity monitoring.
+   *
+   * @method recordSuccessfulLogin
+   * @param {string} [authMethod='password'] - Authentication method used (password, oauth, etc.)
+   * @returns {Promise<void>} Saves user with updated login information
    * @example
+   * // Record successful password login
+   * await user.recordSuccessfulLogin('password');
+   *
+   * // Record successful OAuth login
+   * await user.recordSuccessfulLogin('google_oauth');
    */
   async recordSuccessfulLogin(authMethod = 'password') {
     this.set('loginAttempts', 0);

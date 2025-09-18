@@ -8,6 +8,43 @@ const Parse = require('parse/node');
 const { AppleOAuthServiceCore } = require('./AppleOAuthServiceCore');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Apple OAuth Service - Handles Apple Sign In authentication flows.
+ * Provides secure Apple OAuth integration with privacy compliance features,
+ * department-specific flows, and corporate configuration support.
+ *
+ * Features:
+ * - Apple ID Token verification and validation
+ * - Privacy-compliant user data handling
+ * - Corporate domain mapping and department flows
+ * - Enhanced security with nonce validation
+ * - Automatic user creation and linking
+ * - Comprehensive audit logging
+ *
+ * @class AppleOAuthService
+ * @extends AppleOAuthServiceCore
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize Apple OAuth service
+ * const appleService = new AppleOAuthService();
+ *
+ * // Handle Apple OAuth callback
+ * const callbackData = {
+ *   code: 'authorization_code',
+ *   id_token: 'jwt_id_token',
+ *   department: 'engineering',
+ *   corporateConfigId: 'config123'
+ * };
+ * const result = await appleService.handleCallback(callbackData);
+ *
+ * // Initiate Apple OAuth flow
+ * const oauthFlow = await appleService.initiateOAuth({
+ *   department: 'engineering',
+ *   redirectUri: 'https://app.com/auth/callback'
+ * });
+ */
 class AppleOAuthService extends AppleOAuthServiceCore {
   /**
    * Handles Apple OAuth callback with enhanced security.
@@ -74,6 +111,10 @@ class AppleOAuthService extends AppleOAuthServiceCore {
   validateCallbackData({
     code, idToken, error, errorDescription,
   }) {
+    /**
+     * Validates for OAuth error responses from Apple's authorization server.
+     * Handles error codes and descriptions returned by Apple during failed authentication.
+     */
     if (error) {
       throw new Parse.Error(
         Parse.Error.OTHER_CAUSE,
@@ -81,6 +122,10 @@ class AppleOAuthService extends AppleOAuthServiceCore {
       );
     }
 
+    /**
+     * Ensures required authorization data is present for token exchange.
+     * Both authorization code and ID token are required for Apple OAuth flow completion.
+     */
     if (!code || !idToken) {
       throw new Parse.Error(
         Parse.Error.INVALID_QUERY,

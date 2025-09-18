@@ -4,7 +4,6 @@
  * Production implementation with Google, Microsoft, and Apple OAuth integration.
  * @author Amexing Development Team
  * @version 2.0.0
- * @since 2024-09-12
  * @since 2.0.0
  */
 
@@ -20,10 +19,23 @@ const logger = require('../../infrastructure/logger');
  * OAuth Service - Handles OAuth 2.0 authentication with multiple providers.
  * Provides secure authentication flows for Google, Microsoft, and Apple OAuth integration.
  * Supports both production and mock modes for testing environments.
+ *
+ * Features:
+ * - Multi-provider OAuth support (Google, Microsoft, Apple)
+ * - Corporate domain mapping and SSO
+ * - Mock mode for testing environments
+ * - CSRF protection with state parameters
+ * - Automatic user creation and linking
+ * - PCI DSS compliant token handling
+ *
  * @class OAuthService
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 2.0.0
  * @example
  * const oauthService = new OAuthService();
- * const authUrl = oauthService.getAuthorizationUrl('google', 'state123');
+ * const authUrl = await oauthService.generateAuthorizationUrl('google', 'state123');
+ * const result = await oauthService.handleCallback('google', 'auth_code', 'state123');
  */
 class OAuthService {
   constructor() {
@@ -415,9 +427,9 @@ class OAuthService {
   /**
    * Performs the actual HTTP token exchange with the provider.
    * @param {string} provider - Provider name.
-   * @param {string} code - Authorization code
-   * @param {object} config - Provider configuration
-   * @returns {Promise<object>} Token data
+   * @param {string} code - Authorization code.
+   * @param {object} config - Provider configuration.
+   * @returns {Promise<object>} Token data.
    * @example
    * const service = new OAuthService();
    * const tokenData = await service.performTokenExchange('google', 'auth_code_123', providerConfig);
@@ -792,7 +804,7 @@ class OAuthService {
    * Stores OAuth state for CSRF protection.
    * @param {string} state - State parameter.
    * @param {object} data - State data.
-   * @returns {Promise<void>} Completes when state is stored
+   * @returns {Promise<void>} Completes when state is stored.
    * @example
    * const service = new OAuthService();
    * await service.storeOAuthState('state123', { provider: 'google' });
@@ -1130,9 +1142,9 @@ class OAuthService {
 
   /**
    * Adds new corporate domain configuration.
-   * @param {string} domain - Email domain
-   * @param {object} config - Corporate configuration
-   * @returns {object} Added domain configuration
+   * @param {string} domain - Email domain.
+   * @param {object} config - Corporate configuration.
+   * @returns {object} Added domain configuration.
    * @example
    * const service = new OAuthService();
    * const result = service.addCorporateDomain('company.com', corporateConfig);

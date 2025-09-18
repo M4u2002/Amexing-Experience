@@ -11,6 +11,50 @@ const winston = require('winston');
 const csrf = require('csrf');
 const uidSafe = require('uid-safe');
 
+/**
+ * Security Middleware - Comprehensive security protection suite for PCI DSS compliance.
+ * Provides multi-layered security protection including CSRF protection, rate limiting,
+ * input sanitization, XSS protection, and comprehensive security headers.
+ *
+ * This middleware implements industry-standard security measures required for
+ * PCI DSS compliance, protecting against common web vulnerabilities and attacks
+ * while maintaining performance and usability.
+ *
+ * Features:
+ * - Helmet security headers with CSP configuration
+ * - Rate limiting with configurable thresholds
+ * - MongoDB injection protection and input sanitization
+ * - XSS attack prevention and content filtering
+ * - HTTP Parameter Pollution (HPP) protection
+ * - CORS configuration for cross-origin requests
+ * - Session management with secure MongoDB storage
+ * - CSRF token generation and validation
+ * - Environment-specific security configurations
+ * - Comprehensive logging and monitoring
+ *
+ * @class SecurityMiddleware
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize security middleware
+ * const securityMiddleware = new SecurityMiddleware();
+ *
+ * // Apply security layers to Express app
+ * app.use(securityMiddleware.getHelmetConfig());
+ * app.use(securityMiddleware.getRateLimitConfig());
+ * app.use(securityMiddleware.getSessionConfig());
+ * app.use(securityMiddleware.getCorsConfig());
+ * app.use(securityMiddleware.getInputSanitization());
+ *
+ * // CSRF protection for forms
+ * app.use('/api', securityMiddleware.validateCsrfToken());
+ * app.get('/csrf-token', securityMiddleware.generateCsrfToken());
+ *
+ * // Environment-specific configurations
+ * // Development: Relaxed CSP, detailed error messages
+ * // Production: Strict CSP, HSTS, secure cookies
+ */
 class SecurityMiddleware {
   constructor() {
     this.isDevelopment = process.env.NODE_ENV === 'development';

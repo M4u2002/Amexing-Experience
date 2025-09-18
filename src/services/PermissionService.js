@@ -15,6 +15,50 @@
 
 const logger = require('../infrastructure/logger');
 
+/**
+ * Permission Service - Core permission management and authorization system.
+ * Provides comprehensive permission resolution, inheritance, validation, and
+ * context-aware access control for the Amexing platform.
+ *
+ * This is the central service for all permission-related operations, implementing
+ * a sophisticated hierarchical permission system with caching, temporary permissions,
+ * and comprehensive audit trails.
+ *
+ * Features:
+ * - Multi-level permission inheritance hierarchy
+ * - Context-aware permission resolution
+ * - Temporary permission management with expiration
+ * - Permission dependency and conflict resolution
+ * - High-performance caching system
+ * - Comprehensive audit logging
+ * - Dynamic permission updates
+ * - Integration with OAuth and corporate systems
+ *
+ * @class PermissionService
+ * @author Claude Code + Technical Team
+ * @version 2.0
+ * @since 2025-09-11
+ * @example
+ * // Initialize permission service with database
+ * const permissionService = new PermissionService();
+ * permissionService.initialize(mongoDatabase);
+ *
+ * // Get user's effective permissions
+ * const permissions = await permissionService.getUserEffectivePermissions('user123');
+ *
+ * // Check specific permission
+ * const hasAccess = await permissionService.hasPermission('user123', 'admin_access');
+ *
+ * // Check permission with context
+ * const contextPermission = await permissionService.hasPermission(
+ *   'user123', 'department_admin', { departmentId: 'dept_systems' }
+ * );
+ *
+ * // Grant temporary permission
+ * await permissionService.grantTemporaryPermission(
+ *   'user123', 'emergency_access', 3600, 'Emergency response'
+ * );
+ */
 class PermissionService {
   constructor() {
     this.db = null; // MongoDB connection will be injected
@@ -23,9 +67,17 @@ class PermissionService {
   }
 
   /**
-   * Initialize the service with database connection.
-   * @param {object} database - MongoDB database connection.
+   * Initializes the PermissionService with database connection and cache setup.
+   * Establishes MongoDB connection for permission data access and configures
+   * in-memory caching system for high-performance permission resolution.
+   *
+   * @method initialize
+   * @param {object} database - MongoDB database connection instance
+   * @returns {void} Service initialization completed
    * @example
+   * // Initialize with MongoDB connection
+   * const permissionService = new PermissionService();
+   * permissionService.initialize(mongoDatabase);
    */
   initialize(database) {
     this.db = database;
@@ -37,16 +89,22 @@ class PermissionService {
   // ============================================
 
   /**
-   * Get user's effective permissions from all sources
-   * Resolves permissions with inheritance hierarchy:
-   * 1. UserPermission (highest priority)
-   * 2. DepartmentPermission (if user in department)
-   * 3. Role permissions (user's assigned role)
-   * 4. System defaults (base permissions).
-   * @param {string} userId - User ID.
-   * @param {object} context - Optional context (departmentId, clientId, etc.).
-   * @returns {Array} Array of effective permission codes.
+   * Retrieves user's effective permissions from all sources with inheritance resolution.
+   * Implements comprehensive permission hierarchy: User → Department → Role → System,
+   * with caching optimization and context-aware permission calculation.
+   *
+   * @method getUserEffectivePermissions
+   * @param {string} userId - Unique user identifier
+   * @param {object} [context={}] - Optional context (departmentId, clientId, etc.)
+   * @returns {Promise<Array<string>>} Array of effective permission codes
    * @example
+   * // Get basic user permissions
+   * const permissions = await permissionService.getUserEffectivePermissions('user123');
+   *
+   * // Get permissions with department context
+   * const deptPermissions = await permissionService.getUserEffectivePermissions(
+   *   'user123', { departmentId: 'dept_finance' }
+   * );
    */
   async getUserEffectivePermissions(userId, context = {}) {
     try {
@@ -113,12 +171,23 @@ class PermissionService {
   }
 
   /**
-   * Check if user has specific permission.
-   * @param {string} userId - User ID.
-   * @param {string} permissionCode - Permission code to check.
-   * @param {object} context - Optional context for permission checking.
-   * @returns {boolean} Has permission.
+   * Validates if user has specific permission with wildcard and contextual support.
+   * Performs comprehensive permission checking including exact matches, wildcard
+   * permissions, and contextual validation with fail-secure error handling.
+   *
+   * @method hasPermission
+   * @param {string} userId - Unique user identifier
+   * @param {string} permissionCode - Permission code to validate (e.g., 'admin_access', 'department_read')
+   * @param {object} [context={}] - Optional context for permission checking
+   * @returns {Promise<boolean>} True if user has permission, false otherwise
    * @example
+   * // Check basic permission
+   * const hasAccess = await permissionService.hasPermission('user123', 'admin_access');
+   *
+   * // Check contextual permission
+   * const canManage = await permissionService.hasPermission(
+   *   'user123', 'department_admin', { departmentId: 'dept_systems' }
+   * );
    */
   async hasPermission(userId, permissionCode, context = {}) {
     try {
@@ -160,10 +229,19 @@ class PermissionService {
   }
 
   /**
-   * Get role permissions.
-   * @param {string} roleCode - Role code.
-   * @returns {Array} Permission codes.
+   * Retrieves permissions associated with a specific role including inheritance.
+   * Resolves role-based permissions with inherited role support and duplicate
+   * removal for comprehensive role permission resolution.
+   *
+   * @method getRolePermissions
+   * @param {string} roleCode - Role code identifier (e.g., 'admin', 'manager', 'user')
+   * @returns {Promise<Array<string>>} Array of permission codes for the role
    * @example
+   * // Get admin role permissions
+   * const adminPerms = await permissionService.getRolePermissions('admin');
+   *
+   * // Get inherited permissions
+   * const managerPerms = await permissionService.getRolePermissions('manager');
    */
   async getRolePermissions(roleCode) {
     const role = await this.db.collection('Role').findOne({
@@ -196,11 +274,17 @@ class PermissionService {
   }
 
   /**
-   * Get department permissions for user.
-   * @param {string} departmentId - Department ID.
-   * @param {string} userId - User ID.
-   * @returns {Array} Permission codes.
+   * Retrieves department-specific permissions for a user.
+   * Resolves permissions granted at the department level with user-specific
+   * department access validation and inheritance support.
+   *
+   * @method getDepartmentPermissions
+   * @param {string} departmentId - Department identifier
+   * @param {string} userId - User identifier for department access validation
+   * @returns {Promise<Array<string>>} Array of department permission codes
    * @example
+   * // Get department permissions for user
+   * const deptPerms = await permissionService.getDepartmentPermissions('dept_finance', 'user123');
    */
   async getDepartmentPermissions(departmentId, userId) {
     const departmentPermissions = await this.db.collection('DepartmentPermission').find({

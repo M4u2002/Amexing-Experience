@@ -10,6 +10,48 @@ const Parse = require('parse/node');
 const AmexingUser = require('../../domain/models/AmexingUser');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * OAuth Permission Service - Manages permission inheritance from OAuth providers.
+ * Handles the complex mapping of OAuth provider roles, groups, and permissions to
+ * Amexing's internal permission system with hierarchical authorization.
+ *
+ * This service implements the critical business logic for translating external
+ * OAuth provider permissions (Google Workspace, Microsoft Azure AD) into
+ * Amexing-specific permissions, supporting department-based access control
+ * and corporate authorization workflows.
+ *
+ * Features:
+ * - OAuth provider permission mapping (Google, Microsoft, Apple)
+ * - Hierarchical permission system with inheritance
+ * - Department-specific permission assignment
+ * - Corporate group and role mapping
+ * - Permission validation and conflict resolution
+ * - Comprehensive audit logging
+ * - Dynamic permission updates
+ *
+ * @class OAuthPermissionService
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize permission service
+ * const permissionService = new OAuthPermissionService();
+ *
+ * // Map OAuth user permissions
+ * const oauthUserData = {
+ *   provider: 'google',
+ *   groups: ['google_admin', 'dept_sistemas'],
+ *   roles: ['admin'],
+ *   department: 'IT'
+ * };
+ * const permissions = await permissionService.mapOAuthPermissions(user, oauthUserData);
+ *
+ * // Validate user permissions
+ * const hasAccess = await permissionService.validatePermission(user, 'admin_full');
+ *
+ * // Update permissions based on OAuth changes
+ * await permissionService.updateUserPermissions(user, newOAuthData);
+ */
 class OAuthPermissionService {
   constructor() {
     // Permission mapping from OAuth groups/roles to Amexing permissions

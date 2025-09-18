@@ -12,6 +12,15 @@ const { PermissionInheritanceService } = require('./PermissionInheritanceService
 const { PermissionAuditService } = require('./PermissionAuditService');
 const { CorporateOAuthService } = require('./CorporateOAuthService');
 
+/**
+ * Department OAuth Flow Service - Manages department-specific OAuth authentication flows.
+ * Provides OAuth integration with Google, Microsoft, and Apple for department-level authentication.
+ * Handles permission inheritance, context switching, and audit logging.
+ * @class DepartmentOAuthFlowService
+ * @example
+ * const service = new DepartmentOAuthFlowService();
+ * const authUrl = await service.initiateDepartmentOAuth('engineering', 'google', 'callback-url');
+ */
 class DepartmentOAuthFlowService {
   constructor() {
     this.contextService = new PermissionContextService();
@@ -61,7 +70,7 @@ class DepartmentOAuthFlowService {
 
   /**
    * Initialize the service.
-   * @returns {Promise<void>} Completes when service is initialized
+   * @returns {Promise<void>} Completes when service is initialized.
    * @example
    * const service = new DepartmentOAuthFlowService();
    * await service.initialize();
@@ -79,7 +88,7 @@ class DepartmentOAuthFlowService {
 
   /**
    * Load department configurations from database.
-   * @returns {Promise<void>} Completes when configurations are loaded
+   * @returns {Promise<void>} Completes when configurations are loaded.
    * @example
    * const service = new DepartmentOAuthFlowService();
    * await service.loadDepartmentConfigurations();
@@ -138,7 +147,7 @@ class DepartmentOAuthFlowService {
 
   /**
    * Validate department setup.
-   * @returns {Promise<void>} Completes when validation is finished
+   * @returns {Promise<void>} Completes when validation is finished.
    * @example
    * const service = new DepartmentOAuthFlowService();
    * await service.validateDepartmentSetup();
@@ -598,9 +607,9 @@ class DepartmentOAuthFlowService {
 
   /**
    * Create department context.
-   * @param {object} user - AmexingUser object
-   * @param {object} department - Department configuration
-   * @returns {Promise<object>} Created PermissionContext object
+   * @param {object} user - AmexingUser object.
+   * @param {object} department - Department configuration.
+   * @returns {Promise<object>} Created PermissionContext object.
    * @example
    * const context = await service.createDepartmentContext(user, deptConfig);
    */
@@ -628,10 +637,10 @@ class DepartmentOAuthFlowService {
 
   /**
    * Create session with department context.
-   * @param {object} user - AmexingUser object
-   * @param {object} department - Department configuration
-   * @param {object} contextResult - Context initialization result
-   * @returns {Promise<object>} Session data with token and metadata
+   * @param {object} user - AmexingUser object.
+   * @param {object} department - Department configuration.
+   * @param {object} contextResult - Context initialization result.
+   * @returns {Promise<object>} Session data with token and metadata.
    * @example
    * const sessionData = await service.createDepartmentSession(user, deptConfig, contextResult);
    */
@@ -666,12 +675,12 @@ class DepartmentOAuthFlowService {
 
   /**
    * Build department-specific OAuth URL.
-   * @param {object} options - OAuth URL build options
-   * @param {object} options.department - Department configuration
-   * @param {string} options.provider - OAuth provider name
-   * @param {string} options.redirectUri - Redirect URI
-   * @param {string} options.state - OAuth state parameter
-   * @returns {Promise<string>} Generated OAuth authorization URL
+   * @param {object} options - OAuth URL build options.
+   * @param {object} options.department - Department configuration.
+   * @param {string} options.provider - OAuth provider name.
+   * @param {string} options.redirectUri - Redirect URI.
+   * @param {string} options.state - OAuth state parameter.
+   * @returns {Promise<string>} Generated OAuth authorization URL.
    * @example
    * const authUrl = await service.buildDepartmentOAuthUrl({ department, provider: 'google', redirectUri, state });
    */
@@ -701,12 +710,12 @@ class DepartmentOAuthFlowService {
 
   /**
    * Build Google OAuth URL with department-specific parameters.
-   * @param {object} config - OAuth provider configuration
-   * @param {string[]} scopes - OAuth scopes array
-   * @param {string} redirectUri - Redirect URI
-   * @param {string} state - OAuth state parameter
-   * @param {object} department - Department configuration
-   * @returns {string} Google OAuth authorization URL
+   * @param {object} config - OAuth provider configuration.
+   * @param {string[]} scopes - OAuth scopes array.
+   * @param {string} redirectUri - Redirect URI.
+   * @param {string} state - OAuth state parameter.
+   * @param {object} department - Department configuration.
+   * @returns {string} Google OAuth authorization URL.
    * @example
    * const authUrl = service.buildGoogleOAuthUrl(config, ['openid', 'email'], redirectUri, state, deptConfig);
    */
@@ -741,12 +750,12 @@ class DepartmentOAuthFlowService {
 
   /**
    * Build Microsoft OAuth URL with department-specific parameters.
-   * @param {object} config - OAuth provider configuration
-   * @param {string[]} scopes - OAuth scopes array
-   * @param {string} redirectUri - Redirect URI
-   * @param {string} state - OAuth state parameter
-   * @param {object} department - Department configuration
-   * @returns {string} Microsoft OAuth authorization URL
+   * @param {object} config - OAuth provider configuration.
+   * @param {string[]} scopes - OAuth scopes array.
+   * @param {string} redirectUri - Redirect URI.
+   * @param {string} state - OAuth state parameter.
+   * @param {object} department - Department configuration.
+   * @returns {string} Microsoft OAuth authorization URL.
    * @example
    * const authUrl = service.buildMicrosoftOAuthUrl(config, ['openid', 'email'], redirectUri, state, deptConfig);
    */
@@ -780,12 +789,12 @@ class DepartmentOAuthFlowService {
 
   /**
    * Build Apple OAuth URL with department-specific parameters.
-   * @param {object} config - OAuth provider configuration
-   * @param {string[]} scopes - OAuth scopes array
-   * @param {string} redirectUri - Redirect URI
-   * @param {string} state - OAuth state parameter
-   * @param {object} department - Department configuration
-   * @returns {string} Apple OAuth authorization URL
+   * @param {object} config - OAuth provider configuration.
+   * @param {string[]} scopes - OAuth scopes array.
+   * @param {string} redirectUri - Redirect URI.
+   * @param {string} state - OAuth state parameter.
+   * @param {object} department - Department configuration.
+   * @returns {string} Apple OAuth authorization URL.
    * @example
    * const authUrl = service.buildAppleOAuthUrl(config, ['name', 'email'], redirectUri, state, deptConfig);
    */
@@ -810,8 +819,8 @@ class DepartmentOAuthFlowService {
 
   /**
    * Get department configuration.
-   * @param {string} departmentCode - Department code identifier
-   * @returns {object|undefined} Department configuration or undefined if not found
+   * @param {string} departmentCode - Department code identifier.
+   * @returns {object|undefined} Department configuration or undefined if not found.
    * @example
    * const deptConfig = service.getDepartmentConfig('hr');
    */
@@ -821,7 +830,7 @@ class DepartmentOAuthFlowService {
 
   /**
    * Get available departments.
-   * @returns {object[]} Array of available department configurations
+   * @returns {object[]} Array of available department configurations.
    * @example
    * const departments = service.getAvailableDepartments();
    */
@@ -837,9 +846,9 @@ class DepartmentOAuthFlowService {
 
   /**
    * Get department-specific OAuth scopes.
-   * @param {string} departmentCode - Department code identifier
-   * @param {string} provider - OAuth provider name
-   * @returns {string[]} Array of OAuth scopes for the department and provider
+   * @param {string} departmentCode - Department code identifier.
+   * @param {string} provider - OAuth provider name.
+   * @returns {string[]} Array of OAuth scopes for the department and provider.
    * @example
    * const scopes = service.getDepartmentScopes('hr', 'microsoft');
    */
@@ -856,8 +865,8 @@ class DepartmentOAuthFlowService {
 
   /**
    * Get default OAuth scopes for provider.
-   * @param {string} provider - OAuth provider name
-   * @returns {string[]} Array of default OAuth scopes
+   * @param {string} provider - OAuth provider name.
+   * @returns {string[]} Array of default OAuth scopes.
    * @example
    * const defaultScopes = service.getDefaultScopes('google');
    */
@@ -873,8 +882,8 @@ class DepartmentOAuthFlowService {
 
   /**
    * Get department base permissions.
-   * @param {string} departmentCode - Department code identifier
-   * @returns {string[]} Array of base permissions for the department
+   * @param {string} departmentCode - Department code identifier.
+   * @returns {string[]} Array of base permissions for the department.
    * @example
    * const permissions = service.getDepartmentBasePermissions('hr');
    */
@@ -895,8 +904,8 @@ class DepartmentOAuthFlowService {
 
   /**
    * Format department name from code.
-   * @param {string} code - Department code
-   * @returns {string} Formatted department name
+   * @param {string} code - Department code.
+   * @returns {string} Formatted department name.
    * @example
    * const name = service.formatDepartmentName('rrhh'); // Returns 'Recursos Humanos'
    */

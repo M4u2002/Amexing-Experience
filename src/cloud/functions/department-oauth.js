@@ -15,6 +15,9 @@ const auditService = new PermissionAuditService();
 
 /**
  * Get available departments for OAuth.
+ * @param {object} request - Parse Cloud Code request object.
+ * @param {object} request.user - Current authenticated user.
+ * @returns {Promise<object>} Available departments for user.
  */
 const getAvailableDepartments = async (request) => {
   const { user } = request;
@@ -58,6 +61,7 @@ const getAvailableDepartments = async (request) => {
 
 /**
  * Initiate department-specific OAuth flow.
+ * @param request
  */
 const initiateDepartmentOAuth = async (request) => {
   const { params, ip } = request;
@@ -113,11 +117,12 @@ const initiateDepartmentOAuth = async (request) => {
 
 /**
  * Handle department OAuth callback.
+ * @param request
  */
 const handleDepartmentOAuthCallback = async (request) => {
   const { params, ip } = request;
   const {
-    code, state, error: oauthError, provider: callbackProvider,
+    code, state, error: oauthError,
   } = params;
 
   try {
@@ -172,6 +177,7 @@ const handleDepartmentOAuthCallback = async (request) => {
 
 /**
  * Get department OAuth configuration.
+ * @param request
  */
 const getDepartmentOAuthConfig = async (request) => {
   const { params, user } = request;
@@ -229,6 +235,7 @@ const getDepartmentOAuthConfig = async (request) => {
 
 /**
  * Switch user to department context post-OAuth.
+ * @param request
  */
 const switchToDepartmentContext = async (request) => {
   const { params, user } = request;
@@ -285,9 +292,10 @@ const switchToDepartmentContext = async (request) => {
 
 /**
  * Get department OAuth providers with dynamic configuration.
+ * @param request
  */
 const getDepartmentOAuthProviders = async (request) => {
-  const { params, user } = request;
+  const { params } = request;
   const { department } = params;
 
   try {
@@ -332,6 +340,7 @@ const getDepartmentOAuthProviders = async (request) => {
 
 /**
  * Validate department OAuth access.
+ * @param request
  */
 const validateDepartmentOAuthAccess = async (request) => {
   const { params, user, ip } = request;
@@ -414,6 +423,7 @@ const validateDepartmentOAuthAccess = async (request) => {
 
 /**
  * Get department OAuth analytics (for admins).
+ * @param request
  */
 const getDepartmentOAuthAnalytics = async (request) => {
   const { params, user } = request;

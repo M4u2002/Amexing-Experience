@@ -8,6 +8,43 @@ const jwt = require('jsonwebtoken');
 const https = require('https');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Apple ID Token Validator - Validates and verifies Apple Sign In ID tokens.
+ * Provides comprehensive JWT validation including signature verification using
+ * Apple's public keys, nonce validation, and token expiration checks.
+ *
+ * This class implements Apple's recommended security practices for ID token
+ * verification, ensuring the authenticity and integrity of tokens received
+ * from Apple's OAuth service.
+ *
+ * Features:
+ * - JWT signature verification using Apple's public keys
+ * - Nonce validation for replay attack protection
+ * - Token expiration and issuer validation
+ * - Automatic public key fetching and caching
+ * - Comprehensive error handling and logging
+ * - PCI DSS compliant token processing
+ *
+ * @class AppleIdTokenValidator
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize validator with Apple OAuth config
+ * const config = {
+ *   clientId: process.env.APPLE_CLIENT_ID,
+ *   teamId: process.env.APPLE_TEAM_ID
+ * };
+ * const validator = new AppleIdTokenValidator(config);
+ *
+ * // Verify ID token from Apple callback
+ * const payload = await validator.verifyIdToken(idToken, expectedNonce);
+ * console.log('User ID:', payload.sub);
+ * console.log('Email:', payload.email);
+ *
+ * // Validate token structure separately
+ * const structureValid = await validator.validateTokenStructure(idToken);
+ */
 class AppleIdTokenValidator {
   constructor(config) {
     this.config = config;
@@ -45,10 +82,20 @@ class AppleIdTokenValidator {
     const appleKeys = await this.getApplePublicKeys();
     const decoded = jwt.decode(idToken, { complete: true });
 
+    /**
+     * Validates JWT token structure and extracts key identifier.
+     * Ensures token has proper format and contains required header information
+     * for public key lookup and signature verification.
+     */
     if (!decoded || !decoded.header.kid) {
       throw new Error('Invalid ID token format');
     }
 
+    /**
+     * Locates matching Apple public key for token verification.
+     * Uses key identifier from token header to find corresponding
+     * public key from Apple's key set for signature validation.
+     */
     const publicKey = appleKeys[decoded.header.kid];
     if (!publicKey) {
       throw new Error('Unable to find matching public key');

@@ -12,6 +12,54 @@ const CorporateOAuthService = require('./CorporateOAuthService');
 const AmexingUser = require('../../domain/models/AmexingUser');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Permission Inheritance Service - Manages complex permission inheritance workflows.
+ * Handles the inheritance of permissions from OAuth groups, corporate configurations,
+ * department assignments, and custom permission overrides with conflict resolution.
+ *
+ * This service orchestrates the complete permission inheritance process, including
+ * OAuth group permissions, corporate policy enforcement, department-specific rules,
+ * and individual permission overrides with proper precedence and audit trails.
+ *
+ * Features:
+ * - OAuth group permission inheritance
+ * - Corporate policy and configuration enforcement
+ * - Department-specific permission assignment
+ * - Permission override and conflict resolution
+ * - Hierarchical permission inheritance
+ * - Comprehensive audit logging
+ * - Permission validation and cleanup
+ * - Dynamic permission updates
+ *
+ * @class PermissionInheritanceService
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize inheritance service
+ * const inheritanceService = new PermissionInheritanceService();
+ *
+ * // Process complete permission inheritance for corporate user
+ * const oauthProfile = {
+ *   groups: ['azure_user_admin', 'dept_sistemas'],
+ *   roles: ['manager'],
+ *   department: 'IT'
+ * };
+ * const result = await inheritanceService.processCompleteInheritance(
+ *   user, oauthProfile, 'microsoft', corporateConfig
+ * );
+ *
+ * // Apply permission overrides
+ * const overrides = [{
+ *   type: 'grant',
+ *   permission: 'emergency_access',
+ *   reason: 'Incident response team member'
+ * }];
+ * await inheritanceService.applyPermissionOverrides(user, overrides);
+ *
+ * // Validate inherited permissions
+ * const validation = await inheritanceService.validateInheritedPermissions(user);
+ */
 class PermissionInheritanceService {
   constructor() {
     // Override types and their priority

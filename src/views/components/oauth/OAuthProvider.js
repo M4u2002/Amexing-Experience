@@ -1,7 +1,61 @@
 /**
- * OAuth Provider Component - Sprint 04
- * Main OAuth orchestration component for landing pages
- * Implements Component-Based OAuth Architecture.
+ * OAuth Provider Component - Main OAuth orchestration component for comprehensive authentication.
+ * Provides centralized OAuth authentication management supporting multiple providers (Google, Microsoft, Apple)
+ * with corporate mode, department-based access control, and comprehensive audit logging for PCI DSS compliance.
+ *
+ * This component serves as the primary orchestrator for OAuth authentication flows, managing provider
+ * initialization, UI rendering, authentication workflows, and security compliance across the Amexing platform.
+ * It supports both individual and corporate authentication modes with department-specific configurations.
+ *
+ * Features:
+ * - Multi-provider OAuth support (Google, Microsoft, Apple) with dynamic configuration
+ * - Corporate mode with department-based access control and branding
+ * - Mobile-optimized responsive design with touch interactions
+ * - PCI DSS compliant audit logging and security monitoring
+ * - Intelligent provider suggestion based on email domain detection
+ * - Context switching integration for permission management
+ * - Comprehensive error handling with user-friendly messaging
+ * - Real-time provider availability updates based on department selection
+ * - CSRF protection with secure state and nonce generation
+ * - Graceful fallback mechanisms for unsupported browsers
+ * - Auto-initialization with configuration injection support
+ *
+ * @class OAuthProvider
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Basic OAuth provider initialization
+ * const oauthProvider = new OAuthProvider({
+ *   allowedProviders: ['google', 'microsoft', 'apple'],
+ *   redirectUri: '/auth/oauth/callback',
+ *   theme: 'default'
+ * });
+ *
+ * // Corporate mode with department selection
+ * const corporateOAuth = new OAuthProvider({
+ *   corporateMode: true,
+ *   departmentRequired: true,
+ *   corporateConfig: {
+ *     id: 'company-123',
+ *     name: 'Acme Corporation',
+ *     departments: {
+ *       engineering: { displayName: 'Engineering', allowedProviders: ['google', 'microsoft'] },
+ *       sales: { displayName: 'Sales', allowedProviders: ['microsoft'] }
+ *     }
+ *   }
+ * });
+ *
+ * // Mobile-optimized configuration
+ * const mobileOAuth = new OAuthProvider({
+ *   mobile: true,
+ *   allowedProviders: ['apple', 'google'],
+ *   theme: 'mobile-optimized'
+ * });
+ *
+ * // Auto-initialization from DOM
+ * // <div id="oauth-container" data-config='{"corporateMode": true}'></div>
+ * // Component auto-initializes on DOMContentLoaded
  */
 
 class OAuthProvider {

@@ -18,6 +18,7 @@ const logger = require('../../infrastructure/logger');
  * Gets user permission inheritance status
  * Endpoint: GET /functions/getUserPermissionInheritance
  * Access: User can view own permissions, admins can view any.
+ * @param request
  */
 const getUserPermissionInheritance = async (request) => {
   try {
@@ -61,6 +62,7 @@ const getUserPermissionInheritance = async (request) => {
  * Gets available contexts for a user
  * Endpoint: GET /functions/getAvailableContexts
  * Access: User can view own contexts.
+ * @param request
  */
 const getAvailableContexts = async (request) => {
   try {
@@ -99,6 +101,7 @@ const getAvailableContexts = async (request) => {
  * Switches user to a specific permission context
  * Endpoint: POST /functions/switchPermissionContext
  * Access: User can switch own context.
+ * @param request
  */
 const switchPermissionContext = async (request) => {
   try {
@@ -145,6 +148,7 @@ const switchPermissionContext = async (request) => {
  * Creates permission delegation from manager to employee
  * Endpoint: POST /functions/createPermissionDelegation
  * Access: Requires manager role or higher.
+ * @param request
  */
 const createPermissionDelegation = async (request) => {
   try {
@@ -218,6 +222,7 @@ const createPermissionDelegation = async (request) => {
  * Revokes permission delegation
  * Endpoint: POST /functions/revokePermissionDelegation
  * Access: Original manager or admin.
+ * @param request
  */
 const revokePermissionDelegation = async (request) => {
   try {
@@ -253,6 +258,7 @@ const revokePermissionDelegation = async (request) => {
  * Creates emergency permission elevation
  * Endpoint: POST /functions/createEmergencyElevation
  * Access: Requires admin role.
+ * @param request
  */
 const createEmergencyElevation = async (request) => {
   try {
@@ -324,6 +330,7 @@ const createEmergencyElevation = async (request) => {
  * Creates individual permission override
  * Endpoint: POST /functions/createPermissionOverride
  * Access: Requires admin role.
+ * @param request
  */
 const createPermissionOverride = async (request) => {
   try {
@@ -401,6 +408,7 @@ const createPermissionOverride = async (request) => {
  * Checks if user has specific permission
  * Endpoint: GET /functions/checkUserPermission
  * Access: User can check own permissions, admins can check any.
+ * @param request
  */
 const checkUserPermission = async (request) => {
   try {
@@ -449,6 +457,7 @@ const checkUserPermission = async (request) => {
  * Gets active delegations for a manager
  * Endpoint: GET /functions/getActiveDelegations
  * Access: Manager can view own delegations.
+ * @param request
  */
 const getActiveDelegations = async (request) => {
   try {
@@ -487,6 +496,7 @@ const getActiveDelegations = async (request) => {
  * Gets delegated permissions for an employee
  * Endpoint: GET /functions/getDelegatedPermissions
  * Access: Employee can view own delegated permissions.
+ * @param request
  */
 const getDelegatedPermissions = async (request) => {
   try {
@@ -525,6 +535,7 @@ const getDelegatedPermissions = async (request) => {
  * Gets permission audit report
  * Endpoint: GET /functions/getPermissionAuditReport
  * Access: Requires admin role.
+ * @param request
  */
 const getPermissionAuditReport = async (request) => {
   try {
@@ -579,6 +590,7 @@ const getPermissionAuditReport = async (request) => {
  * Gets permission audit statistics
  * Endpoint: GET /functions/getPermissionAuditStats
  * Access: Requires admin role.
+ * @param request
  */
 const getPermissionAuditStats = async (request) => {
   try {
@@ -620,6 +632,7 @@ const getPermissionAuditStats = async (request) => {
  * Gets all available permissions in the system
  * Endpoint: GET /functions/getAvailablePermissions
  * Access: Requires manager role or higher.
+ * @param request
  */
 const getAvailablePermissions = async (request) => {
   try {

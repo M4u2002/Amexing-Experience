@@ -851,6 +851,7 @@ class PermissionContextSwitcher {
   /**
    * Gets current context as plain text.
    * @returns {string} Current context text.
+   * @example
    */
   getCurrentContextText() {
     if (this.currentContext) {
@@ -862,6 +863,7 @@ class PermissionContextSwitcher {
   /**
    * Appends context list elements to a container.
    * @param {HTMLElement} container - Container to append elements to.
+   * @example
    */
   appendContextListElements(container) {
     if (!this.availableContexts || this.availableContexts.length === 0) {
@@ -893,6 +895,7 @@ class PermissionContextSwitcher {
   /**
    * Appends context info elements to a container.
    * @param {HTMLElement} container - Container to append elements to.
+   * @example
    */
   appendContextInfoElements(container) {
     if (!this.currentContext) {

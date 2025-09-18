@@ -15,6 +15,7 @@ const logger = require('../../infrastructure/logger');
  * Gets available corporate domains configuration
  * Endpoint: GET /functions/getAvailableCorporateDomains
  * Access: Requires admin role.
+ * @param request
  */
 const getAvailableCorporateDomains = async (request) => {
   try {
@@ -53,6 +54,7 @@ const getAvailableCorporateDomains = async (request) => {
  * Adds new corporate domain configuration
  * Endpoint: POST /functions/addCorporateDomain
  * Access: Requires superadmin role.
+ * @param request
  */
 const addCorporateDomain = async (request) => {
   try {
@@ -147,6 +149,7 @@ const addCorporateDomain = async (request) => {
  * Gets OAuth provider status and configuration
  * Endpoint: GET /functions/getOAuthProviderStatus
  * Access: Requires admin role.
+ * @param request
  */
 const getOAuthProviderStatus = async (request) => {
   try {
@@ -198,6 +201,7 @@ const getOAuthProviderStatus = async (request) => {
  * Tests corporate domain OAuth flow
  * Endpoint: POST /functions/testCorporateDomain
  * Access: Requires admin role.
+ * @param request
  */
 const testCorporateDomain = async (request) => {
   try {
@@ -267,6 +271,7 @@ const testCorporateDomain = async (request) => {
  * Gets OAuth audit logs (admin view)
  * Endpoint: GET /functions/getOAuthAuditLogs
  * Access: Requires admin role.
+ * @param request
  */
 const getOAuthAuditLogs = async (request) => {
   try {

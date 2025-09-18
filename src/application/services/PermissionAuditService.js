@@ -10,6 +10,14 @@
 const Parse = require('parse/node');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Permission Audit Service - Handles audit logging for permission changes and OAuth activities.
+ * Provides comprehensive audit trails for PCI DSS compliance and security monitoring.
+ * @class PermissionAuditService
+ * @example
+ * const auditService = new PermissionAuditService();
+ * await auditService.recordPermissionAudit({ userId: '123', action: 'oauth_login' });
+ */
 class PermissionAuditService {
   constructor() {
     // Audit event types
@@ -159,7 +167,7 @@ class PermissionAuditService {
    * Validates compliance fields for audit record.
    * @param {object} eventData - Event data to validate.
    * @param {string} framework - Compliance framework.
-   * @returns {void} Throws error if validation fails
+   * @returns {void} Throws error if validation fails.
    * @example
    * const service = new PermissionAuditService();
    * service.validateComplianceFields(eventData, 'PCI_DSS');
@@ -332,7 +340,7 @@ class PermissionAuditService {
    * Creates compliance-specific record.
    * @param {Parse.Object} auditRecord - Main audit record.
    * @param {string} framework - Compliance framework.
-   * @returns {Promise<void>} Completes when compliance record is created
+   * @returns {Promise<void>} Completes when compliance record is created.
    * @example
    * const service = new PermissionAuditService();
    * await service.createComplianceRecord(auditRecord, 'SOX');
@@ -374,7 +382,7 @@ class PermissionAuditService {
   /**
    * Triggers immediate review for critical events.
    * @param {Parse.Object} auditRecord - Audit record.
-   * @returns {Promise<void>} Completes when review is triggered
+   * @returns {Promise<void>} Completes when review is triggered.
    * @example
    * const service = new PermissionAuditService();
    * await service.triggerImmediateReview(criticalAuditRecord);

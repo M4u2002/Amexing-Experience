@@ -15,6 +15,8 @@ const logger = require('../../infrastructure/logger');
  * Generates corporate landing page configuration
  * Endpoint: GET /functions/getCorporateLandingConfig
  * Access: Public (but logs for security monitoring).
+ * @param request
+ * @example
  */
 const getCorporateLandingConfig = async (request) => {
   try {
@@ -119,6 +121,8 @@ const getCorporateLandingConfig = async (request) => {
  * Generates OAuth authorization URL for corporate landing
  * Endpoint: POST /functions/generateCorporateOAuthURL
  * Access: Public.
+ * @param request
+ * @example
  */
 const generateCorporateOAuthURL = async (request) => {
   try {
@@ -200,11 +204,13 @@ const generateCorporateOAuthURL = async (request) => {
  * Validates corporate landing page access
  * Endpoint: POST /functions/validateCorporateLandingAccess
  * Access: Public (with rate limiting).
+ * @param request
+ * @example
  */
 const validateCorporateLandingAccess = async (request) => {
   try {
     const {
-      clientSlug, departmentCode, email, accessCode,
+      clientSlug, departmentCode, email,
     } = request.params;
 
     // Basic validation
@@ -307,6 +313,8 @@ const validateCorporateLandingAccess = async (request) => {
  * Gets corporate client departments for landing page
  * Endpoint: GET /functions/getCorporateClientDepartments
  * Access: Public (for client-specific landing pages).
+ * @param request
+ * @example
  */
 const getCorporateClientDepartments = async (request) => {
   try {

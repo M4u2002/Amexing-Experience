@@ -20,13 +20,43 @@ const AmexingAuthService = require('../services/AmexingAuthService');
 const PermissionService = require('../services/PermissionService');
 
 /**
- * Enhanced authentication and permission middleware.
- * Replaces Parse authentication with custom AmexingUser model and dynamic permissions.
- * Provides JWT validation, OAuth token handling, and context-aware authorization.
+ * Amexing Authentication Middleware - Enhanced authentication and authorization system.
+ * Replaces Parse authentication with custom AmexingUser model and dynamic permissions,
+ * providing comprehensive JWT validation, OAuth token handling, and context-aware authorization.
+ *
+ * This middleware implements the core authentication layer for the Amexing platform,
+ * supporting multiple authentication methods, dynamic permission checking, and
+ * sophisticated session management with PCI DSS compliance.
+ *
+ * Features:
+ * - JWT token validation and refresh handling
+ * - Dynamic permission checking with context awareness
+ * - OAuth token integration (Google, Microsoft, Apple)
+ * - Session management and user context injection
+ * - Rate limiting based on user roles and permissions
+ * - Comprehensive security logging and audit trails
+ * - Multi-tenant and department-aware authorization
+ * - Token expiration and renewal mechanisms
+ *
  * @class AmexingAuthMiddleware
+ * @author Claude Code + Technical Team
+ * @version 2.0
+ * @since 2025-09-11
  * @example
+ * // Initialize authentication middleware
  * const authMiddleware = new AmexingAuthMiddleware();
+ * authMiddleware.initialize(amexingAuthService);
+ *
+ * // Apply to API routes
  * app.use('/api', authMiddleware.validateToken());
+ * app.use('/api/admin', authMiddleware.requirePermission('admin_access'));
+ *
+ * // Apply to specific routes with context
+ * app.use('/api/department/:deptId', authMiddleware.validateDepartmentAccess());
+ * app.use('/api/oauth', authMiddleware.validateOAuthToken());
+ *
+ * // Role-based access control
+ * app.use('/api/users', authMiddleware.requireRole(['admin', 'manager']));
  */
 class AmexingAuthMiddleware {
   constructor() {
@@ -230,11 +260,11 @@ class AmexingAuthMiddleware {
   /**
    * Require specific role.
    * @param {string|Array} roles - Required role(s).
-   * @param {object} options - Role check options.
+   * @param {object} _options - Role check options (currently unused).
    * @returns {Function} Middleware function.
    * @example
    */
-  requireRole = (roles, options = {}) => async (req, res, next) => {
+  requireRole = (roles, _options = {}) => async (req, res, next) => {
     try {
       // Ensure user is authenticated
       if (!req.user) {
@@ -515,12 +545,12 @@ class AmexingAuthMiddleware {
 
   /**
    * Validate session exists and is active.
-   * @param {string} jti - JWT ID.
-   * @param {string} userId - User ID.
+   * @param {string} _jti - JWT ID (currently unused).
+   * @param {string} _userId - User ID (currently unused).
    * @returns {boolean} Session is valid.
    * @example
    */
-  async validateSession(jti, userId) {
+  async validateSession(_jti, _userId) {
     try {
       // This would check the Session table
       // For now, we'll assume valid if JWT is valid
@@ -536,7 +566,7 @@ class AmexingAuthMiddleware {
    * @param {string} jti - JWT ID.
    * @example
    */
-  async updateSessionActivity(jti) {
+  async updateSessionActivity(_jti) {
     try {
       // This would update the Session table
       // Implementation depends on your session storage strategy

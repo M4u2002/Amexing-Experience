@@ -1,7 +1,55 @@
 /**
- * Apple Sign In Button Component - Sprint 04
- * Native Apple Sign In implementation with privacy compliance
- * Integrates with mobile optimization and department flows.
+ * Apple Sign In Button Component - Native Apple ID authentication with privacy compliance.
+ * Provides secure Apple Sign In integration with corporate department flows, mobile
+ * optimization, and comprehensive fallback mechanisms for cross-platform compatibility.
+ *
+ * This component implements Apple's official Sign In with Apple JavaScript SDK,
+ * supporting both native Apple ID authentication and fallback OAuth flows for
+ * non-Apple devices with privacy-compliant user data handling.
+ *
+ * Features:
+ * - Native Apple ID SDK integration with official button rendering
+ * - Cross-platform fallback for non-Apple devices
+ * - Mobile-optimized touch interactions and responsive design
+ * - Corporate department and configuration support
+ * - Privacy-compliant email handling with Hide My Email support
+ * - Secure state and nonce generation for CSRF protection
+ * - Loading states and comprehensive error handling
+ * - Dynamic theme support for light/dark mode
+ * - Touch-optimized interactions for mobile devices
+ * - Graceful degradation for unsupported browsers
+ *
+ * @class AppleSignInButton
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Basic Apple Sign In button
+ * const appleButton = new AppleSignInButton({
+ *   clientId: 'com.amexing.service',
+ *   onSuccess: (response) => {
+ *     console.log('Apple authentication successful:', response);
+ *     // Handle successful authentication
+ *   },
+ *   onError: (error) => {
+ *     console.error('Apple authentication failed:', error);
+ *   }
+ * });
+ *
+ * // Corporate department flow
+ * const corporateAppleButton = new AppleSignInButton({
+ *   clientId: 'com.amexing.corporate',
+ *   department: 'engineering',
+ *   corporateConfigId: 'corp-config-123',
+ *   onSuccess: (response) => {
+ *     // Handle corporate authentication
+ *   }
+ * });
+ *
+ * // Static availability check
+ * if (AppleSignInButton.isSupported()) {
+ *   const button = AppleSignInButton.create(options);
+ * }
  */
 
 class AppleSignInButton {

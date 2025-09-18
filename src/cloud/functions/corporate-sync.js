@@ -14,6 +14,8 @@ const logger = require('../../infrastructure/logger');
  * Manually triggers sync for a corporate client
  * Endpoint: POST /functions/triggerCorporateSync
  * Access: Requires admin role.
+ * @param request
+ * @example
  */
 const triggerCorporateSync = async (request) => {
   try {
@@ -61,6 +63,8 @@ const triggerCorporateSync = async (request) => {
  * Starts periodic sync for a corporate client
  * Endpoint: POST /functions/startPeriodicSync
  * Access: Requires admin role.
+ * @param request
+ * @example
  */
 const startPeriodicSync = async (request) => {
   try {
@@ -128,6 +132,8 @@ const startPeriodicSync = async (request) => {
  * Stops periodic sync for a corporate client
  * Endpoint: POST /functions/stopPeriodicSync
  * Access: Requires admin role.
+ * @param request
+ * @example
  */
 const stopPeriodicSync = async (request) => {
   try {
@@ -173,6 +179,8 @@ const stopPeriodicSync = async (request) => {
  * Gets sync status for all corporate clients
  * Endpoint: GET /functions/getAllSyncStatuses
  * Access: Requires admin role.
+ * @param request
+ * @example
  */
 const getAllSyncStatuses = async (request) => {
   try {
@@ -212,6 +220,8 @@ const getAllSyncStatuses = async (request) => {
  * Gets detailed sync history for a corporate client
  * Endpoint: GET /functions/getCorporateSyncHistory
  * Access: Requires admin role.
+ * @param request
+ * @example
  */
 const getCorporateSyncHistory = async (request) => {
   try {

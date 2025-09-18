@@ -12,6 +12,53 @@ const AmexingUser = require('../../domain/models/AmexingUser');
 const PermissionInheritanceService = require('./PermissionInheritanceService');
 const logger = require('../../infrastructure/logger');
 
+/**
+ * Corporate OAuth Service - Manages corporate domain OAuth integration and employee provisioning.
+ * Handles the complex mapping of corporate email domains to client configurations,
+ * automatic employee provisioning, and integration with corporate OAuth providers.
+ *
+ * This service implements the corporate authentication workflows that support
+ * enterprise clients like universities and corporations with their own OAuth
+ * providers (Google Workspace, Microsoft Azure AD).
+ *
+ * Features:
+ * - Corporate domain recognition and mapping
+ * - Automatic employee provisioning and onboarding
+ * - Department mapping from OAuth groups
+ * - Corporate client configuration management
+ * - Multi-provider corporate OAuth support
+ * - Permission inheritance from corporate roles
+ * - Comprehensive audit and compliance logging
+ * - Integration with existing corporate systems
+ *
+ * @class CorporateOAuthService
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 2.0.0
+ * @example
+ * // Initialize corporate OAuth service
+ * const corporateService = new CorporateOAuthService();
+ *
+ * // Map corporate user from OAuth login
+ * const oauthUserInfo = {
+ *   email: 'john.doe@nuba.com.mx',
+ *   name: 'John Doe',
+ *   groups: ['IT', 'Managers'],
+ *   department: 'Information Technology'
+ * };
+ * const result = await corporateService.mapCorporateUser(oauthUserInfo, 'microsoft');
+ *
+ * // Check if domain is corporate
+ * const isCorpDomain = corporateService.isCorporateDomain('utq.edu.mx');
+ *
+ * // Get corporate configuration
+ * const config = corporateService.getCorporateConfig('nuba.com.mx');
+ *
+ * // Auto-provision employee
+ * const employee = await corporateService.autoProvisionEmployee(
+ *   oauthUserInfo, 'microsoft', corporateConfig
+ * );
+ */
 class CorporateOAuthService {
   constructor() {
     // Known corporate domains for auto-mapping

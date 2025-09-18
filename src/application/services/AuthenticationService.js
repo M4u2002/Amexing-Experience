@@ -17,10 +17,36 @@ const { AuthenticationServiceCore } = require('./AuthenticationServiceCore');
  * Authentication Service - Handles traditional and OAuth authentication.
  * Provides comprehensive authentication functionality including JWT token management,
  * user registration, login, and OAuth integration with AmexingUser model.
+ *
+ * Features:
+ * - Email/password authentication with PCI DSS compliance
+ * - JWT token generation and validation
+ * - Password reset and change functionality
+ * - Account lockout protection
+ * - Comprehensive security logging
+ * - Integration with AmexingUser model
+ *
  * @class AuthenticationService
+ * @extends AuthenticationServiceCore
+ * @author Amexing Development Team
+ * @version 1.0.0
+ * @since 1.0.0
  * @example
- * const authService = new AuthenticationService();
- * const result = await authService.loginUser('user@example.com', 'password123');
+ * // Register a new user
+ * const userData = {
+ *   username: 'john_doe',
+ *   email: 'john@example.com',
+ *   password: 'securePass123!',
+ *   firstName: 'John',
+ *   lastName: 'Doe'
+ * };
+ * const registrationResult = await AuthenticationService.registerUser(userData);
+ *
+ * // Login user
+ * const loginResult = await AuthenticationService.loginUser('john@example.com', 'securePass123!');
+ *
+ * // Validate token
+ * const tokenValidation = await AuthenticationService.validateToken(accessToken);
  */
 class AuthenticationService extends AuthenticationServiceCore {
   /**
