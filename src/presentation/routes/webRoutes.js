@@ -14,6 +14,8 @@ router.get('/about', homeController.about);
 router.get('/login', authController.showLogin);
 router.get('/register', authController.showRegister);
 router.get('/logout', authController.logout);
+router.get('/auth/forgot-password', authController.showForgotPassword);
+router.get('/auth/reset-password', authController.showResetPassword);
 
 // Email verification pages
 router.get('/verify-email-success', (req, res) => {

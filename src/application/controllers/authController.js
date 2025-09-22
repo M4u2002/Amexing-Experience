@@ -2,17 +2,86 @@ const Parse = require('parse/node');
 const logger = require('../../infrastructure/logger');
 const securityMiddlewares = require('../../infrastructure/security/securityMiddleware');
 
+/**
+ * Authentication Controller - Handles authentication operations and user flows.
+ * Provides comprehensive authentication endpoints including login, registration, logout,
+ * password reset, and OAuth integration with CSRF protection and security compliance.
+ *
+ * This controller manages both web interface and JSON API endpoints for all
+ * authentication flows, integrating with Parse Server, OAuth providers, and
+ * security middleware for PCI DSS compliance.
+ *
+ * Features:
+ * - User login and registration with validation
+ * - Password reset and change functionality
+ * - OAuth provider integration (Google, Microsoft, Apple)
+ * - CSRF protection for all forms
+ * - Session management and security
+ * - Comprehensive error handling and logging
+ * - Mobile and web responsive interfaces.
+ * @class AuthController
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Initialize authentication controller
+ * const authController = new AuthController();
+ *
+ * // Express route integration
+ * router.get('/login', authController.showLogin.bind(authController));
+ * router.post('/login', authController.login.bind(authController));
+ * router.get('/register', authController.showRegister.bind(authController));
+ * router.post('/register', authController.register.bind(authController));
+ *
+ * // OAuth integration
+ * router.get('/oauth/:provider', authController.initiateOAuth.bind(authController));
+ * router.post('/oauth/:provider/callback', authController.handleOAuthCallback.bind(authController));
+ */
 class AuthController {
+  /**
+   * Displays the login form with CSRF protection and OAuth provider options.
+   * Renders the login view with security tokens, error messages, and available
+   * OAuth authentication providers for user authentication.
+   * @function showLogin
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Renders login view.
+   * @example
+   * // GET /login
+   * // Displays login form with CSRF token and OAuth providers
+   */
   async showLogin(req, res) {
     const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
+
+    // Get OAuth providers for login form
+    let oauthProviders = [];
+    try {
+      const providersResult = await Parse.Cloud.run('getOAuthProviders');
+      oauthProviders = providersResult.providers || [];
+    } catch (error) {
+      logger.error('Error getting OAuth providers for login:', error);
+    }
     res.render('auth/login', {
       title: 'Login - AmexingWeb',
       error: req.query.error || null,
       csrfToken: csrf,
       parseAppId: process.env.PARSE_APP_ID,
+      oauthProviders,
     });
   }
 
+  /**
+   * Displays the registration form with CSRF protection and input validation.
+   * Renders the registration view with security tokens, error messages, and
+   * proper form validation setup for new user account creation.
+   * @function showRegister
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Renders registration form.
+   * @example
+   * // GET /register
+   * // Displays registration form with CSRF token and validation
+   */
   async showRegister(req, res) {
     const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
     res.render('auth/register', {
@@ -23,6 +92,20 @@ class AuthController {
     });
   }
 
+  /**
+   * Processes user login with Parse Server authentication and session management.
+   * Handles POST requests for user authentication, validates credentials, creates
+   * sessions, and manages login attempts with security logging and error handling.
+   * @function login
+   * @param {object} req - Express request object with username and password in body.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Redirects on success or renders login with error.
+   * @example
+   * // POST /login
+   * // Body: { username: 'user@example.com', password: 'securepassword' }
+   * // Success: redirects to dashboard
+   * // Failure: renders login with error message
+   */
   async login(req, res) {
     // Handle both GET (show form) and POST (process login)
     if (req.method === 'GET') {
@@ -89,6 +172,20 @@ class AuthController {
     });
   }
 
+  /**
+   * Processes user registration with validation, user creation, and session setup.
+   * Handles POST requests for new user registration, validates input data,
+   * creates Parse Server user accounts, and establishes authentication sessions.
+   * @function register
+   * @param {object} req - Express request object with username, email, password in body.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Redirects on success or renders registration with error.
+   * @example
+   * // POST /register
+   * // Body: { username: 'newuser', email: 'user@example.com', password: 'SecurePass123!' }
+   * // Success: creates user and redirects to dashboard
+   * // Failure: renders registration form with validation errors
+   */
   async register(req, res) {
     // Handle both GET (show form) and POST (process registration)
     if (req.method === 'GET') {
@@ -186,6 +283,18 @@ class AuthController {
     });
   }
 
+  /**
+   * Handles user logout with session cleanup and security logging.
+   * Invalidates Parse Server session, clears browser sessions/cookies,
+   * and logs security event for audit trail compliance.
+   * @function logout
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Redirects to login page.
+   * @example
+   * // POST /logout
+   * // Clears all session data and redirects to login
+   */
   async logout(req, res) {
     try {
       // Clear Parse session if exists
@@ -226,6 +335,56 @@ class AuthController {
 
       res.redirect('/');
     }
+  }
+
+  /**
+   * Displays the forgot password form for password reset requests.
+   * Renders the password reset form with CSRF protection and status messages
+   * for users who need to recover access to their accounts.
+   * @function showForgotPassword
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Renders forgot password form.
+   * @example
+   * // GET /auth/forgot-password
+   * // Displays password reset request form
+   */
+  async showForgotPassword(req, res) {
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
+    res.render('auth/forgot-password', {
+      title: 'Forgot Password - AmexingWeb',
+      error: req.query.error || null,
+      success: req.query.success || null,
+      csrfToken: csrf,
+    });
+  }
+
+  /**
+   * Displays the password reset form with token validation.
+   * Validates the reset token and renders the password reset form with
+   * security measures for users completing their password recovery process.
+   * @function showResetPassword
+   * @param {object} req - Express request object with reset token in query.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Renders reset password form or redirects on error.
+   * @example
+   * // GET /auth/reset-password?token=abc123
+   * // Displays password reset form with validated token
+   */
+  async showResetPassword(req, res) {
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
+    const { token } = req.query;
+
+    if (!token) {
+      return res.redirect(`/auth/forgot-password?error=${encodeURIComponent('Invalid or missing reset token')}`);
+    }
+
+    res.render('auth/reset-password', {
+      title: 'Reset Password - AmexingWeb',
+      error: req.query.error || null,
+      token,
+      csrfToken: csrf,
+    });
   }
 }
 

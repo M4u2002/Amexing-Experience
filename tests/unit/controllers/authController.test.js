@@ -44,6 +44,7 @@ describe('Authentication Controller', () => {
         error: null,
         csrfToken: expect.any(String),
         parseAppId: expect.any(String),
+        oauthProviders: expect.any(Array),
       });
     });
 

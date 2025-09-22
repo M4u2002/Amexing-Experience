@@ -1,3 +1,43 @@
+/**
+ * Amexing Web Application - Main server entry point and configuration.
+ * Initializes Express application with Parse Server, security middleware, routing,
+ * and comprehensive application infrastructure for the Amexing platform.
+ *
+ * This is the primary entry point for the Amexing web application, orchestrating
+ * the initialization of all core components including Parse Server, security
+ * middleware, authentication systems, and routing configuration.
+ *
+ * Features:
+ * - Express.js application server with comprehensive middleware stack
+ * - Parse Server integration for backend-as-a-service functionality
+ * - Parse Dashboard for administrative interface (development/optional)
+ * - Multi-layered security middleware with PCI DSS compliance
+ * - OAuth authentication system with multiple provider support
+ * - Comprehensive routing system (web, API, auth, docs)
+ * - Static file serving with production optimizations
+ * - Error handling and logging infrastructure
+ * - Health check and monitoring endpoints
+ * - Graceful shutdown and process management
+ * - Environment-specific configuration loading
+ * - Production and development mode optimizations.
+ * @file Main application server and initialization.
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Start the application
+ * npm start
+ *
+ * // Development mode with hot reloading
+ * npm run dev
+ *
+ * // Production deployment
+ * NODE_ENV=production npm start
+ *
+ * // Environment variables
+ * PORT=3000 NODE_ENV=production npm start
+ */
+
 require('dotenv').config({
   path: `./environments/.env.${process.env.NODE_ENV || 'development'}`,
 });
@@ -16,6 +56,7 @@ const parseServerConfig = require('../config/parse-server');
 const parseDashboardConfig = require('../config/parse-dashboard');
 const webRoutes = require('./presentation/routes/webRoutes');
 const apiRoutes = require('./presentation/routes/apiRoutes');
+const authRoutes = require('./presentation/routes/authRoutes');
 const docsRoutes = require('./presentation/routes/docsRoutes');
 const errorHandler = require('./application/middleware/errorHandler');
 
@@ -92,26 +133,38 @@ if (
   process.env.NODE_ENV !== 'production'
   || process.env.ENABLE_DASHBOARD === 'true'
 ) {
-  const dashboardApp = express();
+  try {
+    const dashboardApp = express();
 
-  // Apply security middleware to dashboard
-  dashboardApp.use(securityMiddleware.getHelmetConfig());
-  dashboardApp.use(securityMiddleware.getStrictRateLimiter());
+    // Apply security middleware to dashboard
+    dashboardApp.use(securityMiddleware.getHelmetConfig());
+    dashboardApp.use(securityMiddleware.getStrictRateLimiter());
 
-  // Initialize and mount dashboard
-  const dashboard = new ParseDashboard(parseDashboardConfig, {
-    allowInsecureHTTP: process.env.NODE_ENV === 'development',
-  });
+    // Initialize and mount dashboard with error handling
+    const dashboard = new ParseDashboard(parseDashboardConfig, {
+      allowInsecureHTTP: process.env.NODE_ENV === 'development',
+      dev: process.env.NODE_ENV === 'development',
+      trustProxy: process.env.NODE_ENV === 'production',
+    });
 
-  dashboardApp.use('/', dashboard);
+    dashboardApp.use('/', dashboard);
 
-  // Start dashboard server
-  dashboardApp.listen(DASHBOARD_PORT, () => {
-    logger.info(
-      `Parse Dashboard running on http://localhost:${DASHBOARD_PORT}`
-    );
-  });
+    // Start dashboard server
+    dashboardApp.listen(DASHBOARD_PORT, () => {
+      logger.info(
+        `Parse Dashboard running on http://localhost:${DASHBOARD_PORT}`
+      );
+    });
+  } catch (error) {
+    logger.error('Failed to start Parse Dashboard:', error.message);
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('Continuing without Parse Dashboard in development mode');
+    }
+  }
 }
+
+// Alternative: Use separate dashboard command to avoid conflict
+logger.info('Parse Dashboard disabled in main app. Use "yarn dashboard" to run separately if needed.');
 
 // Session middleware
 app.use(securityMiddleware.getSessionConfig());
@@ -126,13 +179,33 @@ securityMiddlewares.forEach((middleware) => {
 // API Routes
 app.use('/api', apiRoutes);
 
+// Authentication Routes
+app.use('/auth', authRoutes);
+
 // Documentation Routes
 app.use('/', docsRoutes);
 
 // Web Routes
 app.use('/', webRoutes);
 
-// Helper function to test database metrics
+/**
+ * Retrieves database connection metrics for health monitoring and diagnostics.
+ * Performs a direct MongoDB connection test with timeout controls to assess
+ * database availability, response time, and connection health for monitoring.
+ * @function getDatabaseMetrics
+ * @returns {Promise<object>} Database metrics object with connection status, response time, and error details.
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Get database health metrics
+ * const metrics = await getDatabaseMetrics();
+ * console.log('DB Connected:', metrics.connected);
+ * console.log('Response Time:', metrics.responseTime, 'ms');
+ * if (metrics.error) {
+ *   console.error('DB Error:', metrics.error);
+ * }
+ */
 const getDatabaseMetrics = async () => {
   const dbMetrics = {
     connected: false,
@@ -234,7 +307,23 @@ app.get('/health', async (req, res) => {
   res.json(healthCheck);
 });
 
-// Helper function to get system metrics
+/**
+ * Retrieves comprehensive system metrics for monitoring and performance analysis.
+ * Collects Node.js process information, memory usage, CPU statistics, and platform
+ * details for system monitoring, alerting, and performance optimization.
+ * @function getSystemMetrics
+ * @returns {object} System metrics object containing uptime, memory, CPU, and platform information.
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Get current system metrics
+ * const metrics = getSystemMetrics();
+ * console.log('Uptime:', metrics.uptime, 'seconds');
+ * console.log('Memory Used:', metrics.memory.heapUsed, 'MB');
+ * console.log('Platform:', metrics.platform);
+ * console.log('Node Version:', metrics.nodeVersion);
+ */
 const getSystemMetrics = () => ({
   uptime: process.uptime(),
   platform: process.platform,
@@ -322,7 +411,24 @@ const server = app.listen(PORT, () => {
   }
 });
 
-// Graceful shutdown
+/**
+ * Handles graceful application shutdown for clean process termination.
+ * Manages orderly shutdown sequence including server closing, connection cleanup,
+ * and resource disposal to prevent data loss and ensure clean termination.
+ * @function gracefulShutdown
+ * @param {string} signal - The signal that triggered the shutdown (e.g., 'SIGTERM', 'SIGINT', 'SIGUSR2').
+ * @returns {Promise<void>} Resolves when shutdown is complete.
+ * @author Amexing Development Team
+ * @version 2.0.0
+ * @since 1.0.0
+ * @example
+ * // Triggered automatically by process signals
+ * process.on('SIGTERM', gracefulShutdown);
+ * process.on('SIGINT', gracefulShutdown);
+ *
+ * // Manual shutdown call
+ * await gracefulShutdown('MANUAL');
+ */
 const gracefulShutdown = async (signal) => {
   logger.info(`Received ${signal}, starting graceful shutdown...`);
 

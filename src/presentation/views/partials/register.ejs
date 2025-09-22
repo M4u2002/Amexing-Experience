@@ -7,7 +7,7 @@
             </div>
         <% } %>
         
-        <form action="/parse/users" method="POST">
+        <form action="/auth/register" method="POST">
             <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
             
             <div style="margin-bottom: 1.5rem;">
@@ -47,6 +47,28 @@
                 <small style="color: #999; font-size: 0.875rem;">
                     Must be at least 12 characters with uppercase, lowercase, number, and special character
                 </small>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="firstName" style="display: block; margin-bottom: 0.5rem; color: #666;">First Name</label>
+                <input 
+                    type="text" 
+                    id="firstName" 
+                    name="firstName" 
+                    required
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
+                >
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="lastName" style="display: block; margin-bottom: 0.5rem; color: #666;">Last Name</label>
+                <input 
+                    type="text" 
+                    id="lastName" 
+                    name="lastName" 
+                    required
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
+                >
             </div>
             
             <div style="margin-bottom: 1.5rem;">

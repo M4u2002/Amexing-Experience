@@ -2,7 +2,8 @@ const express = require('express');
 
 const router = express.Router();
 const apiController = require('../../application/controllers/apiController');
-const authMiddleware = require('../../application/middleware/authMiddleware');
+// const authMiddleware = require('../../application/middleware/authMiddleware'); // Unused import
+const jwtMiddleware = require('../../application/middleware/jwtMiddleware');
 const validationMiddleware = require('../../application/middleware/validationMiddleware');
 const securityMiddleware = require('../../infrastructure/security/securityMiddleware');
 
@@ -35,8 +36,8 @@ if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
   });
 }
 
-// Protected API endpoints
-router.use(authMiddleware.requireAuth);
+// Protected API endpoints - use JWT authentication for API routes
+router.use(jwtMiddleware.authenticateToken);
 
 // User endpoints
 router.get('/user/profile', apiController.getUserProfile);
