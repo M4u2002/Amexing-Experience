@@ -1,6 +1,9 @@
-name: Weekly Security Scan
+name: PCI DSS Security Scan
 
 on:
+  pull_request:
+    # Run comprehensive security scan on all PRs for PCI DSS compliance
+    types: [opened, synchronize, reopened]
   push:
     branches: [main, master]
   schedule:
