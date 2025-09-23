@@ -14,73 +14,80 @@ const AmexingUser = require('../src/domain/models/AmexingUser');
 
 const testUsers = [
   {
-    username: 'dev.superadmin',
+    username: 'superadmin@dev.amexing.com',
     email: 'superadmin@dev.amexing.com',
     password: 'DevSuper2024!@#',
     firstName: 'Super',
     lastName: 'Administrator',
     role: 'superadmin',
     active: true,
+    exists: true,
     emailVerified: true
   },
   {
-    username: 'dev.admin',
+    username: 'admin@dev.amexing.com',
     email: 'admin@dev.amexing.com',
     password: 'DevAdmin2024!@#',
     firstName: 'Admin',
     lastName: 'User',
     role: 'admin',
     active: true,
+    exists: true,
     emailVerified: true
   },
   {
-    username: 'dev.client',
+    username: 'client@dev.amexing.com',
     email: 'client@dev.amexing.com',
     password: 'DevClient2024!@#',
     firstName: 'Client',
     lastName: 'Manager',
     role: 'client',
     active: true,
+    exists: true,
     emailVerified: true
   },
   {
-    username: 'dev.department_manager',
+    username: 'manager@dev.amexing.com',
     email: 'manager@dev.amexing.com',
     password: 'DevManager2024!@#',
     firstName: 'Department',
     lastName: 'Manager',
     role: 'department_manager',
     active: true,
+    exists: true,
     emailVerified: true
   },
   {
-    username: 'dev.employee',
+    username: 'employee@dev.amexing.com',
     email: 'employee@dev.amexing.com',
     password: 'DevEmployee2024!@#',
     firstName: 'Test',
     lastName: 'Employee',
     role: 'employee',
     active: true,
+    exists: true,
     emailVerified: true
   },
   {
-    username: 'dev.driver',
+    username: 'driver@dev.amexing.com',
     email: 'driver@dev.amexing.com',
     password: 'DevDriver2024!@#',
     firstName: 'Test',
     lastName: 'Driver',
     role: 'driver',
     active: true,
+    exists: true,
     emailVerified: true
   },
   {
-    username: 'dev.guest',
+    username: 'guest@dev.amexing.com',
     email: 'guest@dev.amexing.com',
     password: 'DevGuest2024!@#',
     firstName: 'Guest',
     lastName: 'User',
     role: 'guest',
     active: true,
+    exists: true,
     emailVerified: true
   }
 ];
@@ -103,7 +110,7 @@ async function seedTestUsers() {
 
     // Delete existing test users using Parse Query
     const query = new Parse.Query(AmexingUser);
-    query.startsWith('username', 'dev.');
+    query.endsWith('email', '@dev.amexing.com');
 
     const existingUsers = await query.find({ useMasterKey: true });
     if (existingUsers.length > 0) {
@@ -127,23 +134,23 @@ async function seedTestUsers() {
         // Save the user
         await user.save(null, { useMasterKey: true });
 
-        console.log(`✅ Created user: ${userData.username} (${userData.role})`);
+        console.log(`✅ Created user: ${userData.email} (${userData.role})`);
       } catch (userError) {
-        console.error(`❌ Failed to create user ${userData.username}:`, userError.message);
+        console.error(`❌ Failed to create user ${userData.email}:`, userError.message);
       }
     }
 
     console.log('🎉 All test users created successfully!');
     console.log('\n📋 Test Users Summary:');
-    console.log('┌─────────────────────────┬─────────────────────────┬──────────────────────┐');
-    console.log('│ Username               │ Password                │ Role                 │');
-    console.log('├─────────────────────────┼─────────────────────────┼──────────────────────┤');
+    console.log('┌─────────────────────────────────┬─────────────────────────┬──────────────────────┐');
+    console.log('│ Email                           │ Password                │ Role                 │');
+    console.log('├─────────────────────────────────┼─────────────────────────┼──────────────────────┤');
 
     testUsers.forEach(user => {
-      console.log(`│ ${user.username.padEnd(22)} │ ${user.password.padEnd(23)} │ ${user.role.padEnd(20)} │`);
+      console.log(`│ ${user.email.padEnd(31)} │ ${user.password.padEnd(23)} │ ${user.role.padEnd(20)} │`);
     });
 
-    console.log('└─────────────────────────┴─────────────────────────┴──────────────────────┘');
+    console.log('└─────────────────────────────────┴─────────────────────────┴──────────────────────┘');
     console.log('\n🌐 Access the login page at: http://localhost:1337/login');
     console.log('💡 Click the test user buttons in development mode for quick login');
 

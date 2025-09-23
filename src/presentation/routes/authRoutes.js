@@ -20,8 +20,8 @@ const router = express.Router();
 
 // Rate limiting for auth endpoints
 const authRateLimit = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 50,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 900000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || 50,
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -46,11 +46,11 @@ router.post('/login', async (req, res) => {
     // Validate required fields
     if (!identifier || !password) {
       if (req.accepts('html')) {
-        return res.redirect(`/login?error=${encodeURIComponent('Username and password are required')}`);
+        return res.redirect(`/login?error=${encodeURIComponent('Email and password are required')}`);
       }
       return res.status(400).json({
         success: false,
-        error: 'Identifier and password are required',
+        error: 'Email and password are required',
       });
     }
 
@@ -79,26 +79,18 @@ router.post('/login', async (req, res) => {
       const AmexingUser = require('../../domain/models/AmexingUser');
 
       try {
-        // Query AmexingUser using Parse SDK
+        // Query AmexingUser using Parse SDK - email only lookup
         const query = new Parse.Query(AmexingUser);
-        query.equalTo('username', identifier);
-
-        let user = await query.first({ useMasterKey: true });
-
-        // If not found by username, try email
-        if (!user) {
-          const emailQuery = new Parse.Query(AmexingUser);
-          emailQuery.equalTo('email', identifier);
-          user = await emailQuery.first({ useMasterKey: true });
-        }
+        query.equalTo('email', identifier.toLowerCase().trim());
+        const user = await query.first({ useMasterKey: true });
 
         if (!user) {
           if (req.accepts('html')) {
-            return res.redirect(`/login?error=${encodeURIComponent('Invalid username or password')}`);
+            return res.redirect(`/login?error=${encodeURIComponent('Invalid email or password')}`);
           }
           return res.status(401).json({
             success: false,
-            error: 'Invalid username or password',
+            error: 'Invalid email or password',
           });
         }
 
@@ -110,11 +102,11 @@ router.post('/login', async (req, res) => {
           await user.recordFailedLogin();
 
           if (req.accepts('html')) {
-            return res.redirect(`/login?error=${encodeURIComponent('Invalid username or password')}`);
+            return res.redirect(`/login?error=${encodeURIComponent('Invalid email or password')}`);
           }
           return res.status(401).json({
             success: false,
-            error: 'Invalid username or password',
+            error: 'Invalid email or password',
           });
         }
 

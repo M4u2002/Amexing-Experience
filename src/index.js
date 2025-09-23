@@ -91,6 +91,13 @@ app.use(
   })
 );
 
+// General public assets (js, css, images, etc.)
+app.use(
+  express.static(path.join(__dirname, '..', 'public'), {
+    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+  })
+);
+
 // Dashboard static assets
 app.use(
   '/dashboard',
@@ -126,11 +133,12 @@ app.use(
 // Initialize Parse Server
 const parseServer = new ParseServer(parseServerConfig);
 
-// Start Parse Server (graceful failure in development)
+// Start Parse Server with better error handling
 (async () => {
   try {
+    logger.info('Starting Parse Server initialization...');
     await parseServer.start();
-    logger.info('Parse Server initialized successfully');
+    logger.info('Parse Server started successfully');
 
     // Initialize Parse SDK for internal use (health checks, etc.)
     const Parse = require('parse/node');
@@ -142,9 +150,20 @@ const parseServer = new ParseServer(parseServerConfig);
     Parse.serverURL = parseServerConfig.serverURL;
 
     logger.info('Parse SDK initialized for internal operations');
+
+    // Wait a moment for cloud functions to register
+    setTimeout(() => {
+      logger.info('Parse Server initialization completed - cloud functions should be ready');
+    }, 2000);
+
     // Cloud functions are automatically loaded by Parse Server via the config
   } catch (error) {
-    logger.error('Failed to initialize Parse Server:', error);
+    logger.error('Failed to initialize Parse Server:', error.message);
+    logger.error('Parse Server error details:', {
+      name: error.name,
+      code: error.code,
+      stack: error.stack,
+    });
 
     if (process.env.NODE_ENV === 'production') {
       logger.error('Exiting in production due to Parse Server failure');

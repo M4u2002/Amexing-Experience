@@ -86,6 +86,7 @@ class DashboardAuthMiddleware {
     res.locals.userRole = user.role;
     res.locals.userName = user.name || user.username;
     res.locals.userId = user.id;
+    res.locals.accessToken = accessToken; // Pass token to templates
 
     next();
   };

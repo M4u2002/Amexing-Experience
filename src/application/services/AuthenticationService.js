@@ -261,7 +261,8 @@ class AuthenticationService extends AuthenticationServiceCore {
     try {
       const decoded = jwt.verify(token, this.jwtSecret);
 
-      if (decoded.type !== 'access') {
+      // Check token type if present (backward compatibility)
+      if (decoded.type && decoded.type !== 'access') {
         throw new Parse.Error(Parse.Error.INVALID_REQUEST, 'Invalid token type');
       }
 

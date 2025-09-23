@@ -28,28 +28,37 @@ const authenticateToken = async (req, res, next) => {
     // Extract token from cookies (preferred) or Authorization header
     let token = req.cookies?.accessToken;
 
+    logger.debug('JWT Middleware - Cookie token:', { tokenPresent: !!token });
+
     if (!token) {
       const authHeader = req.headers.authorization;
+      logger.debug('JWT Middleware - Auth header:', { headerPresent: !!authHeader });
       token = authHeader && authHeader.startsWith('Bearer ')
         ? authHeader.slice(7)
         : null;
     }
 
     if (!token) {
+      logger.debug('JWT Middleware - No token found, returning 401');
       return res.status(401).json({
         success: false,
         error: 'Access token required',
       });
     }
 
+    logger.debug('JWT Middleware - Token found, validating...');
+
     // Validate token using AuthenticationService
     const result = await AuthenticationService.validateToken(token);
+
+    logger.debug('JWT Middleware - Validation result:', { success: !!result });
 
     // Attach user information to request
     req.user = result.user;
     req.userId = result.userId;
     req.userRole = result.role;
 
+    logger.debug('JWT Middleware - User attached:', { userId: req.userId, role: req.userRole });
     next();
   } catch (error) {
     logger.error('JWT authentication error:', error);

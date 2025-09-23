@@ -588,5 +588,15 @@ function registerCloudFunctions() {
 
 // Register cloud functions immediately
 // Parse Server loads this file and Parse.Cloud is available
-registerCloudFunctions();
-logger.info('Cloud functions registration initiated');
+try {
+  logger.info('Starting cloud functions registration...');
+  registerCloudFunctions();
+  logger.info('Cloud functions registration completed successfully');
+} catch (error) {
+  logger.error('Failed to register cloud functions:', error);
+  logger.error('Cloud function registration error details:', {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+  });
+}

@@ -65,7 +65,7 @@ class DepartmentOAuthFlowService {
       },
     };
 
-    this.initialize();
+    this.initialized = false;
   }
 
   /**
@@ -76,13 +76,29 @@ class DepartmentOAuthFlowService {
    * await service.initialize();
    */
   async initialize() {
+    if (this.initialized) {
+      return;
+    }
+
     try {
       await this.loadDepartmentConfigurations();
       await this.validateDepartmentSetup();
+      this.initialized = true;
       logger.info('DepartmentOAuthFlowService initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize DepartmentOAuthFlowService:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Ensure the service is initialized before use.
+   * @returns {Promise<void>}
+   * @private
+   */
+  async ensureInitialized() {
+    if (!this.initialized) {
+      await this.initialize();
     }
   }
 
@@ -95,6 +111,13 @@ class DepartmentOAuthFlowService {
    */
   async loadDepartmentConfigurations() {
     try {
+      // Don't load from database during initial construction
+      // This prevents Parse queries before Parse Server is ready
+      if (!Parse.applicationId) {
+        logger.warn('Parse not initialized yet, skipping department configurations load');
+        return;
+      }
+
       const DepartmentConfig = Parse.Object.extend('DepartmentOAuthConfig');
       const query = new Parse.Query(DepartmentConfig);
       query.equalTo('isActive', true);
@@ -188,6 +211,8 @@ class DepartmentOAuthFlowService {
    * });
    */
   async initiateDepartmentOAuth(request) {
+    await this.ensureInitialized();
+
     const {
       department, provider, corporateConfigId, redirectUri, state,
     } = request;

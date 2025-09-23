@@ -127,7 +127,7 @@ class AmexingAuthService {
       const userId = uuidv4();
       newUser.set('id', userId);
       newUser.set('email', email.toLowerCase().trim());
-      newUser.set('username', this.generateUsername(email));
+      newUser.set('username', email.toLowerCase().trim()); // Use email as username for consistency
       newUser.set('passwordHash', passwordHash);
       newUser.set('emailVerified', false);
       newUser.set('phoneVerified', false);
@@ -325,7 +325,7 @@ class AmexingAuthService {
     const newUser = {
       id: userId,
       email: profile.email.toLowerCase().trim(),
-      username: this.generateUsername(profile.email),
+      username: profile.email.toLowerCase().trim(), // Use email as username for OAuth users
       emailVerified: profile.verified || true, // OAuth emails are pre-verified
       phoneVerified: false,
 
@@ -741,7 +741,7 @@ class AmexingAuthService {
   async findUserByEmail(email) {
     const query = new Parse.Query('AmexingUser');
     query.equalTo('email', email.toLowerCase().trim());
-    query.equalTo('deleted', false);
+    query.equalTo('exists', true); // Only find existing users (not soft deleted)
 
     const parseUser = await query.first({ useMasterKey: true });
     return parseUser ? this.parseObjectToPlain(parseUser) : null;
@@ -756,7 +756,7 @@ class AmexingAuthService {
   async findUserById(userId) {
     const query = new Parse.Query('AmexingUser');
     query.equalTo('id', userId);
-    query.equalTo('deleted', false);
+    query.equalTo('exists', true); // Only find existing users (not soft deleted)
 
     const parseUser = await query.first({ useMasterKey: true });
     return parseUser ? this.parseObjectToPlain(parseUser) : null;
@@ -773,7 +773,7 @@ class AmexingAuthService {
     const query = new Parse.Query('AmexingUser');
     query.equalTo('oauthAccounts.provider', provider);
     query.equalTo('oauthAccounts.providerId', providerId);
-    query.equalTo('deleted', false);
+    query.equalTo('exists', true); // Only find existing users (not soft deleted)
 
     const parseUser = await query.first({ useMasterKey: true });
     return parseUser ? this.parseObjectToPlain(parseUser) : null;
@@ -811,7 +811,7 @@ class AmexingAuthService {
       throw new Error('Password is required');
     }
 
-    const minLength = parseInt(process.env.PASSWORD_MIN_LENGTH) || 12;
+    const minLength = parseInt(process.env.PASSWORD_MIN_LENGTH, 10) || 12;
     const requireUppercase = process.env.PASSWORD_REQUIRE_UPPERCASE === 'true';
     const requireLowercase = process.env.PASSWORD_REQUIRE_LOWERCASE === 'true';
     const requireNumbers = process.env.PASSWORD_REQUIRE_NUMBERS === 'true';
@@ -895,15 +895,15 @@ class AmexingAuthService {
   }
 
   /**
-   * Generate unique username from email.
+   * Generate username from email (deprecated - now uses email directly).
    * @param {string} email - Email address.
-   * @returns {string} Generated username.
+   * @returns {string} Email as username.
+   * @deprecated Use email directly as username for consistency.
    * @example
    */
   generateUsername(email) {
-    const baseUsername = email.split('@')[0].toLowerCase();
-    const randomSuffix = crypto.randomBytes(4).toString('hex');
-    return `${baseUsername}_${randomSuffix}`;
+    // Simplified: just return email as username for consistency
+    return email.toLowerCase().trim();
   }
 
   /**
@@ -1088,7 +1088,7 @@ class AmexingAuthService {
     query.equalTo('oauthDomain', domain);
     query.equalTo('isCorporate', true);
     query.equalTo('active', true);
-    query.equalTo('deleted', false);
+    query.equalTo('exists', true); // Only find existing clients (not soft deleted)
 
     const parseClient = await query.first({ useMasterKey: true });
     return parseClient ? this.parseObjectToPlain(parseClient) : null;

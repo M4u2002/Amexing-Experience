@@ -50,7 +50,7 @@ const AmexingUser = require('../../domain/models/AmexingUser');
  */
 class AuthenticationServiceCore {
   constructor() {
-    this.jwtSecret = process.env.JWT_SECRET;
+    this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
     this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '8h';
     this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
   }

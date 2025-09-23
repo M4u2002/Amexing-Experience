@@ -379,7 +379,7 @@ class SecurityMiddleware {
           req.method === 'GET'
           || req.method === 'HEAD'
           || req.method === 'OPTIONS'
-          || req.path.startsWith('/api/auth')
+          || req.path.startsWith('/api/')
         ) {
           // Generate CSRF token for forms if session exists
           if (req.session && (req.method === 'GET' || req.method === 'HEAD')) {
@@ -402,7 +402,7 @@ class SecurityMiddleware {
         }
 
         const token = req.headers['x-csrf-token']
-          || req.body.csrfToken
+          || req.body?.csrfToken
           || req.query.csrfToken;
         if (!token) {
           return res.status(403).json({

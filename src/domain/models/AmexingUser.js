@@ -9,6 +9,7 @@
 const Parse = require('parse/node');
 const bcrypt = require('bcrypt');
 const logger = require('../../infrastructure/logger');
+const BaseModel = require('./BaseModel');
 
 /**
  * AmexingUser Model - Extended Parse User with comprehensive PCI DSS compliance features.
@@ -66,7 +67,7 @@ const logger = require('../../infrastructure/logger');
  * // Safe user data for API responses
  * const safeUserData = user.toSafeJSON();
  */
-class AmexingUser extends Parse.Object {
+class AmexingUser extends BaseModel {
   constructor() {
     super('AmexingUser');
   }
@@ -89,6 +90,7 @@ class AmexingUser extends Parse.Object {
     // Default values
     user.set('role', userData.role || 'user');
     user.set('active', userData.active !== undefined ? userData.active : true);
+    user.set('exists', userData.exists !== undefined ? userData.exists : true);
     user.set('emailVerified', false);
     user.set('loginAttempts', 0);
     user.set('lockedUntil', null);
@@ -99,7 +101,11 @@ class AmexingUser extends Parse.Object {
     // OAuth fields
     user.set('oauthAccounts', userData.oauthAccounts || []);
     user.set('primaryOAuthProvider', userData.primaryOAuthProvider || null);
-    user.set('lastAuthMethod', 'password');
+    user.set('lastAuthMethod', userData.lastAuthMethod || 'password');
+
+    // Organizational relationships
+    user.set('clientId', userData.clientId || null);
+    user.set('departmentId', userData.departmentId || null);
 
     // Audit fields
     user.set('createdBy', userData.createdBy || null);
@@ -397,6 +403,146 @@ class AmexingUser extends Parse.Object {
   }
 
   /**
+   * Get the client this user belongs to.
+   * Uses AI agent compliant queries.
+   * @returns {Promise<object | null>} Client object or null.
+   * @example
+   */
+  async getClient() {
+    try {
+      if (!this.get('clientId')) {
+        return null;
+      }
+
+      const Client = require('./Client');
+      const query = BaseModel.queryActive('Client');
+      query.equalTo('objectId', this.get('clientId'));
+
+      return await query.first({ useMasterKey: true });
+    } catch (error) {
+      logger.error('Error fetching user client', {
+        userId: this.id,
+        clientId: this.get('clientId'),
+        error: error.message,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get the department this user belongs to.
+   * Uses AI agent compliant queries.
+   * @returns {Promise<object | null>} Department object or null.
+   * @example
+   */
+  async getDepartment() {
+    try {
+      if (!this.get('departmentId')) {
+        return null;
+      }
+
+      const Department = require('./Department');
+      const query = BaseModel.queryActive('Department');
+      query.equalTo('objectId', this.get('departmentId'));
+
+      return await query.first({ useMasterKey: true });
+    } catch (error) {
+      logger.error('Error fetching user department', {
+        userId: this.id,
+        departmentId: this.get('departmentId'),
+        error: error.message,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Check if user belongs to a specific client.
+   * @param {string} clientId - Client ID to check.
+   * @returns {boolean} True if user belongs to client.
+   * @example
+   */
+  belongsToClient(clientId) {
+    return this.get('clientId') === clientId;
+  }
+
+  /**
+   * Check if user belongs to a specific department.
+   * @param {string} departmentId - Department ID to check.
+   * @returns {boolean} True if user belongs to department.
+   * @example
+   */
+  belongsToDepartment(departmentId) {
+    return this.get('departmentId') === departmentId;
+  }
+
+  /**
+   * Assign user to a client.
+   * @param {string} clientId - Client ID to assign to.
+   * @param {string} modifiedBy - User ID making the change.
+   * @returns {Promise<boolean>} Success status.
+   * @example
+   */
+  async assignToClient(clientId, modifiedBy) {
+    try {
+      this.set('clientId', clientId);
+      this.set('modifiedBy', modifiedBy);
+      this.set('updatedAt', new Date());
+
+      await this.save(null, { useMasterKey: true });
+
+      logger.info('User assigned to client', {
+        userId: this.id,
+        clientId,
+        modifiedBy,
+      });
+
+      return true;
+    } catch (error) {
+      logger.error('Error assigning user to client', {
+        userId: this.id,
+        clientId,
+        modifiedBy,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Assign user to a department.
+   * @param {string} departmentId - Department ID to assign to.
+   * @param {string} modifiedBy - User ID making the change.
+   * @returns {Promise<boolean>} Success status.
+   * @example
+   */
+  async assignToDepartment(departmentId, modifiedBy) {
+    try {
+      this.set('departmentId', departmentId);
+      this.set('modifiedBy', modifiedBy);
+      this.set('updatedAt', new Date());
+
+      await this.save(null, { useMasterKey: true });
+
+      logger.info('User assigned to department', {
+        userId: this.id,
+        departmentId,
+        modifiedBy,
+      });
+
+      return true;
+    } catch (error) {
+      logger.error('Error assigning user to department', {
+        userId: this.id,
+        departmentId,
+        modifiedBy,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Converts user to safe JSON (excludes sensitive data).
    * @returns {object} Safe user data.
    * @example
@@ -411,12 +557,18 @@ class AmexingUser extends Parse.Object {
       fullName: this.getFullName(),
       role: this.get('role'),
       active: this.get('active'),
+      exists: this.get('exists'),
+      lifecycleStatus: this.getLifecycleStatus(),
       emailVerified: this.get('emailVerified'),
       lastLoginAt: this.get('lastLoginAt'),
       primaryOAuthProvider: this.get('primaryOAuthProvider'),
       hasOAuth: (this.get('oauthAccounts') || []).length > 0,
+      clientId: this.get('clientId'),
+      departmentId: this.get('departmentId'),
       createdAt: this.get('createdAt'),
       updatedAt: this.get('updatedAt'),
+      createdBy: this.get('createdBy'),
+      modifiedBy: this.get('modifiedBy'),
     };
   }
 }

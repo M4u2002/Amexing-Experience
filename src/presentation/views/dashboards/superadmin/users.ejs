@@ -1,0 +1,258 @@
+<!-- User Management Dashboard -->
+<div class="container-fluid">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="/dashboard/superadmin">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">User Management</li>
+        </ol>
+      </nav>
+    </div>
+    <div class="text-muted">
+      <i class="ti ti-users"></i>
+      User management and administration
+    </div>
+  </div>
+
+  <!-- Simple User Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        <i class="ti ti-table"></i>
+        All Users
+      </h6>
+    </div>
+    <div class="card-body">
+      <!-- User Table Container -->
+      <div id="usersTableContainer"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Include JavaScript -->
+<script src="/js/components/UserTableManager.js"></script>
+
+<script>
+// Initialize page when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('User management page loading...');
+
+  // Check if required scripts are loaded
+  if (typeof UserTableManager === 'undefined') {
+    console.error('UserTableManager component not loaded');
+    return;
+  }
+
+  try {
+    // Store access token if available
+    <% if (typeof accessToken !== 'undefined' && accessToken) { %>
+    sessionStorage.setItem('authToken', '<%= accessToken %>');
+    console.log('Token stored in sessionStorage');
+    <% } else { %>
+    console.warn('No access token available to store');
+    <% } %>
+
+    // Initialize optimized user table with advanced features
+    window.usersTable = new UserTableManager('usersTableContainer', {
+      apiBaseUrl: '/api',
+      pageSize: 20,
+      cacheEnabled: true,
+      cacheTimeout: 300000, // 5 minutes
+      debounceDelay: 250,
+      retryAttempts: 3,
+      retryDelay: 1000
+    });
+
+    // Load users with initial call
+    window.usersTable.loadUsers(false);
+
+    console.log('User management page initialized successfully');
+
+    // Auto-refresh every 5 minutes
+    setInterval(() => {
+      if (window.usersTable && document.visibilityState === 'visible') {
+        console.log('Auto-refreshing user table...');
+        window.usersTable.loadUsers(false);
+      }
+    }, 300000); // 5 minutes
+
+  } catch (error) {
+    console.error('Failed to initialize user management page:', error);
+  }
+});
+
+// Cleanup when page unloads
+window.addEventListener('beforeunload', function() {
+  if (window.usersTable) {
+    window.usersTable.destroy();
+  }
+});
+
+// Handle visibility change (pause auto-refresh when tab is hidden)
+document.addEventListener('visibilitychange', function() {
+  if (window.usersTable && document.visibilityState === 'visible') {
+    // Refresh when tab becomes visible again
+    window.usersTable.refresh();
+  }
+});
+</script>
+
+<style>
+/* Custom styles for optimized user management page */
+.card {
+  border: none;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.user-table-wrapper {
+  min-height: 500px;
+  position: relative;
+}
+
+/* Table optimizations */
+.table-responsive {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1rem 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Avatar styling */
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Badge styling */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+}
+
+/* Button styling */
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+}
+
+/* Loading overlay */
+.bg-opacity-75 {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Pagination styling */
+.pagination {
+  margin-bottom: 0;
+}
+
+.page-link {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  margin: 0 0.125rem;
+}
+
+.page-item.active .page-link {
+  background-color: #5d87ff;
+  border-color: #5d87ff;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.table tbody tr {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Cache indicator */
+#usersTableContainer-cache-indicator {
+  animation: pulse 2s infinite;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .table th,
+  .table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  .avatar-sm {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Error and success alerts */
+.alert {
+  border-radius: 0.5rem;
+  border: none;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.alert-success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.15s ease-in-out;
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+</style>

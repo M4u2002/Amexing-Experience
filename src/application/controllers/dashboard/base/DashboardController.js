@@ -72,9 +72,13 @@ class DashboardController extends BaseController {
       const dashboardData = {
         ...additionalData,
         stats,
+        user: req.user || {
+          id: '', role: 'guest', email: '', clientId: '', departmentId: '',
+        },
         userRole: req.user?.role || 'guest',
         userName: req.user?.name || 'Guest User',
         userId: req.user?.id,
+        accessToken: res.locals.accessToken || req.cookies?.accessToken || '',
         breadcrumb: this.buildBreadcrumb(req.path, req.user?.role),
       };
 

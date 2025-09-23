@@ -49,6 +49,11 @@ if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
 // Protected API endpoints - use JWT authentication for API routes
 router.use(jwtMiddleware.authenticateToken);
 
+// User Management API routes
+const userManagementRoutes = require('./api/userManagementRoutes');
+
+router.use('/users', userManagementRoutes);
+
 // User endpoints
 router.get('/user/profile', apiController.getUserProfile);
 router.put(
