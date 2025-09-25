@@ -27,6 +27,7 @@ class GitHooksSetup {
     this.sourceHooksDir = path.join(this.projectRoot, 'scripts', 'git-hooks');
     this.isForce = process.argv.includes('--force');
     this.isAuto = process.argv.includes('--auto');
+    this.skipCI = process.argv.includes('--skip-ci');
     
     this.hooks = [
       'pre-commit',
@@ -52,12 +53,24 @@ class GitHooksSetup {
   }
 
   checkGitRepository() {
+    // Skip git repository check in CI environments
+    if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+      this.log('CI environment detected - skipping git repository check', 'info');
+      return;
+    }
+
     if (!fs.existsSync(path.join(this.projectRoot, '.git'))) {
       throw new Error('Not a git repository. Initialize git first: git init');
     }
   }
 
   ensureDirectories() {
+    // Skip git hooks directory creation in CI environments
+    if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+      this.log('CI environment detected - skipping .git/hooks directory creation', 'info');
+      return;
+    }
+
     // Ensure .git/hooks directory exists
     if (!fs.existsSync(this.hooksDir)) {
       fs.mkdirSync(this.hooksDir, { recursive: true });
@@ -72,10 +85,16 @@ class GitHooksSetup {
   }
 
   createHookFiles() {
+    // Skip hook file creation in CI environments
+    if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+      this.log('CI environment detected - skipping git hook files creation', 'info');
+      return;
+    }
+
     this.hooks.forEach(hookName => {
       const sourceHook = path.join(this.sourceHooksDir, hookName);
       const targetHook = path.join(this.hooksDir, hookName);
-      
+
       // Check if hook already exists and not forcing
       if (fs.existsSync(targetHook) && !this.isForce) {
         this.log(`Hook ${hookName} already exists (use --force to overwrite)`, 'warning');
@@ -377,8 +396,14 @@ log_success "Hook executed successfully!"
   }
 
   validateInstallation() {
+    // Skip validation in CI environments
+    if (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true') {
+      this.log('CI environment detected - skipping git hooks validation', 'info');
+      return true;
+    }
+
     let allInstalled = true;
-    
+
     this.hooks.forEach(hookName => {
       const targetHook = path.join(this.hooksDir, hookName);
       if (fs.existsSync(targetHook)) {
@@ -412,15 +437,28 @@ log_success "Hook executed successfully!"
 
   run() {
     try {
+      // Skip git hooks setup in CI environments when --skip-ci flag is provided
+      if (this.skipCI && (process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true')) {
+        if (!this.isAuto) {
+          this.log('🔧 Git hooks setup - CI environment detected with --skip-ci flag');
+        }
+        this.log('✅ Skipping git hooks installation in CI/CD environment', 'success');
+        if (!this.isAuto) {
+          this.log('Git hooks are only needed for local development', 'info');
+          this.log('CI/CD security validations are handled by GitHub Actions workflows', 'info');
+        }
+        return;
+      }
+
       this.log('🔧 Setting up Git hooks for AmexingWeb PCI DSS compliance...');
-      
+
       this.checkGitRepository();
       this.ensureDirectories();
       this.createHookFiles();
-      
+
       if (this.validateInstallation()) {
         this.log('🎉 All Git hooks installed successfully!', 'success');
-        
+
         if (!this.isAuto) {
           this.log('');
           this.log('Available commands:');

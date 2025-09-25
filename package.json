@@ -84,7 +84,7 @@
     "commit:validate": "commitlint --config .config/commitlint/.commitlintrc.js --from=HEAD~1 --to=HEAD --verbose",
     "precommit": "yarn lint && yarn format:check && yarn docs:coverage",
     "prepush": "yarn quality:all",
-    "postinstall": "node scripts/global/setup/setup-git-hooks.js --auto"
+    "postinstall": "node scripts/global/setup/setup-git-hooks.js --auto --skip-ci"
   },
   "scriptsComments": {
     "scripts:help": "Interactive help system for all scripts with categorized documentation",
