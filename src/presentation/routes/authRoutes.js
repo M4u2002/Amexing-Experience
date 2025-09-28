@@ -66,12 +66,39 @@ router.post('/login', async (req, res) => {
       const parseUser = await Parse.User.logIn(identifier, password);
 
       if (parseUser) {
+        // Get role name from the new Role relationship for Parse User too
+        let roleName = 'guest';
+        const roleId = parseUser.get('roleId');
+        if (roleId) {
+          try {
+            const roleQuery = new Parse.Query('Role');
+            roleQuery.equalTo('objectId', roleId);
+            const roleObject = await roleQuery.first({ useMasterKey: true });
+            if (roleObject) {
+              roleName = roleObject.get('name');
+            }
+          } catch (roleError) {
+            logger.warn('Failed to fetch role for Parse user, defaulting to guest', {
+              userId: parseUser.id,
+              roleId,
+              error: roleError.message,
+            });
+            // Fall back to old role field if new relationship fails
+            roleName = parseUser.get('role') || 'guest';
+          }
+        } else {
+          // Fall back to old role field if no roleId
+          roleName = parseUser.get('role') || 'guest';
+        }
+
         // Convert Parse user to standardized user object for JWT
         authenticatedUser = {
           id: parseUser.id,
           username: parseUser.get('username'),
           email: parseUser.get('email'),
-          role: parseUser.get('role') || 'guest',
+          role: roleName,
+          roleId,
+          organizationId: parseUser.get('organizationId'),
           name: parseUser.get('displayName') || parseUser.get('username'),
         };
 
@@ -125,12 +152,39 @@ router.post('/login', async (req, res) => {
           });
         }
 
+        // Get role name from the new Role relationship
+        let roleName = 'guest';
+        const roleId = user.get('roleId');
+        if (roleId) {
+          try {
+            const roleQuery = new Parse.Query('Role');
+            roleQuery.equalTo('objectId', roleId);
+            const roleObject = await roleQuery.first({ useMasterKey: true });
+            if (roleObject) {
+              roleName = roleObject.get('name');
+            }
+          } catch (roleError) {
+            logger.warn('Failed to fetch role for user, defaulting to guest', {
+              userId: user.id,
+              roleId,
+              error: roleError.message,
+            });
+            // Fall back to old role field if new relationship fails
+            roleName = user.get('role') || 'guest';
+          }
+        } else {
+          // Fall back to old role field if no roleId
+          roleName = user.get('role') || 'guest';
+        }
+
         // Convert Parse Object user to standardized user object
         authenticatedUser = {
           id: user.id,
           username: user.get('username'),
           email: user.get('email'),
-          role: user.get('role') || 'guest',
+          role: roleName,
+          roleId,
+          organizationId: user.get('organizationId'),
           name: user.getDisplayName(),
         };
 
@@ -153,7 +207,10 @@ router.post('/login', async (req, res) => {
           username: authenticatedUser.username,
           email: authenticatedUser.email,
           role: authenticatedUser.role,
+          roleId: authenticatedUser.roleId,
+          organizationId: authenticatedUser.organizationId,
           name: authenticatedUser.name,
+          iat: Math.floor(Date.now() / 1000),
         },
         jwtSecret,
         { expiresIn: '8h' }

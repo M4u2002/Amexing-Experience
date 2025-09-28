@@ -110,13 +110,13 @@ const head = `
          data-sidebartype="full" data-sidebar-position="fixed" data-header-position="fixed">
 
         <!-- Sidebar Start -->
-        <%- include('../../organisms/sidebar/sidebar', { user: user, userRole: currentUserRole, currentPath: currentPath }) %>
+        <%- include('../../organisms/dashboard/navigation/sidebar-nav', { user: user, userRole: currentUserRole, currentPath: currentPath }) %>
         <!-- Sidebar End -->
 
         <!-- Main Content wrapper -->
         <div class="body-wrapper">
             <!-- Header Start -->
-            <%- include('../../organisms/header/header', { user: user, userRole: currentUserRole, currentPath: currentPath, pageTitle: 'Usuarios' }) %>
+            <%- include('../../organisms/dashboard/header/dashboard-header', { user: user, userRole: currentUserRole, currentPath: currentPath, title: 'Usuarios' }) %>
             <!-- Header End -->
 
             <!-- Main Content -->

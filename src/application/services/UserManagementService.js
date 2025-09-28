@@ -76,12 +76,13 @@ class UserManagementService {
         sort = { field: 'lastName', direction: 'asc' },
       } = options;
 
-      // TEMPORARY FIX: Query all users instead of only active ones
-      // Original: const query = BaseModel.queryActive(this.className);
+      // Query only active and existing users
       const query = new Parse.Query(this.className);
+      query.equalTo('active', true);
+      query.equalTo('exists', true);
 
       // Apply role-based access filtering
-      this.applyRoleBasedFiltering(query, currentUser, targetRole);
+      await this.applyRoleBasedFiltering(query, currentUser, targetRole);
 
       // Apply additional filters
       this.applyAdvancedFilters(query, filters);
@@ -94,26 +95,11 @@ class UserManagementService {
       query.skip(skip);
       query.limit(limit);
 
-      // Debug: Check total users in database without filters
-      const debugQuery = new Parse.Query(this.className);
-      const allUsers = await debugQuery.find({ useMasterKey: true });
-      logger.debug('Total users in database:', { count: allUsers.length });
-      allUsers.forEach((user, index) => {
-        logger.debug('User details:', {
-          index: index + 1,
-          email: user.get('email') || 'no-email',
-          active: user.get('active'),
-          exists: user.get('exists'),
-        });
-      });
-
       // Execute queries in parallel for performance
       const [users, totalCount] = await Promise.all([
         query.find({ useMasterKey: true }),
         this.getTotalUserCount(currentUser, targetRole, filters),
       ]);
-
-      logger.debug('Filtered users found:', { count: users.length });
 
       // Transform users to safe format
       const safeUsers = users.map((user) => this.transformUserToSafeFormat(user));
@@ -171,6 +157,7 @@ class UserManagementService {
     try {
       // AI Agent Rule: Use queryActive for business operations
       const query = BaseModel.queryActive(this.className);
+      query.include('roleId'); // Include role data
       const user = await query.get(userId, { useMasterKey: true });
 
       if (!user) {
@@ -763,7 +750,7 @@ class UserManagementService {
       const query = BaseModel.queryActive(this.className);
 
       // Apply role-based filtering
-      this.applyRoleBasedFiltering(query, currentUser, role);
+      await this.applyRoleBasedFiltering(query, currentUser, role);
 
       // Apply search query across multiple fields
       if (searchQuery.trim()) {
@@ -845,7 +832,7 @@ class UserManagementService {
 
   /**
    * Apply role-based filtering to query based on current user's permissions.
-   * Implements business rules for user visibility.
+   * Implements business rules for user visibility using Parse Pointer relationships.
    * @param {object} query - Query parameters object.
    * @param {object} currentUser - Current authenticated user object.
    * @param {string} targetRole - Target role for authorization check.
@@ -855,22 +842,26 @@ class UserManagementService {
    * // Returns: { success: true, user: {...} }
    * // const result = await service.methodName(parameters);
    * // Returns: Promise resolving to operation result
-   * @returns {*} - Operation result.
+   * @returns {Promise<void>} - Operation result.
    */
-  applyRoleBasedFiltering(query, currentUser, targetRole = null) {
-    switch (currentUser.role) {
+  async applyRoleBasedFiltering(query, currentUser, targetRole = null) {
+    // Get current user's role for permission checking
+    const currentUserRole = currentUser.role || currentUser.get?.('role') || 'guest';
+
+    switch (currentUserRole) {
       case 'superadmin':
-        // Superadmin can see all users
+        // Superadmin can see all users - no filtering needed
         if (targetRole) {
-          query.equalTo('role', targetRole);
+          await this.filterByRoleName(query, targetRole);
         }
+        // If no targetRole specified, superadmin sees ALL users (no additional filters)
         break;
 
       case 'admin':
         // Admin can see all users except other superadmins
-        query.notEqualTo('role', 'superadmin');
+        await this.excludeRoleName(query, 'superadmin');
         if (targetRole && targetRole !== 'superadmin') {
-          query.equalTo('role', targetRole);
+          await this.filterByRoleName(query, targetRole);
         }
         break;
 
@@ -879,14 +870,14 @@ class UserManagementService {
         const allowedClientRoles = ['employee', 'department_manager'];
         if (targetRole) {
           if (allowedClientRoles.includes(targetRole)) {
-            query.equalTo('role', targetRole);
+            await this.filterByRoleName(query, targetRole);
           } else {
             // Restrict to no results if requesting unauthorized role
             query.equalTo('objectId', 'non-existent-id');
             return;
           }
         } else {
-          query.containedIn('role', allowedClientRoles);
+          await this.filterByRoleNames(query, allowedClientRoles);
         }
         // Add client filter when clientId field is available
         if (currentUser.clientId) {
@@ -897,7 +888,7 @@ class UserManagementService {
 
       case 'department_manager':
         // Department manager can only see their department employees
-        query.equalTo('role', 'employee');
+        await this.filterByRoleName(query, 'employee');
         if (currentUser.departmentId) {
           query.equalTo('departmentId', currentUser.departmentId);
         }
@@ -923,16 +914,15 @@ class UserManagementService {
    * // Returns: Promise resolving to operation result
    * @returns {*} - Operation result.
    */
-  applyAdvancedFilters(query, _filters) {
-    // Skip corporate config filtering if not available
-    if (!this.config?.corporateConfig?.departments) {
-      logger.debug('Corporate config not available, skipping advanced filters');
+  applyAdvancedFilters(query, filters) {
+    // Apply filters from request parameters
+    if (!filters || typeof filters !== 'object') {
       return;
     }
 
-    Object.entries(this.config.corporateConfig.departments).forEach(([_key, value]) => {
+    Object.entries(filters).forEach(([key, value]) => {
       if (value !== null && value !== undefined && value !== '') {
-        switch (_key) {
+        switch (key) {
           case 'active':
             query.equalTo('active', value);
             break;
@@ -940,7 +930,11 @@ class UserManagementService {
             query.equalTo('emailVerified', value);
             break;
           case 'role':
-            query.equalTo('role', value);
+            // Support both Pointer and string-based role filtering
+            this.filterByRoleName(query, value).catch((error) => {
+              logger.warn('Failed to filter by role pointer, using string fallback', { role: value, error: error.message });
+              query.equalTo('role', value);
+            });
             break;
           case 'clientId':
             query.equalTo('clientId', value);
@@ -1008,10 +1002,12 @@ class UserManagementService {
    * @returns {Promise<object>} - Promise resolving to operation result.
    */
   async getTotalUserCount(currentUser, targetRole, filters) {
-    // TEMPORARY FIX: Query all users instead of only active ones
-    // Original: const countQuery = BaseModel.queryActive(this.className);
+    // Apply same filters as main query for consistency
     const countQuery = new Parse.Query(this.className);
-    this.applyRoleBasedFiltering(countQuery, currentUser, targetRole);
+    countQuery.equalTo('active', true);
+    countQuery.equalTo('exists', true);
+
+    await this.applyRoleBasedFiltering(countQuery, currentUser, targetRole);
     this.applyAdvancedFilters(countQuery, filters);
 
     const count = await countQuery.count({ useMasterKey: true });
@@ -1034,7 +1030,7 @@ class UserManagementService {
     const { query: searchQuery, role, active } = searchParams;
 
     const countQuery = BaseModel.queryActive(this.className);
-    this.applyRoleBasedFiltering(countQuery, currentUser, role);
+    await this.applyRoleBasedFiltering(countQuery, currentUser, role);
 
     if (searchQuery?.trim()) {
       const searchTerms = searchQuery.trim().toLowerCase();
@@ -1072,13 +1068,41 @@ class UserManagementService {
    * @returns {object} - Operation result.
    */
   transformUserToSafeFormat(user) {
+    // Get role information from Pointer or fallback to string field
+    const rolePointer = user.get('roleId');
+    let roleName = user.get('role'); // Default to string role
+    let roleObjectId = null;
+
+    // Handle rolePointer safely
+    if (rolePointer) {
+      try {
+        // Check if it's a fetched Parse Object with .get() method
+        if (rolePointer.get && typeof rolePointer.get === 'function') {
+          roleName = rolePointer.get('name') || roleName;
+          roleObjectId = rolePointer.id;
+        } else if (typeof rolePointer === 'string') {
+          // It's a string ID, keep the string role name
+          roleObjectId = rolePointer;
+        } else if (rolePointer.id) {
+          // It's a Pointer object but not fetched
+          roleObjectId = rolePointer.id;
+        }
+      } catch (error) {
+        logger.warn('Error processing role pointer in transformUserToSafeFormat', {
+          userId: user.id,
+          error: error.message,
+        });
+      }
+    }
+
     return {
       id: user.id,
       email: user.get('email'),
       username: user.get('username'),
       firstName: user.get('firstName'),
       lastName: user.get('lastName'),
-      role: user.get('role'),
+      role: roleName || 'guest',
+      roleId: roleObjectId,
       active: user.get('active'),
       exists: user.get('exists'),
       emailVerified: user.get('emailVerified'),

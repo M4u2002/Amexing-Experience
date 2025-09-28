@@ -602,6 +602,7 @@ class AmexingAuthMiddleware {
    * @param {*} jti - JWT ID (currently unused).
    * @param _jti
    * @param {*} userId - User ID (currently unused).
+   * @param _userId
    * @returns {boolean} - Boolean result Session is valid.
    * @example
    * // Authentication middleware usage
@@ -610,7 +611,7 @@ class AmexingAuthMiddleware {
    * // const result = await authService.login(credentials);
    * // Returns: { success: true, user: {...}, tokens: {...} }
    */
-  async validateSession(_jti, userId /* unused */) {
+  async validateSession(_jti, _userId) {
     try {
       // This would check the Session table
       // For now, we'll assume valid if JWT is valid
@@ -775,6 +776,7 @@ class AmexingAuthMiddleware {
    * Validate OAuth token.
    * @param {string} token - OAuth token.
    * @param token
+   * @param _token
    * @returns {object | null} - Operation result Token data.
    * @example
    * // Authentication middleware usage
@@ -783,7 +785,7 @@ class AmexingAuthMiddleware {
    * // const result = await authService.login(credentials);
    * // Returns: { success: true, user: {...}, tokens: {...} }
    */
-  async validateOAuthToken(token /* unused */) {
+  async validateOAuthToken(_token) {
     try {
       // This would validate the OAuth token with the provider
       // and return token data if valid
@@ -808,7 +810,7 @@ class AmexingAuthMiddleware {
    * // const result = await authService.login(credentials);
    * // Returns: { success: true, user: {...}, tokens: {...} }
    */
-  async checkRateLimit(key /* unused */, limit /* unused */) {
+  async checkRateLimit(_key, _limit) {
     try {
       // This would implement rate limiting using Redis or similar
       // For now, always allow

@@ -54,6 +54,7 @@ class CorporateOAuthInterface {
       // Setup corporate-specific event handlers
       this.setupCorporateEventHandlers();
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Corporate OAuth Interface initialization failed:', error);
       if (this.config.fallbackToRegular) {
         this.fallbackToRegularOAuth();
@@ -94,6 +95,7 @@ class CorporateOAuthInterface {
         this.corporateData = await response.json();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Failed to load corporate configuration:', error);
     }
   }
@@ -132,6 +134,7 @@ class CorporateOAuthInterface {
           break;
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.warn('Corporate detection method failed:', error);
       }
     }
@@ -166,6 +169,7 @@ class CorporateOAuthInterface {
         return await response.json();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Domain detection failed:', error);
     }
 
@@ -200,6 +204,7 @@ class CorporateOAuthInterface {
         return await response.json();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Subdomain detection failed:', error);
     }
 
@@ -234,6 +239,7 @@ class CorporateOAuthInterface {
         return await response.json();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Parameter detection failed:', error);
     }
 
@@ -263,6 +269,7 @@ class CorporateOAuthInterface {
         localStorage.removeItem('amexing_corporate_config');
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('LocalStorage detection failed:', error);
     }
 
@@ -287,6 +294,7 @@ class CorporateOAuthInterface {
       const referrerDomain = new URL(referrer).hostname;
       return await this.detectFromCustomDomain(referrerDomain);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Referrer detection failed:', error);
     }
 
@@ -328,6 +336,7 @@ class CorporateOAuthInterface {
 
       this.brandingApplied = true;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to apply corporate branding:', error);
     }
   }
@@ -504,6 +513,7 @@ class CorporateOAuthInterface {
       style.setAttribute('data-corporate-css', this.corporateData.id);
       document.head.appendChild(style);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Failed to apply custom CSS:', error);
     }
   }
@@ -610,6 +620,7 @@ class CorporateOAuthInterface {
 
       localStorage.setItem('amexing_corporate_config', JSON.stringify(storageData));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Failed to store corporate config:', error);
     }
   }
@@ -696,6 +707,7 @@ class CorporateOAuthInterface {
    * Highlight corporate login options.
    * @param {string} email - User email address.
    * @param email
+   * @param _email
    * @example
    * // Usage example
    * const result = await highlightCorporateLogin({ email: 'example' });
@@ -704,7 +716,7 @@ class CorporateOAuthInterface {
    * // Returns: { success: true, user: {...}, tokens: {...} }
    * @returns {*} - Operation result.
    */
-  highlightCorporateLogin(email) {
+  highlightCorporateLogin(_email) {
     const oauthContainer = document.getElementById('oauth-container');
     if (!oauthContainer) return;
 

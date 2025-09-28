@@ -37,6 +37,7 @@ class IntelligentProviderSelector {
    */
   async initialize() {
     if (!this.config.container) {
+      // eslint-disable-next-line no-console
       console.warn('IntelligentProviderSelector: Container not found');
       return;
     }
@@ -59,6 +60,7 @@ class IntelligentProviderSelector {
 
       logger.info('IntelligentProviderSelector initialized successfully');
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to initialize IntelligentProviderSelector:', error);
     }
   }
@@ -122,6 +124,7 @@ class IntelligentProviderSelector {
           Object.assign(commonDomains, serverDomains.domains || {});
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.warn('Could not load server domain database:', error);
       }
 
@@ -142,6 +145,7 @@ class IntelligentProviderSelector {
         this.domainDatabase.set(domain, info);
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to load domain database:', error);
     }
   }
@@ -163,6 +167,7 @@ class IntelligentProviderSelector {
         this.learningData = JSON.parse(stored);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Could not load learning data:', error);
       this.learningData = {
         userChoices: {},
@@ -191,6 +196,7 @@ class IntelligentProviderSelector {
     try {
       localStorage.setItem('oauth_provider_learning', JSON.stringify(this.learningData));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Could not save learning data:', error);
     }
   }
@@ -948,7 +954,7 @@ class IntelligentProviderSelector {
    * // const authUrl = await provider.getAuthorizationUrl(options);
    * @returns {object} - Operation result.
    */
-  analyzeDepartmentContext(domain) {
+  analyzeDepartmentContext(_domain) {
     if (!this.config.department) return null;
 
     // Department-specific provider preferences
@@ -970,7 +976,7 @@ class IntelligentProviderSelector {
       };
     }
 
-    return null;
+    return null; // eslint-disable-line no-case-declarations
   }
 
   /**
@@ -1487,6 +1493,7 @@ class IntelligentProviderSelector {
    */
   trackSuggestionShown(suggestion) {
     // Implementation for analytics tracking
+    // eslint-disable-next-line no-console
     console.log('Suggestion shown:', suggestion);
   }
 
@@ -1544,7 +1551,7 @@ class IntelligentProviderSelector {
     return names[provider] || provider;
   }
 
-  getProviderIcon(provider) {
+  getProviderIcon(_provider) {
     // Return SVG icons or placeholder - DEPRECATED: Use createProviderIconElement instead
     return '<div style="width: 32px; height: 32px; background: #ddd; border-radius: 4px;"></div>';
   }

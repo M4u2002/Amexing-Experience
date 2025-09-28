@@ -210,8 +210,12 @@ class PermissionService {
     try {
       // Special case: superadmin has all permissions
       const user = await this.db.collection('AmexingUser').findOne({ id: userId });
-      if (user && user.role === 'superadmin') {
-        return true;
+      if (user) {
+        // Check if user has superadmin role (supports both string and Pointer)
+        const hasSupeAdminRole = await this.hasRole(user, 'superadmin');
+        if (hasSupeAdminRole) {
+          return true;
+        }
       }
 
       // Get effective permissions
@@ -891,6 +895,49 @@ class PermissionService {
         },
       },
     };
+  }
+
+  /**
+   * Helper method to check if user has a specific role.
+   * Supports both string roles and Pointer relationships.
+   * @param {object} user - User object from database.
+   * @param {string} roleName - Role name to check.
+   * @returns {Promise<boolean>} - True if user has the role.
+   */
+  async hasRole(user, roleName) {
+    try {
+      // Check string role field (backward compatibility)
+      if (user.role === roleName) {
+        return true;
+      }
+
+      // Check roleId Pointer
+      if (user.roleId) {
+        // If roleId is a string (object ID)
+        if (typeof user.roleId === 'string') {
+          const role = await this.db.collection('Role').findOne({
+            _id: user.roleId,
+            exists: true,
+            active: true,
+          });
+          return role && role.name === roleName;
+        }
+
+        // If roleId is already populated object
+        if (user.roleId.name) {
+          return user.roleId.name === roleName;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      logger.error('Error checking user role', {
+        userId: user.id,
+        roleName,
+        error: error.message,
+      });
+      return false;
+    }
   }
 }
 

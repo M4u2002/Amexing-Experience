@@ -1,0 +1,321 @@
+<%
+/**
+ * Sidebar Footer Organism
+ * User section at bottom of sidebar with profile, settings, and logout
+ *
+ * @param {string} userRole - Current user role
+ * @param {string} currentPath - Current page path for active states
+ */
+
+const footerUserRole = typeof userRole !== 'undefined' ? userRole : 'guest';
+const footerCurrentPath = typeof currentPath !== 'undefined' ? currentPath : '';
+%>
+
+<!-- User Section -->
+<li class="nav-small-cap mt-4">
+    <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+    <span class="hide-menu">Account</span>
+</li>
+
+<!-- Profile Link -->
+<li class="sidebar-item">
+    <a class="sidebar-link" href="/dashboard/<%= footerUserRole %>/profile">
+        <span class="nav-icon">
+            <i class="ti ti-user"></i>
+        </span>
+        <span class="hide-menu nav-text">My Profile</span>
+    </a>
+</li>
+
+<!-- Settings Link -->
+<li class="sidebar-item">
+    <a class="sidebar-link" href="/dashboard/<%= footerUserRole %>/settings">
+        <span class="nav-icon">
+            <i class="ti ti-settings"></i>
+        </span>
+        <span class="hide-menu nav-text">Settings</span>
+    </a>
+</li>
+
+<!-- Help & Support (for non-guests) -->
+<% if (footerUserRole !== 'guest') { %>
+    <li class="sidebar-item">
+        <a class="sidebar-link" href="/dashboard/<%= footerUserRole %>/help" data-bs-toggle="tooltip" title="Get help and support">
+            <span class="nav-icon">
+                <i class="ti ti-help"></i>
+            </span>
+            <span class="hide-menu nav-text">Help & Support</span>
+        </a>
+    </li>
+<% } %>
+
+<!-- Logout -->
+<li class="sidebar-item">
+    <a class="sidebar-link logout-link"
+       href="/auth/logout"
+       data-confirm="¿Are you sure you want to sign out?">
+        <span class="nav-icon">
+            <i class="ti ti-logout"></i>
+        </span>
+        <span class="hide-menu nav-text">Sign Out</span>
+    </a>
+</li>
+
+<!-- Footer Info -->
+<div class="sidebar-footer mt-4 p-3">
+    <div class="d-flex align-items-center justify-content-center">
+        <div class="text-center">
+            <!-- Version Info -->
+            <div class="mb-2">
+                <small class="text-muted d-block fw-semibold">Amexing Platform</small>
+                <small class="text-muted version-text">v1.0.0</small>
+            </div>
+
+            <!-- Role Badge -->
+            <div class="role-badge-small">
+                <span class="badge bg-primary-subtle text-primary px-2 py-1">
+                    <i class="ti ti-user me-1"></i>
+                    <% if (footerUserRole === 'department_manager') { %>
+                        Dept. Manager
+                    <% } else if (footerUserRole === 'superadmin') { %>
+                        Super Admin
+                    <% } else { %>
+                        <%= footerUserRole.charAt(0).toUpperCase() + footerUserRole.slice(1) %>
+                    <% } %>
+                </span>
+            </div>
+
+            <!-- Company Info -->
+            <div class="mt-2">
+                <small class="text-muted">© 2024 Meeplab</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Footer Styles */
+    .sidebar-footer {
+        border-top: 1px solid #e0e6ed;
+        margin-top: auto;
+        background: linear-gradient(135deg, #fafbfe, #f8f9fb);
+        border-radius: 12px 12px 0 0;
+        position: relative;
+    }
+
+    .sidebar-footer::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 20px;
+        right: 20px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e0e6ed, transparent);
+    }
+
+    /* Version Info */
+    .version-text {
+        font-size: 0.625rem;
+        color: #6c757d;
+        font-family: 'Courier New', monospace;
+        background: rgba(0,0,0,0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    /* Role Badge */
+    .role-badge-small .badge {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        border-radius: 6px;
+        text-transform: capitalize;
+        border: 1px solid rgba(93, 135, 255, 0.2);
+    }
+
+    /* Logout Link Styles */
+    .logout-link {
+        border-top: 1px solid #e0e6ed;
+        margin-top: 0.5rem;
+        padding-top: 1rem !important;
+        color: #dc3545 !important;
+        transition: all 0.3s ease;
+    }
+
+    .logout-link:hover {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05)) !important;
+        color: #dc3545 !important;
+        border-radius: 0 25px 25px 0;
+        margin-right: 15px;
+        transform: translateX(5px);
+    }
+
+    .logout-link .nav-icon {
+        color: #dc3545;
+    }
+
+    /* Help link styles */
+    .sidebar-link[href*="/help"] {
+        position: relative;
+    }
+
+    .sidebar-link[href*="/help"]::after {
+        content: '';
+        position: absolute;
+        top: 8px;
+        right: 15px;
+        width: 6px;
+        height: 6px;
+        background: #28a745;
+        border-radius: 50%;
+        animation: help-pulse 2s infinite;
+    }
+
+    @keyframes help-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.2); }
+    }
+
+    /* Footer animations */
+    .sidebar-footer {
+        animation: footerSlideUp 0.5s ease 0.8s both;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes footerSlideUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 991.98px) {
+        .sidebar-footer {
+            padding: 1rem !important;
+        }
+
+        .version-text {
+            font-size: 0.5625rem;
+        }
+
+        .role-badge-small .badge {
+            font-size: 0.625rem;
+            padding: 2px 4px;
+        }
+    }
+
+    /* Dark theme support */
+    .left-sidebar.dark-theme .sidebar-footer {
+        background: linear-gradient(135deg, #2a3547, #1e2532);
+        border-top-color: #3a4553;
+        color: #adb5bd;
+    }
+
+    .left-sidebar.dark-theme .logout-link {
+        border-top-color: #3a4553;
+        color: #f8d7da !important;
+    }
+
+    .left-sidebar.dark-theme .version-text {
+        background: rgba(255,255,255,0.1);
+        color: #adb5bd;
+    }
+
+    /* Compact mode */
+    .left-sidebar.collapsed .sidebar-footer {
+        padding: 1rem 0.5rem !important;
+        text-align: center;
+    }
+
+    .left-sidebar.collapsed .sidebar-footer .text-muted {
+        display: none;
+    }
+
+    .left-sidebar.collapsed .role-badge-small {
+        transform: rotate(-90deg);
+        margin: 0.5rem 0;
+    }
+
+    /* Status indicator for online/offline */
+    .sidebar-footer .status-indicator {
+        width: 8px;
+        height: 8px;
+        background: #28a745;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+        animation: status-blink 3s infinite;
+    }
+
+    @keyframes status-blink {
+        0%, 90%, 100% { opacity: 1; }
+        95% { opacity: 0.3; }
+    }
+
+    .sidebar-footer .status-indicator.offline {
+        background: #6c757d;
+        animation: none;
+    }
+
+    /* Loading state */
+    .sidebar-footer.loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .sidebar-footer.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        border: 1px solid transparent;
+        border-top: 1px solid #007bff;
+        border-radius: 50%;
+        animation: footer-loading 1s linear infinite;
+        transform: translate(-50%, -50%);
+    }
+
+    @keyframes footer-loading {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add online/offline status indicator
+    const sidebarFooter = document.querySelector('.sidebar-footer');
+    if (sidebarFooter) {
+        const statusIndicator = document.createElement('span');
+        statusIndicator.className = 'status-indicator';
+        statusIndicator.title = 'Online';
+
+        // Add to version info
+        const versionText = sidebarFooter.querySelector('.version-text');
+        if (versionText) {
+            versionText.insertAdjacentElement('beforebegin', statusIndicator);
+        }
+
+        // Update status based on connection
+        function updateConnectionStatus() {
+            if (navigator.onLine) {
+                statusIndicator.classList.remove('offline');
+                statusIndicator.title = 'Online';
+            } else {
+                statusIndicator.classList.add('offline');
+                statusIndicator.title = 'Offline';
+            }
+        }
+
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        updateConnectionStatus();
+    }
+
+    console.log('👤 Sidebar footer initialized for:', '<%= footerUserRole %>');
+});
+</script>

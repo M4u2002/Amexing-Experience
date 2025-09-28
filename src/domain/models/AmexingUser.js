@@ -98,8 +98,19 @@ class AmexingUser extends BaseModel {
     user.set('firstName', userData.firstName);
     user.set('lastName', userData.lastName);
 
+    // Role system (new RBAC) - Handle both Pointer objects and string IDs
+    if (userData.roleId) {
+      // If roleId is a Role object (Pointer), set it directly
+      // If it's a string ID, we'll need to convert it to a Pointer in the service layer
+      user.set('roleId', userData.roleId);
+    } else if (userData.role) {
+      // Backward compatibility: if only role string is provided,
+      // the service layer should convert it to a Pointer
+      user.set('role', userData.role); // Keep for fallback during migration
+    }
+    user.set('delegatedPermissions', userData.delegatedPermissions || []); // Additional permissions
+
     // Default values
-    user.set('role', userData.role || 'user');
     user.set('active', userData.active !== undefined ? userData.active : true);
     user.set('exists', userData.exists !== undefined ? userData.exists : true);
     user.set('emailVerified', false);
@@ -114,9 +125,13 @@ class AmexingUser extends BaseModel {
     user.set('primaryOAuthProvider', userData.primaryOAuthProvider || null);
     user.set('lastAuthMethod', userData.lastAuthMethod || 'password');
 
-    // Organizational relationships
+    // Organizational relationships (enhanced)
+    user.set('organizationId', userData.organizationId || null); // 'amexing', 'utq', 'nuba', etc.
     user.set('clientId', userData.clientId || null);
     user.set('departmentId', userData.departmentId || null);
+
+    // Contextual data for permissions
+    user.set('contextualData', userData.contextualData || {});
 
     // Audit fields
     user.set('createdBy', userData.createdBy || null);
@@ -699,39 +714,369 @@ class AmexingUser extends BaseModel {
   }
 
   /**
-   * Converts user to safe JSON (excludes sensitive data).
-   * @returns {object} - Operation result Safe user data.
+   * Get the user's role object.
+   * @returns {Promise<object|null>} - Role object or null.
    * @example
-   * // Model method usage
-   * const result = await amexinguser.toSafeJSON({ departmentId: 'example', modifiedBy: 'example' });
-   * // Returns: model operation result
-   * // Example usage:
-   * // const result = await methodName(params);
-   * // Returns appropriate result based on operation
    */
-  toSafeJSON() {
-    return {
-      id: this.id,
-      username: this.get('username'),
-      email: this.get('email'),
-      firstName: this.get('firstName'),
-      lastName: this.get('lastName'),
-      fullName: this.getFullName(),
-      role: this.get('role'),
-      active: this.get('active'),
-      exists: this.get('exists'),
-      lifecycleStatus: this.getLifecycleStatus(),
-      emailVerified: this.get('emailVerified'),
-      lastLoginAt: this.get('lastLoginAt'),
-      primaryOAuthProvider: this.get('primaryOAuthProvider'),
-      hasOAuth: (this.get('oauthAccounts') || []).length > 0,
-      clientId: this.get('clientId'),
-      departmentId: this.get('departmentId'),
-      createdAt: this.get('createdAt'),
-      updatedAt: this.get('updatedAt'),
-      createdBy: this.get('createdBy'),
-      modifiedBy: this.get('modifiedBy'),
-    };
+  async getRole() {
+    try {
+      const rolePointer = this.get('roleId');
+      if (!rolePointer) {
+        return null;
+      }
+
+      // Check if rolePointer is already a fetched object
+      if (rolePointer.get && typeof rolePointer.get === 'function') {
+        // Role object is already fetched
+        return rolePointer;
+      }
+
+      // Handle both string IDs (backward compatibility) and Pointer objects
+      let roleId;
+      if (typeof rolePointer === 'string') {
+        roleId = rolePointer;
+      } else if (rolePointer.id) {
+        roleId = rolePointer.id;
+      } else {
+        return null;
+      }
+
+      const Role = require('./Role');
+      const query = BaseModel.queryActive('Role');
+      query.equalTo('objectId', roleId);
+
+      return await query.first({ useMasterKey: true });
+    } catch (error) {
+      logger.error('Error fetching user role', {
+        userId: this.id,
+        roleId: this.get('roleId'),
+        error: error.message,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get user's role name for backward compatibility.
+   * @returns {Promise<string>} - Role name or 'guest'.
+   * @example
+   */
+  async getRoleName() {
+    try {
+      const role = await this.getRole();
+      return role ? role.get('name') : 'guest';
+    } catch (error) {
+      logger.error('Error getting role name', {
+        userId: this.id,
+        error: error.message,
+      });
+      return 'guest';
+    }
+  }
+
+  /**
+   * Check if user has specific permission with context.
+   * @param {string} permission - Permission to check (e.g., 'bookings.approve').
+   * @param {object} context - Context for conditional permissions.
+   * @returns {Promise<boolean>} - True if user has permission.
+   * @example
+   */
+  async hasPermission(permission, context = {}) {
+    try {
+      // Get role permissions
+      const role = await this.getRole();
+      if (!role) {
+        return false;
+      }
+
+      // Add user context to permission check
+      const userContext = {
+        ...context,
+        userId: this.id,
+        organizationId: this.get('organizationId'),
+        clientId: this.get('clientId'),
+        departmentId: this.get('departmentId'),
+        contextualData: this.get('contextualData') || {},
+      };
+
+      const rolePermission = await role.hasPermission(permission, userContext);
+      if (rolePermission) {
+        return true;
+      }
+
+      // Check delegated permissions
+      const hasDelegatedPermission = await this.hasDelegatedPermission(permission, userContext);
+      return hasDelegatedPermission;
+    } catch (error) {
+      logger.error('Error checking user permission', {
+        userId: this.id,
+        permission,
+        context,
+        error: error.message,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Check if user has delegated permission.
+   * @param {string} permission - Permission to check.
+   * @param {object} context - Context for validation.
+   * @returns {Promise<boolean>} - True if user has delegated permission.
+   * @example
+   */
+  async hasDelegatedPermission(permission, context = {}) {
+    try {
+      const DelegatedPermission = require('./DelegatedPermission');
+      const query = BaseModel.queryActive('DelegatedPermission');
+      query.equalTo('toUserId', this.id);
+      query.equalTo('status', 'active');
+
+      const delegations = await query.find({ useMasterKey: true });
+
+      for (const delegation of delegations) {
+        const result = await delegation.hasPermission(permission, context);
+        if (result.allowed) {
+          // Record usage
+          await delegation.recordUsage(permission, context);
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      logger.error('Error checking delegated permissions', {
+        userId: this.id,
+        permission,
+        context,
+        error: error.message,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Delegate permissions to another user.
+   * @param {string} toUserId - User ID to delegate to.
+   * @param {Array<string>} permissions - Permissions to delegate.
+   * @param {object} options - Delegation options.
+   * @returns {Promise<object|null>} - Created delegation or null.
+   * @example
+   */
+  async delegatePermissions(toUserId, permissions, options = {}) {
+    try {
+      // Verify current user can delegate these permissions
+      const role = await this.getRole();
+      if (!role || !role.get('delegatable')) {
+        throw new Error('User role cannot delegate permissions');
+      }
+
+      // Verify each permission can be delegated
+      for (const permission of permissions) {
+        const hasPermission = await this.hasPermission(permission, options.context || {});
+        if (!hasPermission) {
+          throw new Error(`Cannot delegate permission ${permission} - user doesn't have it`);
+        }
+      }
+
+      const DelegatedPermission = require('./DelegatedPermission');
+      const delegation = DelegatedPermission.create({
+        fromUserId: this.id,
+        toUserId,
+        permissions,
+        conditions: options.conditions || {},
+        restrictions: options.restrictions || {},
+        validFrom: options.validFrom || new Date(),
+        validUntil: options.validUntil || null,
+        reason: options.reason || '',
+        delegationType: options.delegationType || 'temporary',
+      });
+
+      await delegation.save(null, { useMasterKey: true });
+
+      logger.info('Permissions delegated', {
+        fromUserId: this.id,
+        toUserId,
+        permissions,
+        delegationId: delegation.id,
+      });
+
+      return delegation;
+    } catch (error) {
+      logger.error('Error delegating permissions', {
+        fromUserId: this.id,
+        toUserId,
+        permissions,
+        error: error.message,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get user's organization object.
+   * @returns {Promise<object|null>} - Organization object or null.
+   * @example
+   */
+  async getOrganization() {
+    try {
+      const organizationId = this.get('organizationId');
+      if (!organizationId) {
+        return null;
+      }
+
+      // This would query an Organization model when implemented
+      // For now, return a basic structure
+      return {
+        id: organizationId,
+        name: organizationId === 'amexing' ? 'Amexing' : organizationId.toUpperCase(),
+        type: organizationId === 'amexing' ? 'internal' : 'client',
+      };
+    } catch (error) {
+      logger.error('Error fetching user organization', {
+        userId: this.id,
+        organizationId: this.get('organizationId'),
+        error: error.message,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Check if user is higher in hierarchy than another user.
+   * @param {object} otherUser - User to compare against.
+   * @returns {Promise<boolean>} - True if current user has higher role level.
+   * @example
+   */
+  async isHigherThan(otherUser) {
+    try {
+      const currentRole = await this.getRole();
+      const otherRole = await otherUser.getRole();
+
+      if (!currentRole || !otherRole) {
+        return false;
+      }
+
+      return currentRole.isHigherThan(otherRole);
+    } catch (error) {
+      logger.error('Error comparing user hierarchy', {
+        userId: this.id,
+        otherUserId: otherUser.id,
+        error: error.message,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Check if user can access another user's data based on scope.
+   * @param {object} targetUser - User whose data is being accessed.
+   * @param {string} scope - Access scope ('own', 'department', 'organization', 'system').
+   * @returns {Promise<boolean>} - True if access is allowed.
+   * @example
+   */
+  async canAccessUserData(targetUser, scope = 'own') {
+    try {
+      // Same user can always access their own data
+      if (this.id === targetUser.id) {
+        return true;
+      }
+
+      // Check scope-based access
+      switch (scope) {
+        case 'own':
+          return false;
+
+        case 'department':
+          return this.get('departmentId') === targetUser.get('departmentId');
+
+        case 'organization':
+          return this.get('organizationId') === targetUser.get('organizationId');
+
+        case 'system': {
+          const role = await this.getRole();
+          return role && role.get('scope') === 'system';
+        }
+
+        default:
+          return false;
+      }
+    } catch (error) {
+      logger.error('Error checking user data access', {
+        userId: this.id,
+        targetUserId: targetUser.id,
+        scope,
+        error: error.message,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Converts user to safe JSON (excludes sensitive data).
+   * @returns {Promise<object>} - Safe user data.
+   * @example
+   */
+  async toSafeJSON() {
+    try {
+      const role = await this.getRole();
+      const organization = await this.getOrganization();
+
+      return {
+        id: this.id,
+        username: this.get('username'),
+        email: this.get('email'),
+        firstName: this.get('firstName'),
+        lastName: this.get('lastName'),
+        fullName: this.getFullName(),
+        role: role ? role.toSafeJSON() : null,
+        roleName: role ? role.get('name') : 'guest', // Backward compatibility
+        active: this.get('active'),
+        exists: this.get('exists'),
+        lifecycleStatus: this.getLifecycleStatus(),
+        emailVerified: this.get('emailVerified'),
+        lastLoginAt: this.get('lastLoginAt'),
+        primaryOAuthProvider: this.get('primaryOAuthProvider'),
+        hasOAuth: (this.get('oauthAccounts') || []).length > 0,
+        organizationId: this.get('organizationId'),
+        organization,
+        clientId: this.get('clientId'),
+        departmentId: this.get('departmentId'),
+        createdAt: this.get('createdAt'),
+        updatedAt: this.get('updatedAt'),
+        createdBy: this.get('createdBy'),
+        modifiedBy: this.get('modifiedBy'),
+      };
+    } catch (error) {
+      logger.error('Error creating safe JSON for user', {
+        userId: this.id,
+        error: error.message,
+      });
+
+      // Return basic safe JSON without role information
+      return {
+        id: this.id,
+        username: this.get('username'),
+        email: this.get('email'),
+        firstName: this.get('firstName'),
+        lastName: this.get('lastName'),
+        fullName: this.getFullName(),
+        active: this.get('active'),
+        exists: this.get('exists'),
+        lifecycleStatus: this.getLifecycleStatus(),
+        emailVerified: this.get('emailVerified'),
+        lastLoginAt: this.get('lastLoginAt'),
+        primaryOAuthProvider: this.get('primaryOAuthProvider'),
+        hasOAuth: (this.get('oauthAccounts') || []).length > 0,
+        organizationId: this.get('organizationId'),
+        clientId: this.get('clientId'),
+        departmentId: this.get('departmentId'),
+        createdAt: this.get('createdAt'),
+        updatedAt: this.get('updatedAt'),
+        createdBy: this.get('createdBy'),
+        modifiedBy: this.get('modifiedBy'),
+      };
+    }
   }
 }
 

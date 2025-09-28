@@ -100,6 +100,7 @@ class RoleBasedController extends DashboardController {
         guest: 1,
       };
 
+      // eslint-disable-next-line security/detect-object-injection
       const userLevel = roleHierarchy[req.user.role] || 0;
       const requiredLevel = roleHierarchy[requiredRole] || 0;
 

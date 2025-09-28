@@ -91,14 +91,14 @@ const getCorporateLandingConfig = async (request) => {
     const availableProviders = OAuthService.getAvailableProviders();
     const providerConfigs = {};
 
-    for (const provider of availableProviders) {
+    availableProviders.forEach((provider) => {
       const config = OAuthService.getProviderConfig(_provider); // eslint-disable-line no-undef
       providerConfigs[provider] = {
         name: provider,
         enabled: config.enabled,
         mockMode: config.mockMode,
       };
-    }
+    });
 
     const response = {
       success: true,

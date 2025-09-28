@@ -29,10 +29,12 @@
  * const appleButton = new AppleSignInButton({
  *   clientId: 'com.amexing.service',
  *   onSuccess: (response) => {
+ *     // eslint-disable-next-line no-console
  *     console.log('Apple authentication successful:', response);
  *     // Handle successful authentication
  *   },
  *   onError: (error) => {
+ *     // eslint-disable-next-line no-console
  *     console.error('Apple authentication failed:', error);
  *   }
  * });
@@ -80,6 +82,7 @@ class AppleSignInButton {
 
   init() {
     if (!this.supportsAppleID) {
+      // eslint-disable-next-line no-console
       console.warn('Apple ID is not supported in this browser');
       return;
     }
@@ -87,9 +90,11 @@ class AppleSignInButton {
     this.loadAppleIDSDK()
       .then(() => {
         this.setupAppleID();
+        // eslint-disable-next-line no-console
         console.log('Apple Sign In initialized');
       })
       .catch((error) => {
+        // eslint-disable-next-line no-console
         console.error('Failed to initialize Apple Sign In:', error);
         this.options.onError(error);
       });
@@ -158,6 +163,7 @@ class AppleSignInButton {
 
       this.createSignInButton();
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Apple ID setup failed:', error);
       this.options.onError(error);
     }
@@ -229,6 +235,7 @@ class AppleSignInButton {
       document.addEventListener('AppleIDSignInOnSuccess', this.handleSuccess.bind(this));
       document.addEventListener('AppleIDSignInOnFailure', this.handleError.bind(this));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to render Apple button:', error);
       this.createFallbackButton(_container);
     }
@@ -389,6 +396,7 @@ class AppleSignInButton {
       }
     } catch (error) {
       this.hideLoading(event.target);
+      // eslint-disable-next-line no-console
       console.error('Apple OAuth initiation failed:', error);
       this.options.onError(error);
     }
@@ -406,6 +414,7 @@ class AppleSignInButton {
         authorization: detail.authorization,
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Apple OAuth success handling failed:', error);
       this.options.onError(error);
     }
@@ -417,6 +426,7 @@ class AppleSignInButton {
     if (detail.error === 'popup_closed_by_user') {
       this.options.onCancel();
     } else {
+      // eslint-disable-next-line no-console
       console.error('Apple OAuth error:', detail);
       this.options.onError(new Error(detail.error || 'Apple OAuth failed'));
     }
@@ -472,6 +482,7 @@ class AppleSignInButton {
         this.createSignInButton();
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Apple Sign In refresh failed:', error);
     }
   }
@@ -522,6 +533,7 @@ class AppleSignInButton {
       styles.remove();
     }
 
+    // eslint-disable-next-line no-console
     console.log('Apple Sign In component destroyed');
   }
 

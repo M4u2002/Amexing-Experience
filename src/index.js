@@ -249,6 +249,11 @@ const dashboardRoutes = require('./presentation/routes/dashboardRoutes');
 
 app.use('/dashboard', dashboardRoutes);
 
+// Atomic Design Routes
+const atomicRoutes = require('./presentation/routes/atomicRoutes');
+
+app.use('/atomic', atomicRoutes);
+
 // Web Routes
 app.use('/', webRoutes);
 

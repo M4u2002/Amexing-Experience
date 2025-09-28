@@ -323,12 +323,31 @@ class AuthenticationService extends AuthenticationServiceCore {
         throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'User not found or inactive');
       }
 
+      // Get role object if roleId is available
+      let roleObject = null;
+      if (decoded.roleId) {
+        try {
+          const roleQuery = new Parse.Query('Role');
+          roleQuery.equalTo('objectId', decoded.roleId);
+          roleObject = await roleQuery.first({ useMasterKey: true });
+        } catch (roleError) {
+          logger.warn('Failed to fetch role object during token validation', {
+            userId: decoded.userId,
+            roleId: decoded.roleId,
+            error: roleError.message,
+          });
+        }
+      }
+
       return {
         success: true,
         userId: decoded.userId,
         username: decoded.username,
         role: decoded.role,
-        user: user.toSafeJSON(),
+        roleId: decoded.roleId,
+        organizationId: decoded.organizationId,
+        user,
+        roleObject,
       };
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {

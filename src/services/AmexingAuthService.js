@@ -279,8 +279,7 @@ class AmexingAuthService {
 
   /**
    * Handle OAuth authentication flow.
-   * @param {string} provider - OAuth provider (google, microsoft, apple).
-   * @param _provider
+   * @param {string} _provider - OAuth provider (google, microsoft, apple) - unused parameter.
    * @param {object} oauthProfile - OAuth user profile.
    * @param {object} tokens - OAuth tokens.
    * @returns {object} - Operation result User and session tokens.
@@ -339,8 +338,7 @@ class AmexingAuthService {
 
   /**
    * Create new user from OAuth profile.
-   * @param {string} provider - OAuth _provider.
-   * @param _provider
+   * @param {string} _provider - OAuth provider.
    * @param {object} profile - OAuth profile.
    * @param {object} tokens - OAuth tokens.
    * @returns {object} - Operation result Created user.
@@ -434,8 +432,7 @@ class AmexingAuthService {
   /**
    * Link OAuth account to existing user.
    * @param {object} user - Existing user.
-   * @param {string} provider - OAuth _provider.
-   * @param _provider
+   * @param {string} _provider - OAuth provider.
    * @param {object} profile - OAuth profile.
    * @param {object} tokens - OAuth tokens.
    * @example
@@ -484,8 +481,7 @@ class AmexingAuthService {
   /**
    * Update existing OAuth user profile and tokens.
    * @param {object} user - Existing user.
-   * @param {string} provider - OAuth _provider.
-   * @param _provider
+   * @param {string} _provider - OAuth provider.
    * @param {object} profile - Updated OAuth profile.
    * @param {object} tokens - New OAuth tokens.
    * @example
@@ -865,8 +861,7 @@ class AmexingAuthService {
 
   /**
    * Find user by OAuth provider and ID.
-   * @param {string} provider - OAuth _provider.
-   * @param _provider
+   * @param {string} _provider - OAuth provider.
    * @param {string} providerId - Provider user ID.
    * @returns {object | null} - Operation result User object or null.
    * @example
