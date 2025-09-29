@@ -48,21 +48,6 @@ function isActiveMenuItem(itemPath, currentPath) {
             </div>
         </div>
 
-        <!-- Role Badge -->
-        <div class="px-3 pb-3">
-            <div class="badge-role p-2 rounded-3 text-center" style="background: linear-gradient(135deg, <%= colors.primary %>, <%= colors.secondary %>);">
-                <small class="text-white fw-bold text-uppercase">
-                    <% if (sidebarUserRole === 'department_manager') { %>
-                        Jefe de Departamento
-                    <% } else if (sidebarUserRole === 'superadmin') { %>
-                        Super Administrador
-                    <% } else { %>
-                        <%= sidebarUserRole.charAt(0).toUpperCase() + sidebarUserRole.slice(1) %>
-                    <% } %>
-                </small>
-            </div>
-        </div>
-
         <!-- Sidebar navigation-->
         <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
             <!-- Include Menu Items by Role -->
@@ -105,20 +90,9 @@ function isActiveMenuItem(itemPath, currentPath) {
         opacity: 0.8;
     }
 
-    /* Role Badge Styles */
-    .badge-role {
-        background: linear-gradient(135deg, <%= colors.primary %>, <%= colors.secondary %>) !important;
-        color: white !important;
-        border: none;
-        box-shadow: 0 4px 15px rgba(93, 135, 255, 0.2);
-        border-radius: 8px;
-        font-weight: 600;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-
     /* Sidebar Navigation */
     .sidebar-nav {
-        height: calc(100vh - 180px);
+        height: calc(100vh - 120px);
         overflow-y: auto;
         overflow-x: hidden;
         padding-bottom: 2rem;
