@@ -199,7 +199,7 @@ describe('User Menu Molecule Component', () => {
 
       expect(html).toContain('/dashboard/admin/profile');
       expect(html).toContain('/dashboard/admin/settings');
-      expect(html).toContain('/dashboard/admin/help');
+      // Help & Support link removed
       expect(html).toContain('/logout');
     });
 
@@ -208,7 +208,7 @@ describe('User Menu Molecule Component', () => {
 
       expect(html).toContain('ti-user');
       expect(html).toContain('ti-settings');
-      expect(html).toContain('ti-help');
+      // ti-help icon removed
       expect(html).toContain('ti-logout');
     });
 

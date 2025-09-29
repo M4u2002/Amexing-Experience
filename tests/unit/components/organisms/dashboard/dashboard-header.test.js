@@ -109,7 +109,7 @@ describe('Dashboard Header Organism - Baseline Tests', () => {
 
       expect(html).toContain('/dashboard/admin/profile');
       expect(html).toContain('/dashboard/admin/settings');
-      expect(html).toContain('/dashboard/admin/help');
+      // Help & Support link removed from menu
       expect(html).toContain('/logout');
     });
   });
