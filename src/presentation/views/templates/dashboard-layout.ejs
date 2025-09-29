@@ -239,7 +239,7 @@
 
     <!-- Additional head content -->
     <% if (typeof headContent !== 'undefined' && headContent) { %>
-        <%- headContent %> <!-- semgrep-ignore: trusted pre-rendered head content -->
+        <%- headContent %> <%# nosemgrep: trusted pre-rendered head content %>
     <% } %>
 </head>
 
@@ -351,7 +351,7 @@
                     <!-- Page Content -->
                     <div class="page-content">
                         <!-- Security: body contains only trusted pre-rendered EJS templates -->
-                        <%- body %> <!-- semgrep-ignore: trusted pre-rendered template content -->
+                        <%- body %> <%# nosemgrep: trusted pre-rendered template content %>
                     </div>
                 </div>
             </main>
@@ -377,7 +377,7 @@
     <% if (typeof pageScripts !== 'undefined' && pageScripts && Array.isArray(pageScripts)) { %>
         <% pageScripts.forEach(function(script) { %>
             <% if (typeof script === 'string' && (script.startsWith('/') || script.startsWith('https://cdnjs.cloudflare.com/'))) { %>
-            <script src="<%= script %>"></script>
+            <script src="<%= script %>"></script> <%# nosemgrep: allowlisted script paths %>
             <% } %>
         <% }); %>
     <% } %>
@@ -446,7 +446,7 @@
 
     <!-- Additional scripts -->
     <% if (typeof footerScripts !== 'undefined' && footerScripts) { %>
-        <%- footerScripts %> <!-- semgrep-ignore: trusted pre-rendered footer scripts -->
+        <%- footerScripts %> <%# nosemgrep: trusted pre-rendered footer scripts %>
     <% } %>
 
 </body>

@@ -47,16 +47,25 @@ if (searchAdditionalClasses) {
 // Build input classes
 let inputClasses = ['form-control'];
 
-// Build attributes string
+// Build attributes string (sanitized for security)
 let attributesString = '';
 if (searchAttributes && typeof searchAttributes === 'object') {
+    // Whitelist allowed attributes for security
+    const allowedAttributes = ['aria-label', 'aria-describedby', 'data-testid', 'tabindex', 'title'];
     attributesString = Object.entries(searchAttributes)
-        .map(([key, value]) => `${key}="${value}"`)
+        .filter(([key]) => allowedAttributes.includes(key))
+        .map(([key, value]) => {
+            // Escape attribute values to prevent XSS
+            const escapedValue = String(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            return `${key}="${escapedValue}"`;
+        })
         .join(' ');
 }
 
-const clearButtonId = searchId + '-clear';
-const searchButtonId = searchId + '-submit';
+// Sanitize IDs to prevent XSS in JavaScript
+const safeSearchId = searchId.replace(/[^a-zA-Z0-9_-]/g, '');
+const clearButtonId = safeSearchId + '-clear';
+const searchButtonId = safeSearchId + '-submit';
 %>
 
 <div class="<%= inputGroupClasses.join(' ') %>">
@@ -68,8 +77,10 @@ const searchButtonId = searchId + '-submit';
     <!-- Search Input -->
     <input type="text"
            class="<%= inputClasses.join(' ') %> border-start-0 border-end-0 ps-0"
-           id="<%= searchId %>"
+           id="<%= safeSearchId %>"
            name="<%= searchName %>"
+           data-search-id="<%= safeSearchId %>"
+           data-clear-btn="<%= clearButtonId %>"
            placeholder="<%= searchPlaceholder %>"
            value="<%= searchValue %>"
            <% if (searchDisabled) { %>disabled<% } %>
@@ -111,10 +122,19 @@ const searchButtonId = searchId + '-submit';
 
 <script>
 // Auto-show/hide clear button based on input value
-document.getElementById('<%= searchId %>').addEventListener('input', function() {
-    const clearBtn = document.getElementById('<%= clearButtonId %>');
-    if (clearBtn) {
-        clearBtn.style.display = this.value.trim() ? 'block' : 'none';
-    }
-});
+(function() {
+    // Find elements using safer data attributes
+    const searchInputs = document.querySelectorAll('[data-search-id]');
+
+    searchInputs.forEach(function(searchInput) {
+        const clearBtnId = searchInput.getAttribute('data-clear-btn');
+        const clearBtn = clearBtnId ? document.getElementById(clearBtnId) : null;
+
+        if (clearBtn) {
+            searchInput.addEventListener('input', function() {
+                clearBtn.style.display = this.value.trim() ? 'block' : 'none';
+            });
+        }
+    });
+})();
 </script>

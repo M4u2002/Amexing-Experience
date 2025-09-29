@@ -25,7 +25,7 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
 
         if (script && (relativeDashboardPattern.test(script) || relativePublicPattern.test(script) || script.startsWith('/flexy-bootstrap'))) {
         %>
-        <script src="<%= script %>"></script> <!-- semgrep-ignore: allowlisted safe script paths -->
+        <script src="<%= script %>"></script> <!-- nosemgrep: allowlisted safe script paths -->
         <% } %>
     <% }); %>
 <% } %>

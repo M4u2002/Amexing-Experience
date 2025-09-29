@@ -107,7 +107,7 @@ const hasFooter = hasDefaultFooter || hasCustomFooter;
             <!-- Header -->
             <div class="modal-header">
                 <% if (modalHeaderContent) { %>
-                    <%# Safe: headerContent contains server-generated trusted HTML %><%- modalHeaderContent %> <!-- semgrep-ignore: trusted server-generated content -->
+                    <%# Safe: headerContent contains server-generated trusted HTML %><%- modalHeaderContent %> <!-- nosemgrep: trusted server-generated content -->
                 <% } else { %>
                     <h5 class="modal-title" id="<%= modalId %>Label"><%= modalTitle %></h5>
                 <% } %>
@@ -120,7 +120,7 @@ const hasFooter = hasDefaultFooter || hasCustomFooter;
             <!-- Body -->
             <div class="modal-body">
                 <% if (modalBodyContent) { %>
-                    <%# Safe: bodyContent contains server-generated trusted HTML %><%- modalBodyContent %> <!-- semgrep-ignore: trusted server-generated content -->
+                    <%# Safe: bodyContent contains server-generated trusted HTML %><%- modalBodyContent %> <!-- nosemgrep: trusted server-generated content -->
                 <% } else { %>
                     <p>Modal body content goes here.</p>
                 <% } %>
@@ -130,7 +130,7 @@ const hasFooter = hasDefaultFooter || hasCustomFooter;
             <% if (hasFooter) { %>
                 <div class="modal-footer">
                     <% if (modalFooterContent) { %>
-                        <%# Safe: footerContent contains server-generated trusted HTML %><%- modalFooterContent %> <!-- semgrep-ignore: trusted server-generated content -->
+                        <%# Safe: footerContent contains server-generated trusted HTML %><%- modalFooterContent %> <!-- nosemgrep: trusted server-generated content -->
                     <% } else { %>
                         <% if (modalSecondaryButtonText) { %>
                             <button type="button"

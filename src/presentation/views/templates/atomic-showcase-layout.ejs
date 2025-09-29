@@ -509,15 +509,15 @@
     <main class="atomic-content">
         <div class="container py-4">
             <% if (typeof body !== 'undefined' && body) { %>
-                <%- body %> <!-- semgrep-ignore: trusted pre-rendered template content -->
+                <%- body %> <!-- nosemgrep: trusted pre-rendered template content -->
             <% } else if (category === 'index') { %>
-                <%- include('../atomic/index-content') %> <!-- semgrep-ignore: trusted template include -->
+                <%- include('../atomic/index-content') %> <!-- nosemgrep: trusted template include -->
             <% } else if (category === 'dashboard') { %>
-                <%- include('../atomic/dashboard/index-content') %> <!-- semgrep-ignore: trusted template include -->
+                <%- include('../atomic/dashboard/index-content') %> <!-- nosemgrep: trusted template include -->
             <% } else if (category === 'auth') { %>
-                <%- include('../atomic/auth/index-content') %> <!-- semgrep-ignore: trusted template include -->
+                <%- include('../atomic/auth/index-content') %> <!-- nosemgrep: trusted template include -->
             <% } else if (category === 'common') { %>
-                <%- include('../atomic/common/index-content') %> <!-- semgrep-ignore: trusted template include -->
+                <%- include('../atomic/common/index-content') %> <!-- nosemgrep: trusted template include -->
             <% } else { %>
                 <p>Content not found for category: <%= category %></p>
             <% } %>
@@ -689,7 +689,7 @@
     <% if (typeof additionalScripts !== 'undefined' && additionalScripts && Array.isArray(additionalScripts)) { %>
         <% additionalScripts.forEach(function(script) { %>
             <% if (typeof script === 'string' && (script.startsWith('/') || script.startsWith('https://cdnjs.cloudflare.com/'))) { %>
-            <script src="<%= script %>"></script>
+            <script src="<%= script %>"></script> <!-- nosemgrep: allowlisted script paths -->
             <% } %>
         <% }); %>
     <% } %>

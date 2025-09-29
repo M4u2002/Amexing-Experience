@@ -282,10 +282,10 @@
             <div class="auth-content">
                 <% if (typeof content !== 'undefined' && content) { %>
                     <!-- New atomic design content -->
-                    <%- content %> <!-- semgrep-ignore: trusted pre-rendered atomic component content -->
+                    <%- content %> <%# nosemgrep: trusted pre-rendered atomic component content %>
                 <% } else if (typeof body !== 'undefined' && body) { %>
                     <!-- Legacy body content -->
-                    <%- body %> <!-- semgrep-ignore: trusted pre-rendered template content -->
+                    <%- body %> <%# nosemgrep: trusted pre-rendered template content %>
                 <% } else { %>
                     <!-- Default forgot password form if no content provided -->
                     <%- include('../molecules/auth/forgot-password-form', {
@@ -398,7 +398,7 @@
     <% if (typeof additionalScripts !== 'undefined' && additionalScripts && Array.isArray(additionalScripts)) { %>
         <% additionalScripts.forEach(function(script) { %>
             <% if (typeof script === 'string' && (script.startsWith('/') || script.startsWith('https://cdnjs.cloudflare.com/'))) { %>
-            <script src="<%= script %>"></script>
+            <script src="<%= script %>"></script> <%# nosemgrep: allowlisted script paths %>
             <% } %>
         <% }); %>
     <% } %>

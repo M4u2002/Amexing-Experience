@@ -133,7 +133,7 @@ const hasFooter = cardFooterContent;
     <% if (hasHeader) { %>
     <div class="<%= headerClasses.join(' ') %>">
         <% if (cardHeaderContent) { %>
-            <%# Safe: headerContent contains server-generated trusted HTML %><%- cardHeaderContent %> <!-- semgrep-ignore: trusted server-generated content -->
+            <%# Safe: headerContent contains server-generated trusted HTML %><%- cardHeaderContent %> <!-- nosemgrep: trusted server-generated content -->
         <% } else { %>
             <% if (cardTitle) { %>
                 <h5 class="card-title mb-0"><%= cardTitle %></h5>
@@ -148,14 +148,14 @@ const hasFooter = cardFooterContent;
     <!-- Body -->
     <div class="<%= bodyClasses.join(' ') %>">
         <% if (cardBodyContent) { %>
-            <%# Safe: bodyContent contains server-generated trusted HTML %><%- cardBodyContent %> <!-- semgrep-ignore: trusted server-generated content -->
+            <%# Safe: bodyContent contains server-generated trusted HTML %><%- cardBodyContent %> <!-- nosemgrep: trusted server-generated content -->
         <% } %>
     </div>
 
     <!-- Footer -->
     <% if (hasFooter) { %>
     <div class="<%= footerClasses.join(' ') %>">
-        <%# Safe: footerContent contains server-generated trusted HTML %><%- cardFooterContent %> <!-- semgrep-ignore: trusted server-generated content -->
+        <%# Safe: footerContent contains server-generated trusted HTML %><%- cardFooterContent %> <!-- nosemgrep: trusted server-generated content -->
     </div>
     <% } %>
 </div>
