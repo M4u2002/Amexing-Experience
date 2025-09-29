@@ -200,7 +200,7 @@ describe('User Menu Molecule Component', () => {
       expect(html).toContain('/dashboard/admin/profile');
       expect(html).toContain('/dashboard/admin/settings');
       expect(html).toContain('/dashboard/admin/help');
-      expect(html).toContain('/auth/logout');
+      expect(html).toContain('/logout');
     });
 
     test('should include menu icons', async () => {

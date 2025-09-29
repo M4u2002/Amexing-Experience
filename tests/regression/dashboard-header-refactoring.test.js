@@ -61,7 +61,7 @@ describe('Dashboard Header Refactoring Regression Tests', () => {
         { text: 'My Profile', href: '/dashboard/admin/profile' },
         { text: 'Settings', href: '/dashboard/admin/settings' },
         { text: 'Help & Support', href: '/dashboard/admin/help' },
-        { text: 'Sign Out', href: '/auth/logout' }
+        { text: 'Sign Out', href: '/logout' }
       ];
 
       expectedItems.forEach(expectedItem => {
