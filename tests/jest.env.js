@@ -25,6 +25,11 @@ process.env.ENABLE_MONITORING = 'false';
 process.env.ENABLE_AUDIT_LOGGING = 'false';
 process.env.ENABLE_DASHBOARD = 'false'; // Disable dashboard for most tests
 
+// Mock OAuth environment variables for testing
+process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
+process.env.MICROSOFT_CLIENT_ID = 'test-microsoft-client-id';
+process.env.APPLE_CLIENT_ID = 'test-apple-client-id';
+
 console.log('Test environment configured');
 console.log('Database URI:', process.env.DATABASE_URI);
 console.log('Parse Server URL:', process.env.PARSE_SERVER_URL);

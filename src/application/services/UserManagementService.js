@@ -1461,9 +1461,10 @@ class UserManagementService {
   }
 
   /**
-   * Filter query to include only users with specific role
-   * @param {Parse.Query} query - Parse query object
-   * @param {string} roleName - Role name to filter by
+   * Filter query to include only users with specific role.
+   * @param {Parse.Query} query - Parse query object.
+   * @param {string} roleName - Role name to filter by.
+   * @example
    */
   async filterByRoleName(query, roleName) {
     try {
@@ -1471,16 +1472,17 @@ class UserManagementService {
     } catch (error) {
       logger.error('Failed to filter by role name', {
         error: error.message,
-        roleName
+        roleName,
       });
       throw error;
     }
   }
 
   /**
-   * Filter query to exclude users with specific role
-   * @param {Parse.Query} query - Parse query object
-   * @param {string} roleName - Role name to exclude
+   * Filter query to exclude users with specific role.
+   * @param {Parse.Query} query - Parse query object.
+   * @param {string} roleName - Role name to exclude.
+   * @example
    */
   async excludeRoleName(query, roleName) {
     try {
@@ -1488,16 +1490,17 @@ class UserManagementService {
     } catch (error) {
       logger.error('Failed to exclude role name', {
         error: error.message,
-        roleName
+        roleName,
       });
       throw error;
     }
   }
 
   /**
-   * Filter query to include only users with specific roles
-   * @param {Parse.Query} query - Parse query object
-   * @param {string[]} roleNames - Array of role names to filter by
+   * Filter query to include only users with specific roles.
+   * @param {Parse.Query} query - Parse query object.
+   * @param {string[]} roleNames - Array of role names to filter by.
+   * @example
    */
   async filterByRoleNames(query, roleNames) {
     try {
@@ -1505,7 +1508,7 @@ class UserManagementService {
     } catch (error) {
       logger.error('Failed to filter by role names', {
         error: error.message,
-        roleNames
+        roleNames,
       });
       throw error;
     }

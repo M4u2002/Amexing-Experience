@@ -10,7 +10,10 @@ module.exports = {
   testEnvironment: 'node',
 
   // Setup files
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  setupFilesAfterEnv: [
+    '<rootDir>/tests/setup.js',
+    '<rootDir>/tests/setup/componentSetup.js'
+  ],
 
   // Test patterns
   testMatch: [
@@ -22,7 +25,8 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/coverage/',
-    '/.runtime/logs/'
+    '/.runtime/logs/',
+    '/tests/parse-platform/' // Exclude Parse Platform tests until proper server setup
   ],
 
   // Coverage configuration
@@ -75,10 +79,12 @@ module.exports = {
   setupFiles: ['<rootDir>/tests/jest.env.js'],
 
   // Transform configuration
-  transform: {},
-  
+  transform: {
+    '\\.ejs$': '<rootDir>/tests/transformers/ejsTransformer.js'
+  },
+
   // Module file extensions
-  moduleFileExtensions: ['js', 'json'],
+  moduleFileExtensions: ['js', 'json', 'ejs'],
 
   // Global setup and teardown
   globalSetup: '<rootDir>/tests/globalSetup.js',

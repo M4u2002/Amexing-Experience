@@ -438,8 +438,8 @@ class DelegatedPermission extends BaseModel {
       timeline: {
         delegatedAt: this.get('delegatedAt'),
         expiresAt: this.get('expiresAt'),
-        revokedAt: this.get('revokedAt')
-      }
+        revokedAt: this.get('revokedAt'),
+      },
     };
   }
 
@@ -592,7 +592,6 @@ class DelegatedPermission extends BaseModel {
 
     return { valid: true };
   }
-
 
   /**
    * Extend delegation validity period.

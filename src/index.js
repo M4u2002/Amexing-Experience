@@ -190,9 +190,9 @@ app.use('/parse', parseServer.app);
 // Mount Parse Dashboard (separate app for security)
 // Only start dashboard when running directly (not in tests)
 if (
-  require.main === module &&
-  (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DASHBOARD === 'true') &&
-  process.env.ENABLE_DASHBOARD !== 'false'
+  require.main === module
+  && (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DASHBOARD === 'true')
+  && process.env.ENABLE_DASHBOARD !== 'false'
 ) {
   try {
     const dashboardApp = express();

@@ -932,7 +932,8 @@ class AmexingUser extends BaseModel {
         if (delegationData.context && delegationData.context.maxAmount) {
           // Check if user is trying to delegate with higher limits than they have
           const userContextualData = this.get('contextualData') || {};
-          if (userContextualData.maxApprovalAmount && delegationData.context.maxAmount > userContextualData.maxApprovalAmount) {
+          if (userContextualData.maxApprovalAmount
+            && delegationData.context.maxAmount > userContextualData.maxApprovalAmount) {
             throw new Error('Cannot delegate with higher limits than own permissions');
           }
         }
