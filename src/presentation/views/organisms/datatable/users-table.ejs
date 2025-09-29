@@ -139,22 +139,6 @@ function initializeDataTableWithData(usersData) {
     const tableConfig = {
         data: usersData,
         columns: [
-            {
-                title: 'Foto',
-                data: 'profileImage',
-                orderable: false,
-                searchable: false,
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        const imgSrc = data || '/dashboard/images/profile/user-default.jpg';
-                        return `<div class="text-center">
-                            <img src="${imgSrc}" class="rounded-circle border" width="40" height="40"
-                                 alt="Profile" onerror="this.src='/dashboard/images/profile/user-default.jpg'">
-                        </div>`;
-                    }
-                    return data;
-                }
-            },
             { title: 'Nombre', data: 'firstName', className: 'fw-bold' },
             { title: 'Apellido', data: 'lastName' },
             { title: 'Email', data: 'email', className: 'text-muted' },
