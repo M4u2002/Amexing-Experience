@@ -39,14 +39,15 @@ const footerCurrentPath = typeof currentPath !== 'undefined' ? currentPath : '';
 
 <!-- Logout -->
 <li class="sidebar-item">
-    <a class="sidebar-link logout-link"
-       href="/logout"
-       data-confirm="¿Are you sure you want to sign out?">
-        <span class="nav-icon">
-            <i class="ti ti-logout"></i>
-        </span>
-        <span class="hide-menu nav-text">Sign Out</span>
-    </a>
+    <form method="POST" action="/logout" id="logout-form" style="margin: 0;">
+        <button type="submit" class="sidebar-link logout-link w-100 text-start border-0 bg-transparent"
+                onclick="return confirm('¿Are you sure you want to sign out?');">
+            <span class="nav-icon">
+                <i class="ti ti-logout"></i>
+            </span>
+            <span class="hide-menu nav-text">Sign Out</span>
+        </button>
+    </form>
 </li>
 
 <style>
@@ -89,13 +90,22 @@ const footerCurrentPath = typeof currentPath !== 'undefined' ? currentPath : '';
         border: 1px solid rgba(93, 135, 255, 0.2);
     }
 
-    /* Logout Link Styles */
+    /* Logout Link/Button Styles */
+    #logout-form {
+        padding: 0;
+        margin: 0;
+    }
+
     .logout-link {
         border-top: 1px solid #e0e6ed;
         margin-top: 0.5rem;
-        padding-top: 1rem !important;
+        padding: 1rem 20px !important;
         color: #dc3545 !important;
         transition: all 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
     }
 
     .logout-link:hover {
@@ -106,8 +116,16 @@ const footerCurrentPath = typeof currentPath !== 'undefined' ? currentPath : '';
         transform: translateX(5px);
     }
 
+    .logout-link:focus {
+        outline: 2px solid rgba(220, 53, 69, 0.5);
+        outline-offset: 2px;
+    }
+
     .logout-link .nav-icon {
         color: #dc3545;
+        margin-right: 10px;
+        display: inline-flex;
+        align-items: center;
     }
 
     /* Footer animations */
