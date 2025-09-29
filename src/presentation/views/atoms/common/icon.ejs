@@ -19,7 +19,14 @@ const sizeMap = {
     'md': 'fs-4',
     'lg': 'fs-3',
     'xl': 'fs-2',
-    'xxl': 'fs-1'
+    'xxl': 'fs-1',
+    // Support direct numeric values for backward compatibility
+    '6': 'fs-6',
+    '5': 'fs-5',
+    '4': 'fs-4',
+    '3': 'fs-3',
+    '2': 'fs-2',
+    '1': 'fs-1'
 };
 const iconSize = typeof size !== 'undefined' && size && sizeMap[size] ? sizeMap[size] : '';
 const iconColor = typeof color !== 'undefined' && color ? `text-${color}` : '';

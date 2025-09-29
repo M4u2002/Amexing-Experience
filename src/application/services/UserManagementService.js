@@ -781,8 +781,11 @@ class UserManagementService {
       }
 
       // Apply sorting
-      const sortOrder = sortDirection === 'desc' ? 'descending' : 'ascending';
-      query.addOrder(sortField, sortOrder);
+      if (sortDirection === 'desc') {
+        query.descending(sortField);
+      } else {
+        query.ascending(sortField);
+      }
 
       // Calculate pagination
       const skip = (page - 1) * limit;
@@ -1454,6 +1457,57 @@ class UserManagementService {
       });
     } catch (error) {
       logger.error('Failed to log search activity', { error: error.message });
+    }
+  }
+
+  /**
+   * Filter query to include only users with specific role
+   * @param {Parse.Query} query - Parse query object
+   * @param {string} roleName - Role name to filter by
+   */
+  async filterByRoleName(query, roleName) {
+    try {
+      query.equalTo('role', roleName);
+    } catch (error) {
+      logger.error('Failed to filter by role name', {
+        error: error.message,
+        roleName
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Filter query to exclude users with specific role
+   * @param {Parse.Query} query - Parse query object
+   * @param {string} roleName - Role name to exclude
+   */
+  async excludeRoleName(query, roleName) {
+    try {
+      query.notEqualTo('role', roleName);
+    } catch (error) {
+      logger.error('Failed to exclude role name', {
+        error: error.message,
+        roleName
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Filter query to include only users with specific roles
+   * @param {Parse.Query} query - Parse query object
+   * @param {string[]} roleNames - Array of role names to filter by
+   */
+  async filterByRoleNames(query, roleNames) {
+    try {
+      query.containedIn('role', roleNames);
+    } catch (error) {
+      logger.error('Failed to filter by role names', {
+        error: error.message,
+        roleNames
+      });
+      throw error;
     }
   }
 }

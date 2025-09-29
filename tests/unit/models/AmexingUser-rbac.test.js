@@ -220,7 +220,15 @@ describe('AmexingUser RBAC Integration', () => {
 
       const hasPermission = await user.hasPermission('bookings.approve', context);
 
-      expect(mockRole.hasContextualPermission).toHaveBeenCalledWith('bookings.approve', context);
+      // Expect the merged context that includes user's contextual data
+      expect(mockRole.hasContextualPermission).toHaveBeenCalledWith(
+        'bookings.approve',
+        expect.objectContaining({
+          amount: 5000,
+          departmentId: 'tech',
+          maxApprovalAmount: 10000 // From user's contextual data
+        })
+      );
       expect(hasPermission).toBe(true);
     });
 
@@ -233,13 +241,15 @@ describe('AmexingUser RBAC Integration', () => {
       const delegatedPermission = {
         hasPermission: jest.fn().mockReturnValue(true),
         isActive: jest.fn().mockReturnValue(true),
-        isExpired: jest.fn().mockReturnValue(false)
+        isExpired: jest.fn().mockReturnValue(false),
+        recordUsage: jest.fn().mockResolvedValue(true)
       };
       user.getDelegatedPermissions.mockResolvedValue([delegatedPermission]);
 
       const hasPermission = await user.hasPermission('special.action');
 
       expect(delegatedPermission.hasPermission).toHaveBeenCalledWith('special.action', {});
+      expect(delegatedPermission.recordUsage).toHaveBeenCalledWith('special.action', {});
       expect(hasPermission).toBe(true);
     });
 
@@ -283,7 +293,10 @@ describe('AmexingUser RBAC Integration', () => {
         reason: 'Vacation coverage'
       };
 
-      const mockDelegation = { id: 'delegation-123' };
+      const mockDelegation = {
+        id: 'delegation-123',
+        save: jest.fn().mockResolvedValue()
+      };
       // Mock DelegatedPermission.create
       const DelegatedPermission = require('../../../src/domain/models/DelegatedPermission');
       DelegatedPermission.create = jest.fn().mockReturnValue(mockDelegation);
@@ -438,6 +451,12 @@ describe('AmexingUser RBAC Integration', () => {
         AmexingUser.create({ email: 'user2@amexing.com', roleId: 'admin-role-id' }),
         AmexingUser.create({ email: 'user3@amexing.com', roleId: 'admin-role-id' })
       ];
+
+      // Set up getRole mock for each user
+      users.forEach(u => {
+        u.getRole = jest.fn().mockResolvedValue(mockRole);
+        u.getDelegatedPermissions = jest.fn().mockResolvedValue([]);
+      });
 
       // If batch loading is implemented, this should be efficient
       const permissionChecks = await Promise.all(

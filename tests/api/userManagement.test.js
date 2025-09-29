@@ -127,7 +127,7 @@ jest.mock('express-rate-limit', () => {
 async function authenticateTestUser(role) {
   const testUsers = {
     superadmin: {
-      id: 'test-superadmin-001',
+      id: actualUserIds[role] || 'test-superadmin-001',
       username: 'superadmin@test.amexing.com',
       email: 'superadmin@test.amexing.com',
       role: 'superadmin',
@@ -135,7 +135,7 @@ async function authenticateTestUser(role) {
       exists: true
     },
     admin: {
-      id: 'test-admin-001',
+      id: actualUserIds[role] || 'test-admin-001',
       username: 'admin@test.amexing.com',
       email: 'admin@test.amexing.com',
       role: 'admin',
@@ -143,7 +143,7 @@ async function authenticateTestUser(role) {
       exists: true
     },
     client: {
-      id: 'test-client-001',
+      id: actualUserIds[role] || 'test-client-001',
       username: 'client@test.amexing.com',
       email: 'client@test.amexing.com',
       role: 'client',
@@ -152,13 +152,13 @@ async function authenticateTestUser(role) {
       clientId: 'test-client-001'
     },
     employee: {
-      id: 'test-employee-001',
+      id: actualUserIds[role] || 'test-employee-001',
       username: 'employee@test.amexing.com',
       email: 'employee@test.amexing.com',
       role: 'employee',
       active: true,
       exists: true,
-      clientId: 'test-client-001'
+      departmentId: 'test-dept-001'
     }
   };
 
@@ -174,6 +174,98 @@ async function authenticateTestUser(role) {
   };
 }
 
+// Store actual user IDs from database
+const actualUserIds = {};
+
+// Create actual test users in Parse database
+async function createActualTestUsers() {
+  const Parse = require('parse/node');
+
+  // Use AmexingUser model since that's what UserManagementService expects
+  const AmexingUser = Parse.Object.extend('AmexingUser');
+
+  const testUsers = [
+    {
+      role: 'superadmin',
+      username: 'superadmin@test.amexing.com',
+      email: 'superadmin@test.amexing.com',
+      password: 'SuperAdminPass123!',
+      firstName: 'Test',
+      lastName: 'Superadmin',
+      active: true,
+      exists: true,
+      emailVerified: true
+    },
+    {
+      role: 'admin',
+      username: 'admin@test.amexing.com',
+      email: 'admin@test.amexing.com',
+      password: 'AdminPass123!',
+      firstName: 'Test',
+      lastName: 'Admin',
+      active: true,
+      exists: true,
+      emailVerified: true
+    },
+    {
+      role: 'client',
+      username: 'client@test.amexing.com',
+      email: 'client@test.amexing.com',
+      password: 'ClientPass123!',
+      firstName: 'Test',
+      lastName: 'Client',
+      active: true,
+      exists: true,
+      emailVerified: true,
+      clientId: 'test-client-001'
+    },
+    {
+      role: 'employee',
+      username: 'employee@test.amexing.com',
+      email: 'employee@test.amexing.com',
+      password: 'EmployeePass123!',
+      firstName: 'Test',
+      lastName: 'Employee',
+      active: true,
+      exists: true,
+      emailVerified: true,
+      departmentId: 'test-dept-001'
+    }
+  ];
+
+  for (const userData of testUsers) {
+    try {
+      // Check if user already exists
+      const query = new Parse.Query(AmexingUser);
+      query.equalTo('username', userData.username);
+      let user = await query.first({ useMasterKey: true });
+
+      if (!user) {
+        // Create new user using AmexingUser model
+        user = new AmexingUser();
+        Object.keys(userData).forEach(key => {
+          user.set(key, userData[key]);
+        });
+
+        await user.save(null, { useMasterKey: true });
+
+        console.log(`Created test user: ${userData.username} with ID: ${user.id}`);
+      } else {
+        console.log(`Test user already exists: ${userData.username} with ID: ${user.id}`);
+      }
+
+      // Store the actual objectId
+      actualUserIds[userData.role] = user.id;
+
+    } catch (error) {
+      console.error(`Failed to create test user ${userData.username}:`, error.message);
+      // Continue with other users
+    }
+  }
+
+  console.log('Actual user IDs:', actualUserIds);
+}
+
 // Mock Express app for testing
 let app;
 let server;
@@ -182,6 +274,9 @@ let testUserTokens = {};
 beforeAll(async () => {
   // Setup Parse connection and test users
   await setupTests();
+
+  // Create actual test users in the database
+  await createActualTestUsers();
 
   // Authenticate test users to get tokens
   testUserTokens.superadmin = await authenticateTestUser('superadmin');

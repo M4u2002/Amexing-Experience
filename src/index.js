@@ -188,9 +188,11 @@ const parseServer = new ParseServer(parseServerConfig);
 app.use('/parse', parseServer.app);
 
 // Mount Parse Dashboard (separate app for security)
+// Only start dashboard when running directly (not in tests)
 if (
-  process.env.NODE_ENV !== 'production'
-  || process.env.ENABLE_DASHBOARD === 'true'
+  require.main === module &&
+  (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DASHBOARD === 'true') &&
+  process.env.ENABLE_DASHBOARD !== 'false'
 ) {
   try {
     const dashboardApp = express();
@@ -476,16 +478,19 @@ app.use((req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
-const server = app.listen(PORT, () => {
-  logger.info(`AmexingWeb API Server running on http://localhost:${PORT}`);
-  logger.info(`Parse Server endpoint: http://localhost:${PORT}/parse`);
-  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+// Start server only if this file is run directly (not imported for testing)
+let server;
+if (require.main === module) {
+  server = app.listen(PORT, () => {
+    logger.info(`AmexingWeb API Server running on http://localhost:${PORT}`);
+    logger.info(`Parse Server endpoint: http://localhost:${PORT}/parse`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  if (process.env.NODE_ENV === 'production') {
-    logger.info('Running in PRODUCTION mode with enhanced security');
-  }
-});
+    if (process.env.NODE_ENV === 'production') {
+      logger.info('Running in PRODUCTION mode with enhanced security');
+    }
+  });
+}
 
 /**
  * Handles graceful application shutdown for clean process termination.

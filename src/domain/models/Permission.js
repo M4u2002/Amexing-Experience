@@ -56,9 +56,32 @@ class Permission extends BaseModel {
       throw new Error('Resource and action are required');
     }
 
+    // Validate resource and action format
+    const validPartRegex = /^[a-z][a-z0-9_]*$/;
+    if (!validPartRegex.test(permissionData.resource)) {
+      throw new Error('Resource must contain only lowercase letters, numbers, and underscores, starting with a letter');
+    }
+    if (!validPartRegex.test(permissionData.action)) {
+      throw new Error('Action must contain only lowercase letters, numbers, and underscores, starting with a letter');
+    }
+
     // Validate conditions structure if provided
     if (permissionData.conditions && typeof permissionData.conditions !== 'object') {
       throw new Error('Conditions must be an object');
+    }
+
+    // Validate condition values if provided
+    if (permissionData.conditions) {
+      const { conditions } = permissionData;
+      if (conditions.maxAmount !== undefined && typeof conditions.maxAmount !== 'number') {
+        throw new Error('maxAmount must be a number');
+      }
+      if (conditions.minAmount !== undefined && typeof conditions.minAmount !== 'number') {
+        throw new Error('minAmount must be a number');
+      }
+      if (conditions.businessHoursOnly !== undefined && typeof conditions.businessHoursOnly !== 'boolean') {
+        throw new Error('businessHoursOnly must be a boolean');
+      }
     }
 
     const permission = new Permission();
@@ -121,7 +144,7 @@ class Permission extends BaseModel {
       const hour = date.getUTCHours();
       const day = date.getUTCDay();
 
-      if (day === 0 || day === 6 || hour < 9 || hour > 17) {
+      if (day === 0 || day === 6 || hour < 9 || hour > 18) {
         return false;
       }
     }
@@ -304,8 +327,8 @@ class Permission extends BaseModel {
     const hour = date.getUTCHours();
     const day = date.getUTCDay();
 
-    // Monday-Friday, 9 AM - 5 PM UTC
-    return day >= 1 && day <= 5 && hour >= 9 && hour < 17;
+    // Monday-Friday, 9 AM - 6 PM UTC (inclusive of 6 PM, exclusive of 7 PM)
+    return day >= 1 && day <= 5 && hour >= 9 && hour <= 18;
   }
 
   /**

@@ -90,6 +90,21 @@ class AmexingUser extends BaseModel {
    * // Returns: { success: true, user: {...}, tokens: {...} }
    */
   static create(userData) {
+    // Validate required RBAC fields
+    if (!userData.roleId && !userData.role) {
+      throw new Error('Either role or roleId is required');
+    }
+
+    // Validate organization ID format
+    if (userData.organizationId && !/^[a-z0-9_-]+$/i.test(userData.organizationId)) {
+      throw new Error('Invalid organization ID format');
+    }
+
+    // Validate contextual data structure
+    if (userData.contextualData && typeof userData.contextualData !== 'object') {
+      throw new Error('Contextual data must be an object');
+    }
+
     const user = new AmexingUser();
 
     // Required fields
@@ -103,10 +118,10 @@ class AmexingUser extends BaseModel {
       // If roleId is a Role object (Pointer), set it directly
       // If it's a string ID, we'll need to convert it to a Pointer in the service layer
       user.set('roleId', userData.roleId);
-    } else if (userData.role) {
-      // Backward compatibility: if only role string is provided,
-      // the service layer should convert it to a Pointer
-      user.set('role', userData.role); // Keep for fallback during migration
+    }
+    if (userData.role) {
+      // Backward compatibility: set legacy role field when provided
+      user.set('role', userData.role);
     }
     user.set('delegatedPermissions', userData.delegatedPermissions || []); // Additional permissions
 
@@ -789,23 +804,35 @@ class AmexingUser extends BaseModel {
         return false;
       }
 
-      // Add user context to permission check
-      const userContext = {
-        ...context,
-        userId: this.id,
-        organizationId: this.get('organizationId'),
-        clientId: this.get('clientId'),
-        departmentId: this.get('departmentId'),
-        contextualData: this.get('contextualData') || {},
-      };
+      // Check role permissions based on whether context is provided
+      let rolePermission = false;
+      if (Object.keys(context).length === 0) {
+        // Simple permission check without context
+        rolePermission = await role.hasPermission(permission);
+      } else {
+        // Contextual permission check
+        // If context already has all needed data (like departmentId), use as-is
+        // Otherwise, combine with user's contextual data
+        let finalContext = context;
+        const userContextualData = this.get('contextualData') || {};
 
-      const rolePermission = await role.hasPermission(permission, userContext);
+        // Only merge user contextual data if not already present in request context
+        if (Object.keys(userContextualData).length > 0) {
+          finalContext = {
+            ...userContextualData,
+            ...context, // Request context takes precedence
+          };
+        }
+
+        rolePermission = await role.hasContextualPermission(permission, finalContext);
+      }
+
       if (rolePermission) {
         return true;
       }
 
       // Check delegated permissions
-      const hasDelegatedPermission = await this.hasDelegatedPermission(permission, userContext);
+      const hasDelegatedPermission = await this.hasDelegatedPermission(permission, context);
       return hasDelegatedPermission;
     } catch (error) {
       logger.error('Error checking user permission', {
@@ -827,16 +854,11 @@ class AmexingUser extends BaseModel {
    */
   async hasDelegatedPermission(permission, context = {}) {
     try {
-      const DelegatedPermission = require('./DelegatedPermission');
-      const query = BaseModel.queryActive('DelegatedPermission');
-      query.equalTo('toUserId', this.id);
-      query.equalTo('status', 'active');
-
-      const delegations = await query.find({ useMasterKey: true });
+      const delegations = await this.getDelegatedPermissions();
 
       for (const delegation of delegations) {
-        const result = await delegation.hasPermission(permission, context);
-        if (result.allowed) {
+        const result = delegation.hasPermission(permission, context);
+        if (result) {
           // Record usage
           await delegation.recordUsage(permission, context);
           return true;
@@ -856,60 +878,90 @@ class AmexingUser extends BaseModel {
   }
 
   /**
-   * Delegate permissions to another user.
-   * @param {string} toUserId - User ID to delegate to.
-   * @param {Array<string>} permissions - Permissions to delegate.
-   * @param {object} options - Delegation options.
-   * @returns {Promise<object|null>} - Created delegation or null.
+   * Get all delegated permissions for this user.
+   * @returns {Promise<Array>} - Array of delegated permissions.
    * @example
    */
-  async delegatePermissions(toUserId, permissions, options = {}) {
+  async getDelegatedPermissions() {
+    try {
+      const DelegatedPermission = require('./DelegatedPermission');
+      const query = BaseModel.queryActive('DelegatedPermission');
+      query.equalTo('toUserId', this.id);
+      query.equalTo('status', 'active');
+
+      return await query.find({ useMasterKey: true });
+    } catch (error) {
+      logger.error('Error getting delegated permissions', {
+        userId: this.id,
+        error: error.message,
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Delegate permissions to other users.
+   * @param {Array<object>} delegationsData - Array of delegation data objects.
+   * @returns {Promise<Array>} - Array of created delegations.
+   * @example
+   */
+  async delegatePermissions(delegationsData) {
     try {
       // Verify current user can delegate these permissions
       const role = await this.getRole();
-      if (!role || !role.get('delegatable')) {
+      if (!role) {
         throw new Error('User role cannot delegate permissions');
       }
 
-      // Verify each permission can be delegated
-      for (const permission of permissions) {
-        const hasPermission = await this.hasPermission(permission, options.context || {});
-        if (!hasPermission) {
-          throw new Error(`Cannot delegate permission ${permission} - user doesn't have it`);
+      const createdDelegations = [];
+      const DelegatedPermission = require('./DelegatedPermission');
+
+      for (const delegationData of delegationsData) {
+        // Check if role can delegate this specific permission
+        if (!role.canDelegatePermission(delegationData.permission)) {
+          throw new Error(`Role cannot delegate permission: ${delegationData.permission}`);
         }
+
+        // Verify permission can be delegated
+        const hasPermission = await this.hasPermission(delegationData.permission, delegationData.context || {});
+        if (!hasPermission) {
+          throw new Error(`Cannot delegate permission ${delegationData.permission} - user doesn't have it`);
+        }
+
+        // Validate delegation context constraints (if specified)
+        if (delegationData.context && delegationData.context.maxAmount) {
+          // Check if user is trying to delegate with higher limits than they have
+          const userContextualData = this.get('contextualData') || {};
+          if (userContextualData.maxApprovalAmount && delegationData.context.maxAmount > userContextualData.maxApprovalAmount) {
+            throw new Error('Cannot delegate with higher limits than own permissions');
+          }
+        }
+
+        // Create delegation with fromUserId added
+        const delegation = DelegatedPermission.create({
+          ...delegationData,
+          fromUserId: this.id,
+        });
+
+        await delegation.save(null, { useMasterKey: true });
+        createdDelegations.push(delegation);
+
+        logger.info('Permission delegated', {
+          fromUserId: this.id,
+          toUserId: delegationData.toUserId,
+          permission: delegationData.permission,
+          delegationId: delegation.id,
+        });
       }
 
-      const DelegatedPermission = require('./DelegatedPermission');
-      const delegation = DelegatedPermission.create({
-        fromUserId: this.id,
-        toUserId,
-        permissions,
-        conditions: options.conditions || {},
-        restrictions: options.restrictions || {},
-        validFrom: options.validFrom || new Date(),
-        validUntil: options.validUntil || null,
-        reason: options.reason || '',
-        delegationType: options.delegationType || 'temporary',
-      });
-
-      await delegation.save(null, { useMasterKey: true });
-
-      logger.info('Permissions delegated', {
-        fromUserId: this.id,
-        toUserId,
-        permissions,
-        delegationId: delegation.id,
-      });
-
-      return delegation;
+      return createdDelegations;
     } catch (error) {
       logger.error('Error delegating permissions', {
         fromUserId: this.id,
-        toUserId,
-        permissions,
+        delegationsData,
         error: error.message,
       });
-      return null;
+      throw error;
     }
   }
 
@@ -939,6 +991,66 @@ class AmexingUser extends BaseModel {
         error: error.message,
       });
       return null;
+    }
+  }
+
+  /**
+   * Check if user can access a specific organization.
+   * @param {string} organizationId - Organization ID to check access for.
+   * @returns {boolean} - True if user can access the organization.
+   * @example
+   */
+  canAccessOrganization(organizationId) {
+    const userOrgId = this.get('organizationId');
+
+    // Amexing users can access any organization
+    if (userOrgId === 'amexing') {
+      return true;
+    }
+
+    // Client users can only access their own organization
+    return userOrgId === organizationId;
+  }
+
+  /**
+   * Check if user can manage another user.
+   * @param {object} otherUser - User to check management permissions for.
+   * @returns {Promise<boolean>} - True if user can manage the other user.
+   * @example
+   */
+  async canManage(otherUser) {
+    try {
+      const currentRole = await this.getRole();
+      const otherRole = await otherUser.getRole();
+
+      if (!currentRole || !otherRole) {
+        return false;
+      }
+
+      // Check if current role can manage the other role
+      const canManageRole = currentRole.canManage(otherRole);
+      if (!canManageRole) {
+        return false;
+      }
+
+      // Additional organization checks
+      const userOrgId = this.get('organizationId');
+      const otherUserOrgId = otherUser.get('organizationId');
+
+      // Amexing users can manage users in any organization
+      if (userOrgId === 'amexing') {
+        return true;
+      }
+
+      // Users can only manage within their own organization
+      return userOrgId === otherUserOrgId;
+    } catch (error) {
+      logger.error('Error checking user management permissions', {
+        userId: this.id,
+        otherUserId: otherUser.id,
+        error: error.message,
+      });
+      return false;
     }
   }
 

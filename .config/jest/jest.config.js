@@ -65,6 +65,12 @@ module.exports = {
   // Detect open handles
   detectOpenHandles: true,
 
+  // Run tests serially to avoid port conflicts
+  maxWorkers: 1,
+
+  // Additional Jest configuration for stability
+  testSequencer: '<rootDir>/tests/testSequencer.js',
+
   // Environment variables for tests
   setupFiles: ['<rootDir>/tests/jest.env.js'],
 
