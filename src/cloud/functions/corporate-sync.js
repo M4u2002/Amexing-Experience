@@ -10,9 +10,9 @@
  * // Returns: function result
  */
 
-const Parse = require('parse/node');
-const CorporateSyncService = require('../../application/services/CorporateSyncService');
-const logger = require('../../infrastructure/logger');
+const Parse = require("parse/node");
+const CorporateSyncService = require("../../application/services/CorporateSyncService");
+const logger = require("../../infrastructure/logger");
 
 /**
  * Manually triggers sync for a corporate client
@@ -32,28 +32,34 @@ const triggerCorporateSync = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for corporate sync'
+        "Admin access required for corporate sync",
       );
     }
 
     const { clientId } = request.params;
 
     if (!clientId) {
-      throw new Parse.Error(Parse.Error.INVALID_QUERY, 'clientId parameter required');
+      throw new Parse.Error(
+        Parse.Error.INVALID_QUERY,
+        "clientId parameter required",
+      );
     }
 
     // Trigger sync
     const syncResult = await CorporateSyncService.syncCorporateClient(clientId);
 
-    logger.logSecurityEvent('CORPORATE_SYNC_TRIGGERED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("CORPORATE_SYNC_TRIGGERED", request.user.id, {
+      adminUser: request.user.get("username"),
       clientId,
       syncedCount: syncResult.syncedCount,
       errorCount: syncResult.errorCount,
@@ -65,7 +71,7 @@ const triggerCorporateSync = async (request) => {
       message: `Sync completed for client ${clientId}`,
     };
   } catch (error) {
-    logger.error('Error triggering corporate sync:', error);
+    logger.error("Error triggering corporate sync:", error);
     throw error;
   }
 };
@@ -88,60 +94,67 @@ const startPeriodicSync = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for sync management'
+        "Admin access required for sync management",
       );
     }
 
     const { clientId, intervalMinutes = 60 } = request.params;
 
     if (!clientId) {
-      throw new Parse.Error(Parse.Error.INVALID_QUERY, 'clientId parameter required');
+      throw new Parse.Error(
+        Parse.Error.INVALID_QUERY,
+        "clientId parameter required",
+      );
     }
 
     // Validate interval
-    if (intervalMinutes < 15 || intervalMinutes > 1440) { // 15 minutes to 24 hours
+    if (intervalMinutes < 15 || intervalMinutes > 1440) {
+      // 15 minutes to 24 hours
       throw new Parse.Error(
         Parse.Error.INVALID_QUERY,
-        'intervalMinutes must be between 15 and 1440'
+        "intervalMinutes must be between 15 and 1440",
       );
     }
 
     // Get client
-    const clientQuery = new Parse.Query('Client');
+    const clientQuery = new Parse.Query("Client");
     const client = await clientQuery.get(clientId, { useMasterKey: true });
 
-    if (!client.get('isCorporate') || !client.get('oauthEnabled')) {
+    if (!client.get("isCorporate") || !client.get("oauthEnabled")) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Client is not configured for corporate OAuth sync'
+        "Client is not configured for corporate OAuth sync",
       );
     }
 
     // Start periodic sync
     CorporateSyncService.startPeriodicSync(client, intervalMinutes);
 
-    logger.logSecurityEvent('PERIODIC_SYNC_STARTED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("PERIODIC_SYNC_STARTED", request.user.id, {
+      adminUser: request.user.get("username"),
       clientId,
-      clientName: client.get('name'),
+      clientName: client.get("name"),
       intervalMinutes,
     });
 
     return {
       success: true,
-      message: `Periodic sync started for client ${client.get('name')}`,
+      message: `Periodic sync started for client ${client.get("name")}`,
       clientId,
       intervalMinutes,
     };
   } catch (error) {
-    logger.error('Error starting periodic sync:', error);
+    logger.error("Error starting periodic sync:", error);
     throw error;
   }
 };
@@ -164,28 +177,34 @@ const stopPeriodicSync = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for sync management'
+        "Admin access required for sync management",
       );
     }
 
     const { clientId } = request.params;
 
     if (!clientId) {
-      throw new Parse.Error(Parse.Error.INVALID_QUERY, 'clientId parameter required');
+      throw new Parse.Error(
+        Parse.Error.INVALID_QUERY,
+        "clientId parameter required",
+      );
     }
 
     // Stop periodic sync
     CorporateSyncService.stopPeriodicSync(clientId);
 
-    logger.logSecurityEvent('PERIODIC_SYNC_STOPPED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("PERIODIC_SYNC_STOPPED", request.user.id, {
+      adminUser: request.user.get("username"),
       clientId,
     });
 
@@ -195,7 +214,7 @@ const stopPeriodicSync = async (request) => {
       clientId,
     };
   } catch (error) {
-    logger.error('Error stopping periodic sync:', error);
+    logger.error("Error stopping periodic sync:", error);
     throw error;
   }
 };
@@ -217,22 +236,25 @@ const getAllSyncStatuses = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for sync status'
+        "Admin access required for sync status",
       );
     }
 
     // Get all sync statuses
     const statuses = await CorporateSyncService.getAllSyncStatuses();
 
-    logger.logSecurityEvent('SYNC_STATUSES_RETRIEVED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("SYNC_STATUSES_RETRIEVED", request.user.id, {
+      adminUser: request.user.get("username"),
       clientCount: statuses.length,
     });
 
@@ -242,7 +264,7 @@ const getAllSyncStatuses = async (request) => {
       count: statuses.length,
     };
   } catch (error) {
-    logger.error('Error getting sync statuses:', error);
+    logger.error("Error getting sync statuses:", error);
     throw error;
   }
 };
@@ -264,41 +286,47 @@ const getCorporateSyncHistory = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for sync history'
+        "Admin access required for sync history",
       );
     }
 
     const { clientId, _limit = 50, skip = 0 } = request.params;
 
     if (!clientId) {
-      throw new Parse.Error(Parse.Error.INVALID_QUERY, 'clientId parameter required');
+      throw new Parse.Error(
+        Parse.Error.INVALID_QUERY,
+        "clientId parameter required",
+      );
     }
 
     // Query sync-related audit logs
-    const auditQuery = new Parse.Query('AuditLog');
-    auditQuery.containedIn('action', [
-      'CORPORATE_SYNC_STARTED',
-      'CORPORATE_SYNC_COMPLETED',
-      'CORPORATE_SYNC_FAILED',
-      'PERIODIC_SYNC_STARTED',
-      'PERIODIC_SYNC_STOPPED',
+    const auditQuery = new Parse.Query("AuditLog");
+    auditQuery.containedIn("action", [
+      "CORPORATE_SYNC_STARTED",
+      "CORPORATE_SYNC_COMPLETED",
+      "CORPORATE_SYNC_FAILED",
+      "PERIODIC_SYNC_STARTED",
+      "PERIODIC_SYNC_STOPPED",
     ]);
 
     // Filter by clientId in the additional data - use escaped string matching
     // Escape clientId to prevent RegExp injection attacks
-    const escapedClientId = clientId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedClientId = clientId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const safePattern = `"clientId":"${escapedClientId}"`;
 
     // Use string contains instead of RegExp to avoid ReDoS
-    auditQuery.contains('additionalData', safePattern);
-    auditQuery.descending('createdAt');
+    auditQuery.contains("additionalData", safePattern);
+    auditQuery.descending("createdAt");
     auditQuery.limit(Math.min(_limit, 100));
     auditQuery.skip(skip);
 
@@ -306,15 +334,15 @@ const getCorporateSyncHistory = async (request) => {
 
     const history = syncHistory.map((log) => ({
       id: log.id,
-      action: log.get('action'),
-      timestamp: log.get('createdAt'),
-      userId: log.get('userId'),
-      additionalData: log.get('additionalData'),
-      success: !log.get('action').includes('FAILED'),
+      action: log.get("action"),
+      timestamp: log.get("createdAt"),
+      userId: log.get("userId"),
+      additionalData: log.get("additionalData"),
+      success: !log.get("action").includes("FAILED"),
     }));
 
-    logger.logSecurityEvent('SYNC_HISTORY_RETRIEVED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("SYNC_HISTORY_RETRIEVED", request.user.id, {
+      adminUser: request.user.get("username"),
       clientId,
       historyCount: history.length,
     });
@@ -326,7 +354,7 @@ const getCorporateSyncHistory = async (request) => {
       count: history.length,
     };
   } catch (error) {
-    logger.error('Error getting sync history:', error);
+    logger.error("Error getting sync history:", error);
     throw error;
   }
 };

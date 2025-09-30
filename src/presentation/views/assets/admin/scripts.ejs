@@ -169,31 +169,25 @@ const AmexingAdmin = {
 
     // Initialize DataTables
     initializeDataTables: function() {
-        // Enhanced diagnostics for CDN loading issues
         if (typeof $ === 'undefined') {
-            console.error('❌ jQuery is not loaded at all');
+            console.error('❌ jQuery not loaded');
             return;
         }
 
         if (typeof $.fn.DataTable === 'undefined') {
-            console.warn('⚠️ DataTables library not loaded, checking CDN resources...');
-
-            // Check if CDN scripts are being blocked
-            this.checkCdnStatus();
-
-            // Stop infinite retry after reasonable attempts
             this.retryCount = (this.retryCount || 0) + 1;
-            if (this.retryCount > 10) {
-                console.error('❌ DataTables CDN failed after 10 attempts, switching to fallback mode');
+
+            if (this.retryCount > 3) {
+                console.warn('⚠️ DataTables CDN failed, loading local fallback');
                 this.loadLocalDataTables();
                 return;
             }
 
-            setTimeout(() => this.initializeDataTables(), 1000);
+            setTimeout(() => this.initializeDataTables(), 300);
             return;
         }
 
-        console.log('📊 DataTables library detected, initializing tables...');
+        console.log('📊 DataTables ready');
 
         // Auto-initialize tables with class 'data-table'
         $('.data-table').each(function() {
@@ -202,7 +196,6 @@ const AmexingAdmin = {
 
             // Skip if already initialized
             if ($.fn.DataTable.isDataTable($table[0])) {
-                console.log('📊 Table already initialized, skipping:', $table.attr('id'));
                 return;
             }
 
@@ -221,7 +214,6 @@ const AmexingAdmin = {
                     window.usersTable = dt;
                 }
 
-                console.log('✅ DataTable initialized successfully for:', $table.attr('id') || $table.get(0).tagName);
             } catch (error) {
                 console.error('❌ Error initializing DataTable:', error);
             }
@@ -494,19 +486,26 @@ const AmexingAdmin = {
 
     // Check CDN status for debugging
     checkCdnStatus: function() {
+        // Check if we already verified CDN this session
+        if (sessionStorage.getItem('cdnStatusChecked') === 'true') {
+            return;
+        }
+
+        sessionStorage.setItem('cdnStatusChecked', 'true');
+
         const cdnUrls = [
             'https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js',
             'https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js'
         ];
 
         cdnUrls.forEach(url => {
-            fetch(url, { method: 'HEAD' })
+            fetch(url, { method: 'HEAD', cache: 'force-cache' })
                 .then(response => {
-                    console.log(`CDN Status for ${url}:`, response.status, response.statusText);
+                    if (!response.ok) {
+                        console.warn(`⚠️ CDN ${url}: ${response.status}`);
+                    }
                 })
-                .catch(error => {
-                    console.error(`CDN Error for ${url}:`, error);
-                });
+                .catch(err => console.warn('⚠️ CDN check failed:', err.message));
         });
     },
 

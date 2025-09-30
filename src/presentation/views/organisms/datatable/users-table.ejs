@@ -70,22 +70,27 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 <!-- DataTable Configuration Script -->
 <script>
 // Function to load API data first, then initialize DataTable
-async function loadUsersAndInitializeTable() {
+async function loadUsersAndInitializeTable(retryCount = 0) {
+    const MAX_RETRIES = 5;
+    const BASE_DELAY = 200; // ms
+
     // Check if jQuery and DataTables are loaded
     if (typeof jQuery === 'undefined' || typeof $ === 'undefined' || typeof $.fn.DataTable === 'undefined') {
-        console.log('⚠️ Libraries not ready, retrying in 500ms...');
-        setTimeout(loadUsersAndInitializeTable, 500);
+        if (retryCount >= MAX_RETRIES) {
+            console.error('❌ DataTables failed to load after', MAX_RETRIES, 'attempts');
+            return;
+        }
+
+        // Exponential backoff: 200ms, 400ms, 800ms, 1600ms, 3200ms
+        const delay = BASE_DELAY * Math.pow(2, retryCount);
+        setTimeout(() => loadUsersAndInitializeTable(retryCount + 1), delay);
         return;
     }
 
-    console.log('✅ Libraries loaded, loading API data...');
-
     const apiEndpoint = '<%= dtApiEndpoint %>';
-    console.log('🎯 API Endpoint:', apiEndpoint);
 
     try {
         // Load users data from API
-        console.log('📤 Fetching users data...');
         const response = await fetch(apiEndpoint, {
             method: 'GET',
             credentials: 'include', // Send cookies
@@ -95,33 +100,30 @@ async function loadUsersAndInitializeTable() {
             }
         });
 
-        console.log('📤 Response status:', response.status);
-
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('📊 API Response:', data);
 
         if (!data.success) {
-            throw new Error(data.error || 'API returned error');
+            throw new Error(data.error || 'API error');
         }
 
         const users = data.data?.users || [];
-        console.log('📊 Users loaded:', users.length);
-
-        if (users.length > 0) {
-            console.log('📊 Sample user:', users[0]);
-        }
 
         // Initialize DataTable with the loaded data
-        console.log('🎯 About to initialize DataTable with users:', users);
-        console.log('🎯 Sample user structure:', JSON.stringify(users[0], null, 2));
         initializeDataTableWithData(users);
 
+        // Dispatch custom event for page to listen
+        document.dispatchEvent(new CustomEvent('usersTableLoaded', {
+            detail: { count: users.length, users }
+        }));
+
+        console.log('✅ Users table loaded:', users.length, 'records');
+
     } catch (error) {
-        console.error('❌ Error loading users:', error);
+        console.error('❌ Error loading users:', error.message);
         // Initialize empty table on error
         initializeDataTableWithData([]);
     }
@@ -129,8 +131,6 @@ async function loadUsersAndInitializeTable() {
 
 // Function to initialize DataTable with pre-loaded data
 function initializeDataTableWithData(usersData) {
-    console.log('🎯 Initializing DataTable with', usersData.length, 'users');
-
     const tableId = '<%= dtTableId %>';
     const canEdit = <%= canEdit %>;
     const canDelete = <%= canDelete %>;
@@ -243,26 +243,12 @@ function initializeDataTableWithData(usersData) {
         // Destroy existing instance if exists
         if ($.fn.DataTable.isDataTable('#' + tableId)) {
             $('#' + tableId).DataTable().destroy();
-            console.log('🔄 Destroyed existing DataTable instance');
         }
 
         const usersTable = $('#' + tableId).DataTable(tableConfig);
-        console.log('✅ DataTable initialized successfully with', usersData.length, 'users');
-        console.log('✅ Table ID used:', tableId);
-        console.log('✅ Table element exists:', $('#' + tableId).length > 0);
-        console.log('✅ Table data loaded:', usersTable.data().count());
 
         // Store reference globally
         window.usersTable = usersTable;
-        console.log('✅ Global reference stored at window.usersTable');
-
-        // Force immediate draw to show data
-        setTimeout(() => {
-            usersTable.draw();
-            console.log('🔄 Forced redraw completed');
-            const info = usersTable.page.info();
-            console.log('🔄 Table info after redraw:', info);
-        }, 100);
 
     } catch (error) {
         console.error('❌ Failed to initialize DataTable:', error);
@@ -280,9 +266,10 @@ function deleteUser(userId) {
     // TODO: Implement delete functionality
 }
 
-// Wait for document ready and start loading
-$(document).ready(function() {
-    console.log('📋 Document ready, starting users table initialization...');
+// Start loading when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadUsersAndInitializeTable);
+} else {
     loadUsersAndInitializeTable();
-});
+}
 </script>

@@ -19,8 +19,8 @@
  * // Returns: operation result
  */
 
-const UserManagementService = require('../../services/UserManagementService');
-const logger = require('../../../infrastructure/logger');
+const UserManagementService = require("../../services/UserManagementService");
+const logger = require("../../../infrastructure/logger");
 
 /**
  * UserManagementController class implementing RESTful API for user management.
@@ -65,7 +65,7 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       // Parse and validate query parameters
@@ -80,7 +80,7 @@ class UserManagementController {
       const response = {
         ...result,
         requestMetadata: {
-          endpoint: 'getUsers',
+          endpoint: "getUsers",
           requestedBy: currentUser.id,
           requestedRole: req.userRole,
           timestamp: new Date(),
@@ -88,9 +88,9 @@ class UserManagementController {
         },
       };
 
-      this.sendSuccess(res, response, 'Users retrieved successfully');
+      this.sendSuccess(res, response, "Users retrieved successfully");
     } catch (error) {
-      logger.error('Error in UserManagementController.getUsers', {
+      logger.error("Error in UserManagementController.getUsers", {
         error: error.message,
         stack: error.stack,
         userId: req.user?.id,
@@ -121,33 +121,33 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       const userId = req.params.id;
       if (!userId) {
-        return this.sendError(res, 'User ID is required', 400);
+        return this.sendError(res, "User ID is required", 400);
       }
 
       // Get user from service
       const user = await this.userService.getUserById(currentUser, userId);
 
       if (!user) {
-        return this.sendError(res, 'User not found or access denied', 404);
+        return this.sendError(res, "User not found or access denied", 404);
       }
 
-      this.sendSuccess(res, { user }, 'User retrieved successfully');
+      this.sendSuccess(res, { user }, "User retrieved successfully");
     } catch (error) {
-      logger.error('Error in UserManagementController.getUserById', {
+      logger.error("Error in UserManagementController.getUserById", {
         error: error.message,
         userId: req.user?.id,
         targetUserId: req.params.id,
       });
 
-      if (error.message.includes('Insufficient permissions')) {
+      if (error.message.includes("Insufficient permissions")) {
         this.sendError(res, error.message, 403);
       } else {
-        this.sendError(res, 'Failed to retrieve user', 500);
+        this.sendError(res, "Failed to retrieve user", 500);
       }
     }
   }
@@ -185,13 +185,17 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       // Validate request body
       const validationErrors = this.validateCreateUserRequest(req.body);
       if (validationErrors.length > 0) {
-        return this.sendError(res, `Validation failed: ${validationErrors.join(', ')}`, 400);
+        return this.sendError(
+          res,
+          `Validation failed: ${validationErrors.join(", ")}`,
+          400,
+        );
       }
 
       const userData = this.sanitizeUserData(req.body);
@@ -206,7 +210,7 @@ class UserManagementController {
       const newUser = await this.userService.createUser(userData, currentUser);
 
       // Log successful creation
-      logger.info('User created via API', {
+      logger.info("User created via API", {
         newUserId: newUser.id,
         email: userData.email,
         role: userData.role,
@@ -218,26 +222,26 @@ class UserManagementController {
         user: newUser,
         passwordGenerated: !req.body.password,
         message: !req.body.password
-          ? 'User created successfully. Temporary password generated - user must change on first login.'
-          : 'User created successfully.',
+          ? "User created successfully. Temporary password generated - user must change on first login."
+          : "User created successfully.",
       };
 
-      this.sendSuccess(res, responseData, 'User created successfully', 201);
+      this.sendSuccess(res, responseData, "User created successfully", 201);
     } catch (error) {
-      logger.error('Error in UserManagementController.createUser', {
+      logger.error("Error in UserManagementController.createUser", {
         error: error.message,
-        userData: { ...req.body, password: '[REDACTED]' },
+        userData: { ...req.body, password: "[REDACTED]" },
         createdBy: req.user?.id,
       });
 
-      if (error.message.includes('Insufficient permissions')) {
+      if (error.message.includes("Insufficient permissions")) {
         this.sendError(res, error.message, 403);
-      } else if (error.message.includes('already exists')) {
+      } else if (error.message.includes("already exists")) {
         this.sendError(res, error.message, 409);
-      } else if (error.message.includes('Validation failed')) {
+      } else if (error.message.includes("Validation failed")) {
         this.sendError(res, error.message, 400);
       } else {
-        this.sendError(res, 'Failed to create user', 500);
+        this.sendError(res, "Failed to create user", 500);
       }
     }
   }
@@ -270,18 +274,22 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       const userId = req.params.id;
       if (!userId) {
-        return this.sendError(res, 'User ID is required', 400);
+        return this.sendError(res, "User ID is required", 400);
       }
 
       // Validate request body
       const validationErrors = this.validateUpdateUserRequest(req.body);
       if (validationErrors.length > 0) {
-        return this.sendError(res, `Validation failed: ${validationErrors.join(', ')}`, 400);
+        return this.sendError(
+          res,
+          `Validation failed: ${validationErrors.join(", ")}`,
+          400,
+        );
       }
 
       const updates = this.sanitizeUserData(req.body);
@@ -290,32 +298,35 @@ class UserManagementController {
       const updatedUser = await this.userService.updateUser(
         userId,
         updates,
-        currentUser
+        currentUser,
       );
 
-      logger.info('User updated via API', {
+      logger.info("User updated via API", {
         updatedUserId: userId,
         fieldsUpdated: Object.keys(updates),
         modifiedBy: currentUser.id,
       });
 
-      this.sendSuccess(res, { user: updatedUser }, 'User updated successfully');
+      this.sendSuccess(res, { user: updatedUser }, "User updated successfully");
     } catch (error) {
-      logger.error('Error in UserManagementController.updateUser', {
+      logger.error("Error in UserManagementController.updateUser", {
         error: error.message,
         userId: req.params.id,
-        updates: { ...req.body, password: req.body.password ? '[REDACTED]' : undefined },
+        updates: {
+          ...req.body,
+          password: req.body.password ? "[REDACTED]" : undefined,
+        },
         modifiedBy: req.user?.id,
       });
 
-      if (error.message.includes('Insufficient permissions')) {
+      if (error.message.includes("Insufficient permissions")) {
         this.sendError(res, error.message, 403);
-      } else if (error.message.includes('not found')) {
+      } else if (error.message.includes("not found")) {
         this.sendError(res, error.message, 404);
-      } else if (error.message.includes('Validation failed')) {
+      } else if (error.message.includes("Validation failed")) {
         this.sendError(res, error.message, 400);
       } else {
-        this.sendError(res, 'Failed to update user', 500);
+        this.sendError(res, "Failed to update user", 500);
       }
     }
   }
@@ -345,53 +356,57 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       const userId = req.params.id;
       if (!userId) {
-        return this.sendError(res, 'User ID is required', 400);
+        return this.sendError(res, "User ID is required", 400);
       }
 
-      const reason = req.body.reason || 'Deactivated via API';
+      const reason = req.body.reason || "Deactivated via API";
 
       // Deactivate user through service
       const success = await this.userService.deactivateUser(
         userId,
         currentUser,
-        reason
+        reason,
       );
 
       if (success) {
-        logger.info('User deactivated via API', {
+        logger.info("User deactivated via API", {
           deactivatedUserId: userId,
           reason,
           deactivatedBy: currentUser.id,
         });
 
-        this.sendSuccess(res, {
-          deactivated: true,
-          reason,
-        }, 'User deactivated successfully');
+        this.sendSuccess(
+          res,
+          {
+            deactivated: true,
+            reason,
+          },
+          "User deactivated successfully",
+        );
       } else {
-        this.sendError(res, 'Failed to deactivate user', 500);
+        this.sendError(res, "Failed to deactivate user", 500);
       }
     } catch (error) {
-      logger.error('Error in UserManagementController.deactivateUser', {
+      logger.error("Error in UserManagementController.deactivateUser", {
         error: error.message,
         userId: req.params.id,
         reason: req.body.reason,
         deactivatedBy: req.user?.id,
       });
 
-      if (error.message.includes('Insufficient permissions')) {
+      if (error.message.includes("Insufficient permissions")) {
         this.sendError(res, error.message, 403);
-      } else if (error.message.includes('not found')) {
+      } else if (error.message.includes("not found")) {
         this.sendError(res, error.message, 404);
-      } else if (error.message.includes('Cannot deactivate your own account')) {
+      } else if (error.message.includes("Cannot deactivate your own account")) {
         this.sendError(res, error.message, 400);
       } else {
-        this.sendError(res, 'Failed to deactivate user', 500);
+        this.sendError(res, "Failed to deactivate user", 500);
       }
     }
   }
@@ -423,51 +438,55 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       const userId = req.params.id;
       if (!userId) {
-        return this.sendError(res, 'User ID is required', 400);
+        return this.sendError(res, "User ID is required", 400);
       }
 
-      const reason = req.body.reason || 'Reactivated via API';
+      const reason = req.body.reason || "Reactivated via API";
 
       // Reactivate user through service
       const success = await this.userService.reactivateUser(
         userId,
         currentUser,
-        reason
+        reason,
       );
 
       if (success) {
-        logger.info('User reactivated via API', {
+        logger.info("User reactivated via API", {
           reactivatedUserId: userId,
           reason,
           reactivatedBy: currentUser.id,
         });
 
-        this.sendSuccess(res, {
-          reactivated: true,
-          reason,
-        }, 'User reactivated successfully');
+        this.sendSuccess(
+          res,
+          {
+            reactivated: true,
+            reason,
+          },
+          "User reactivated successfully",
+        );
       } else {
-        this.sendError(res, 'Failed to reactivate user', 500);
+        this.sendError(res, "Failed to reactivate user", 500);
       }
     } catch (error) {
-      logger.error('Error in UserManagementController.reactivateUser', {
+      logger.error("Error in UserManagementController.reactivateUser", {
         error: error.message,
         userId: req.params.id,
         reason: req.body.reason,
         reactivatedBy: req.user?.id,
       });
 
-      if (error.message.includes('Insufficient permissions')) {
+      if (error.message.includes("Insufficient permissions")) {
         this.sendError(res, error.message, 403);
-      } else if (error.message.includes('not found')) {
+      } else if (error.message.includes("not found")) {
         this.sendError(res, error.message, 404);
       } else {
-        this.sendError(res, 'Failed to reactivate user', 500);
+        this.sendError(res, "Failed to reactivate user", 500);
       }
     }
   }
@@ -494,50 +513,64 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       const userId = req.params.id;
       if (!userId) {
-        return this.sendError(res, 'User ID is required', 400);
+        return this.sendError(res, "User ID is required", 400);
       }
 
       const { active, reason } = req.body;
-      if (typeof active !== 'boolean') {
-        return this.sendError(res, 'Active status (boolean) is required', 400);
+      if (typeof active !== "boolean") {
+        return this.sendError(res, "Active status (boolean) is required", 400);
       }
 
-      const actionReason = reason || `User ${active ? 'activated' : 'deactivated'} via API`;
+      const actionReason =
+        reason || `User ${active ? "activated" : "deactivated"} via API`;
 
       // Toggle user status through service
-      const result = await this.userService.toggleUserStatus(currentUser, userId, active, actionReason);
+      const result = await this.userService.toggleUserStatus(
+        currentUser,
+        userId,
+        active,
+        actionReason,
+      );
 
       if (result.success) {
-        logger.info('User status toggled via API', {
+        logger.info("User status toggled via API", {
           targetUserId: userId,
           newStatus: active,
           reason: actionReason,
           actionBy: currentUser.id,
         });
 
-        this.sendSuccess(res, {
-          user: result.user,
-          previousStatus: result.previousStatus,
-          newStatus: active,
-          reason: actionReason,
-        }, `User ${active ? 'activated' : 'deactivated'} successfully`);
+        this.sendSuccess(
+          res,
+          {
+            user: result.user,
+            previousStatus: result.previousStatus,
+            newStatus: active,
+            reason: actionReason,
+          },
+          `User ${active ? "activated" : "deactivated"} successfully`,
+        );
       } else {
-        this.sendError(res, result.message || 'Failed to toggle user status', 400);
+        this.sendError(
+          res,
+          result.message || "Failed to toggle user status",
+          400,
+        );
       }
     } catch (error) {
-      logger.error('Error in UserManagementController.toggleUserStatus', {
+      logger.error("Error in UserManagementController.toggleUserStatus", {
         error: error.message,
         userId: req.params.id,
         targetStatus: req.body.active,
         actionBy: req.user?.id,
       });
 
-      this.sendError(res, 'Internal server error', 500);
+      this.sendError(res, "Internal server error", 500);
     }
   }
 
@@ -563,43 +596,51 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       const userId = req.params.id;
       if (!userId) {
-        return this.sendError(res, 'User ID is required', 400);
+        return this.sendError(res, "User ID is required", 400);
       }
 
-      const reason = req.body.reason || 'User archived via API';
+      const reason = req.body.reason || "User archived via API";
 
       // Archive user through service
-      const result = await this.userService.archiveUser(currentUser, userId, reason);
+      const result = await this.userService.archiveUser(
+        currentUser,
+        userId,
+        reason,
+      );
 
       if (result.success) {
-        logger.info('User archived via API', {
+        logger.info("User archived via API", {
           archivedUserId: userId,
           reason,
           archivedBy: currentUser.id,
         });
 
-        this.sendSuccess(res, {
-          user: result.user,
-          archived: true,
-          reason,
-        }, 'User archived successfully');
+        this.sendSuccess(
+          res,
+          {
+            user: result.user,
+            archived: true,
+            reason,
+          },
+          "User archived successfully",
+        );
       } else {
-        this.sendError(res, result.message || 'Failed to archive user', 400);
+        this.sendError(res, result.message || "Failed to archive user", 400);
       }
     } catch (error) {
-      logger.error('Error in UserManagementController.archiveUser', {
+      logger.error("Error in UserManagementController.archiveUser", {
         error: error.message,
         userId: req.params.id,
         reason: req.body.reason,
         archivedBy: req.user?.id,
       });
 
-      this.sendError(res, 'Internal server error', 500);
+      this.sendError(res, "Internal server error", 500);
     }
   }
 
@@ -630,20 +671,20 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       // Permission validation is handled by middleware
 
       const stats = await this.userService.getUserStatistics(currentUser);
-      this.sendSuccess(res, stats, 'Statistics retrieved successfully');
+      this.sendSuccess(res, stats, "Statistics retrieved successfully");
     } catch (error) {
-      logger.error('Error in UserManagementController.getUserStatistics', {
+      logger.error("Error in UserManagementController.getUserStatistics", {
         error: error.message,
         userId: req.user?.id,
       });
 
-      this.sendError(res, 'Failed to retrieve statistics', 500);
+      this.sendError(res, "Failed to retrieve statistics", 500);
     }
   }
 
@@ -673,23 +714,26 @@ class UserManagementController {
     try {
       const currentUser = req.user;
       if (!currentUser) {
-        return this.sendError(res, 'Authentication required', 401);
+        return this.sendError(res, "Authentication required", 401);
       }
 
       const searchParams = this.parseSearchParams(req.query);
 
       // Perform search through service
-      const result = await this.userService.searchUsers(currentUser, searchParams);
+      const result = await this.userService.searchUsers(
+        currentUser,
+        searchParams,
+      );
 
-      this.sendSuccess(res, result, 'Search completed successfully');
+      this.sendSuccess(res, result, "Search completed successfully");
     } catch (error) {
-      logger.error('Error in UserManagementController.searchUsers', {
+      logger.error("Error in UserManagementController.searchUsers", {
         error: error.message,
         userId: req.user?.id,
         searchParams: req.query,
       });
 
-      this.sendError(res, 'Search failed', 500);
+      this.sendError(res, "Search failed", 500);
     }
   }
 
@@ -713,7 +757,7 @@ class UserManagementController {
     const page = Math.max(1, parseInt(query.page, 10) || 1);
     const limit = Math.min(
       this.maxPageSize,
-      Math.max(1, parseInt(query.limit, 10) || this.defaultPageSize)
+      Math.max(1, parseInt(query.limit, 10) || this.defaultPageSize),
     );
 
     return {
@@ -721,16 +765,19 @@ class UserManagementController {
       page,
       limit,
       filters: {
-        active: query.active !== undefined ? query.active === 'true' : null,
-        emailVerified: query.emailVerified !== undefined ? query.emailVerified === 'true' : null,
+        active: query.active !== undefined ? query.active === "true" : null,
+        emailVerified:
+          query.emailVerified !== undefined
+            ? query.emailVerified === "true"
+            : null,
         clientId: query.clientId || null,
         departmentId: query.departmentId || null,
         createdAfter: query.createdAfter || null,
         createdBefore: query.createdBefore || null,
       },
       sort: {
-        field: query.sortField || 'lastName',
-        direction: query.sortDirection || 'asc',
+        field: query.sortField || "lastName",
+        direction: query.sortDirection || "asc",
       },
     };
   }
@@ -751,16 +798,16 @@ class UserManagementController {
    */
   parseSearchParams(query) {
     return {
-      query: query.q || '',
+      query: query.q || "",
       role: query.role || null,
-      active: query.active !== undefined ? query.active === 'true' : null,
+      active: query.active !== undefined ? query.active === "true" : null,
       page: Math.max(1, parseInt(query.page, 10) || 1),
       limit: Math.min(
         this.maxPageSize,
-        Math.max(1, parseInt(query.limit, 10) || this.defaultPageSize)
+        Math.max(1, parseInt(query.limit, 10) || this.defaultPageSize),
       ),
-      sortField: query.sortField || 'lastName',
-      sortDirection: query.sortDirection || 'asc',
+      sortField: query.sortField || "lastName",
+      sortDirection: query.sortDirection || "asc",
     };
   }
 
@@ -800,16 +847,28 @@ class UserManagementController {
   validateRequiredFields(data) {
     const errors = [];
 
-    if (!data.email || typeof data.email !== 'string' || data.email.trim() === '') {
-      errors.push('Email is required');
+    if (
+      !data.email ||
+      typeof data.email !== "string" ||
+      data.email.trim() === ""
+    ) {
+      errors.push("Email is required");
     }
 
-    if (!data.firstName || typeof data.firstName !== 'string' || data.firstName.trim() === '') {
-      errors.push('First name is required');
+    if (
+      !data.firstName ||
+      typeof data.firstName !== "string" ||
+      data.firstName.trim() === ""
+    ) {
+      errors.push("First name is required");
     }
 
-    if (!data.lastName || typeof data.lastName !== 'string' || data.lastName.trim() === '') {
-      errors.push('Last name is required');
+    if (
+      !data.lastName ||
+      typeof data.lastName !== "string" ||
+      data.lastName.trim() === ""
+    ) {
+      errors.push("Last name is required");
     }
 
     return errors;
@@ -830,7 +889,7 @@ class UserManagementController {
     if (email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
-        errors.push('Invalid email format');
+        errors.push("Invalid email format");
       }
     }
 
@@ -850,20 +909,35 @@ class UserManagementController {
     const errors = [];
 
     // Role validation (for backward compatibility)
-    const allowedRoles = ['superadmin', 'admin', 'client', 'department_manager', 'employee', 'employee_amexing', 'driver', 'guest'];
+    const allowedRoles = [
+      "superadmin",
+      "admin",
+      "client",
+      "department_manager",
+      "employee",
+      "employee_amexing",
+      "driver",
+      "guest",
+    ];
     if (data.role && !allowedRoles.includes(data.role)) {
-      errors.push(`Invalid role. Allowed roles: ${allowedRoles.join(', ')}`);
+      errors.push(`Invalid role. Allowed roles: ${allowedRoles.join(", ")}`);
     }
 
     // Require either role or roleId
-    if ((!data.role || typeof data.role !== 'string' || data.role.trim() === '')
-        && (!data.roleId || typeof data.roleId !== 'string' || data.roleId.trim() === '')) {
-      errors.push('Either role or roleId is required');
+    if (
+      (!data.role ||
+        typeof data.role !== "string" ||
+        data.role.trim() === "") &&
+      (!data.roleId ||
+        typeof data.roleId !== "string" ||
+        data.roleId.trim() === "")
+    ) {
+      errors.push("Either role or roleId is required");
     }
 
     // RoleId validation if provided
-    if (data.roleId && typeof data.roleId !== 'string') {
-      errors.push('Role ID must be a string');
+    if (data.roleId && typeof data.roleId !== "string") {
+      errors.push("Role ID must be a string");
     }
 
     return errors;
@@ -891,21 +965,30 @@ class UserManagementController {
     if (data.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(data.email.trim())) {
-        errors.push('Invalid email format');
+        errors.push("Invalid email format");
       }
     }
 
     // Role validation if provided (for backward compatibility)
     if (data.role) {
-      const allowedRoles = ['superadmin', 'admin', 'client', 'department_manager', 'employee', 'employee_amexing', 'driver', 'guest'];
+      const allowedRoles = [
+        "superadmin",
+        "admin",
+        "client",
+        "department_manager",
+        "employee",
+        "employee_amexing",
+        "driver",
+        "guest",
+      ];
       if (!allowedRoles.includes(data.role)) {
-        errors.push(`Invalid role. Allowed roles: ${allowedRoles.join(', ')}`);
+        errors.push(`Invalid role. Allowed roles: ${allowedRoles.join(", ")}`);
       }
     }
 
     // RoleId validation if provided
-    if (data.roleId && typeof data.roleId !== 'string') {
-      errors.push('Role ID must be a string');
+    if (data.roleId && typeof data.roleId !== "string") {
+      errors.push("Role ID must be a string");
     }
 
     return errors;
@@ -929,17 +1012,29 @@ class UserManagementController {
     const sanitized = {};
 
     // String fields that should be trimmed
-    const stringFields = ['email', 'firstName', 'lastName', 'role', 'roleId', 'clientId', 'departmentId', 'organizationId'];
+    const stringFields = [
+      "email",
+      "firstName",
+      "lastName",
+      "role",
+      "roleId",
+      "clientId",
+      "departmentId",
+      "organizationId",
+    ];
     stringFields.forEach((field) => {
       // eslint-disable-next-line security/detect-object-injection
-      if (Object.prototype.hasOwnProperty.call(data, field) && typeof data[field] === 'string') {
+      if (
+        Object.prototype.hasOwnProperty.call(data, field) &&
+        typeof data[field] === "string"
+      ) {
         // eslint-disable-next-line security/detect-object-injection
         sanitized[field] = data[field].trim();
       }
     });
 
     // Boolean fields
-    const booleanFields = ['active', 'emailVerified', 'mustChangePassword'];
+    const booleanFields = ["active", "emailVerified", "mustChangePassword"];
     booleanFields.forEach((field) => {
       // eslint-disable-next-line security/detect-object-injection
       if (Object.prototype.hasOwnProperty.call(data, field)) {
@@ -949,12 +1044,12 @@ class UserManagementController {
     });
 
     // Object fields (for contextual data)
-    if (data.contextualData && typeof data.contextualData === 'object') {
+    if (data.contextualData && typeof data.contextualData === "object") {
       sanitized.contextualData = data.contextualData;
     }
 
     // Password field (handled specially)
-    if (data.password && typeof data.password === 'string') {
+    if (data.password && typeof data.password === "string") {
       sanitized.password = data.password; // Don't trim passwords
     }
 
@@ -986,8 +1081,9 @@ class UserManagementController {
    */
   generateSecurePassword() {
     const length = 12;
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    let password = '';
+    const charset =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
 
     for (let i = 0; i < length; i += 1) {
       password += charset.charAt(Math.floor(Math.random() * charset.length));
@@ -1008,7 +1104,7 @@ class UserManagementController {
    * this.sendSuccess(res, { user: userData }, 'User created successfully', 201);
    * // Sends: { success: true, message: '...', data: {...}, timestamp: '...' }
    */
-  sendSuccess(res, data, message = 'Success', statusCode = 200) {
+  sendSuccess(res, data, message = "Success", statusCode = 200) {
     res.status(statusCode).json({
       success: true,
       message,

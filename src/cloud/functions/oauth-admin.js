@@ -10,10 +10,10 @@
  * // Returns: function result
  */
 
-const Parse = require('parse/node');
-const OAuthService = require('../../application/services/OAuthService');
-const CorporateOAuthService = require('../../application/services/CorporateOAuthService');
-const logger = require('../../infrastructure/logger');
+const Parse = require("parse/node");
+const OAuthService = require("../../application/services/OAuthService");
+const CorporateOAuthService = require("../../application/services/CorporateOAuthService");
+const logger = require("../../infrastructure/logger");
 
 /**
  * Gets available corporate domains configuration
@@ -30,21 +30,24 @@ const getAvailableCorporateDomains = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for corporate domain management'
+        "Admin access required for corporate domain management",
       );
     }
 
     const corporateDomains = OAuthService.getAvailableCorporateDomains();
 
-    logger.logSecurityEvent('CORPORATE_DOMAINS_RETRIEVED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("CORPORATE_DOMAINS_RETRIEVED", request.user.id, {
+      adminUser: request.user.get("username"),
       domainCount: corporateDomains.length,
     });
 
@@ -54,7 +57,7 @@ const getAvailableCorporateDomains = async (request) => {
       message: `Retrieved ${corporateDomains.length} corporate domain configurations`,
     };
   } catch (error) {
-    logger.error('Error retrieving corporate domains:', error);
+    logger.error("Error retrieving corporate domains:", error);
     throw error;
   }
 };
@@ -74,26 +77,34 @@ const addCorporateDomain = async (request) => {
   try {
     // Check superadmin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (userRole !== 'superadmin') {
+    const userRole = request.user.get("role");
+    if (userRole !== "superadmin") {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Superadmin access required for domain configuration'
+        "Superadmin access required for domain configuration",
       );
     }
 
     const {
-      _domain, clientName, type, primaryProvider, autoProvisionEmployees, departmentMapping,
+      _domain,
+      clientName,
+      type,
+      primaryProvider,
+      autoProvisionEmployees,
+      departmentMapping,
     } = request.params;
 
     // Validate required parameters
     if (!_domain || !clientName || !type || !primaryProvider) {
       throw new Parse.Error(
         Parse.Error.INVALID_QUERY,
-        'Missing required parameters: domain, clientName, type, primaryProvider'
+        "Missing required parameters: domain, clientName, type, primaryProvider",
       );
     }
 
@@ -102,23 +113,26 @@ const addCorporateDomain = async (request) => {
     if (!availableProviders.includes(primaryProvider)) {
       throw new Parse.Error(
         Parse.Error.INVALID_QUERY,
-        `Invalid _provider. Available: ${availableProviders.join(', ')}`
+        `Invalid _provider. Available: ${availableProviders.join(", ")}`,
       );
     }
 
     // Validate domain format
     // eslint-disable-next-line security/detect-unsafe-regex
-    const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    const domainRegex =
+      /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     if (!domainRegex.test(_domain)) {
-      throw new Parse.Error(Parse.Error.INVALID_QUERY, 'Invalid domain format');
+      throw new Parse.Error(Parse.Error.INVALID_QUERY, "Invalid domain format");
     }
 
     // Check if domain already exists
-    const existingConfig = OAuthService.getCorporateDomainConfig(`test@${_domain}`);
+    const existingConfig = OAuthService.getCorporateDomainConfig(
+      `test@${_domain}`,
+    );
     if (existingConfig) {
       throw new Parse.Error(
         Parse.Error.DUPLICATE_VALUE,
-        `Domain ${_domain} is already configured`
+        `Domain ${_domain} is already configured`,
       );
     }
 
@@ -131,7 +145,7 @@ const addCorporateDomain = async (request) => {
     };
 
     // Add Microsoft-specific configuration if needed
-    if (primaryProvider === 'microsoft') {
+    if (primaryProvider === "microsoft") {
       config.microsoftTenantId = process.env.MICROSOFT_OAUTH_TENANT_ID;
       config.enableDirectorySync = true;
     }
@@ -139,8 +153,8 @@ const addCorporateDomain = async (request) => {
     // Add the corporate domain
     OAuthService.addCorporateDomain(_domain, config);
 
-    logger.logSecurityEvent('CORPORATE_DOMAIN_ADDED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("CORPORATE_DOMAIN_ADDED", request.user.id, {
+      adminUser: request.user.get("username"),
       domain, // eslint-disable-line no-undef
       clientName,
       provider: primaryProvider,
@@ -154,7 +168,7 @@ const addCorporateDomain = async (request) => {
       message: `Corporate domain ${_domain} configured successfully`,
     };
   } catch (error) {
-    logger.error('Error adding corporate domain:', error);
+    logger.error("Error adding corporate domain:", error);
     throw error;
   }
 };
@@ -174,14 +188,17 @@ const getOAuthProviderStatus = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for OAuth provider status'
+        "Admin access required for OAuth provider status",
       );
     }
 
@@ -199,19 +216,23 @@ const getOAuthProviderStatus = async (request) => {
       };
     }
 
-    logger.logSecurityEvent('OAUTH_PROVIDER_STATUS_RETRIEVED', request.user.id, {
-      adminUser: request.user.get('username'),
-      providers: availableProviders,
-    });
+    logger.logSecurityEvent(
+      "OAUTH_PROVIDER_STATUS_RETRIEVED",
+      request.user.id,
+      {
+        adminUser: request.user.get("username"),
+        providers: availableProviders,
+      },
+    );
 
     return {
       success: true,
       providers: providerConfigs,
       totalProviders: availableProviders.length,
-      mockMode: process.env.OAUTH_MOCK_MODE === 'true',
+      mockMode: process.env.OAUTH_MOCK_MODE === "true",
     };
   } catch (error) {
-    logger.error('Error retrieving OAuth provider status:', error);
+    logger.error("Error retrieving OAuth provider status:", error);
     throw error;
   }
 };
@@ -231,21 +252,27 @@ const testCorporateDomain = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
+      throw new Parse.Error(
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
+      );
     }
 
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
       throw new Parse.Error(
         Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for domain testing'
+        "Admin access required for domain testing",
       );
     }
 
     const { testEmail } = request.params;
 
     if (!testEmail) {
-      throw new Parse.Error(Parse.Error.INVALID_QUERY, 'testEmail parameter required');
+      throw new Parse.Error(
+        Parse.Error.INVALID_QUERY,
+        "testEmail parameter required",
+      );
     }
 
     // Extract domain and check configuration
@@ -262,14 +289,16 @@ const testCorporateDomain = async (request) => {
     }
 
     // Test the provider availability
-    const providerConfig = OAuthService.getProviderConfig(domainConfig.primaryProvider);
+    const providerConfig = OAuthService.getProviderConfig(
+      domainConfig.primaryProvider,
+    );
 
-    logger.logSecurityEvent('CORPORATE_DOMAIN_TESTED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("CORPORATE_DOMAIN_TESTED", request.user.id, {
+      adminUser: request.user.get("username"),
       testEmail: CorporateOAuthService.maskEmail(testEmail),
       domain,
       provider: domainConfig.primaryProvider,
-      result: 'configured',
+      result: "configured",
     });
 
     return {
@@ -286,7 +315,7 @@ const testCorporateDomain = async (request) => {
       providerConfig,
     };
   } catch (error) {
-    logger.error('Error testing corporate domain:', error);
+    logger.error("Error testing corporate domain:", error);
     throw error;
   }
 };
@@ -306,23 +335,26 @@ const getOAuthAuditLogs = async (request) => {
   try {
     // Check admin permissions
     if (!request.user) {
-      throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'User not authenticated');
-    }
-
-    const userRole = request.user.get('role');
-    if (!['admin', 'superadmin'].includes(userRole)) {
       throw new Parse.Error(
-        Parse.Error.OPERATION_FORBIDDEN,
-        'Admin access required for audit logs'
+        Parse.Error.INVALID_SESSION_TOKEN,
+        "User not authenticated",
       );
     }
 
-    const { _limit = 50, skip = 0, entityType = 'OAuthEvent' } = request.params;
+    const userRole = request.user.get("role");
+    if (!["admin", "superadmin"].includes(userRole)) {
+      throw new Parse.Error(
+        Parse.Error.OPERATION_FORBIDDEN,
+        "Admin access required for audit logs",
+      );
+    }
+
+    const { _limit = 50, skip = 0, entityType = "OAuthEvent" } = request.params;
 
     // Query OAuth-related audit logs
-    const auditQuery = new Parse.Query('AuditLog');
-    auditQuery.equalTo('entityType', entityType);
-    auditQuery.descending('createdAt');
+    const auditQuery = new Parse.Query("AuditLog");
+    auditQuery.equalTo("entityType", entityType);
+    auditQuery.descending("createdAt");
     auditQuery.limit(Math.min(_limit, 100)); // Max 100 records
     auditQuery.skip(skip);
 
@@ -330,18 +362,18 @@ const getOAuthAuditLogs = async (request) => {
 
     const logs = auditLogs.map((log) => ({
       id: log.id,
-      action: log.get('action'),
-      entityId: log.get('entityId'),
-      userId: log.get('userId'),
-      timestamp: log.get('createdAt'),
-      oauthProvider: log.get('oauthProvider'),
-      pciRelevant: log.get('pciRelevant'),
+      action: log.get("action"),
+      entityId: log.get("entityId"),
+      userId: log.get("userId"),
+      timestamp: log.get("createdAt"),
+      oauthProvider: log.get("oauthProvider"),
+      pciRelevant: log.get("pciRelevant"),
       // Exclude sensitive details for security
-      hasDetails: !!log.get('oauthDetails'),
+      hasDetails: !!log.get("oauthDetails"),
     }));
 
-    logger.logSecurityEvent('OAUTH_AUDIT_LOGS_RETRIEVED', request.user.id, {
-      adminUser: request.user.get('username'),
+    logger.logSecurityEvent("OAUTH_AUDIT_LOGS_RETRIEVED", request.user.id, {
+      adminUser: request.user.get("username"),
       logCount: logs.length,
       entityType,
     });
@@ -353,7 +385,7 @@ const getOAuthAuditLogs = async (request) => {
       entityType,
     };
   } catch (error) {
-    logger.error('Error retrieving OAuth audit logs:', error);
+    logger.error("Error retrieving OAuth audit logs:", error);
     throw error;
   }
 };

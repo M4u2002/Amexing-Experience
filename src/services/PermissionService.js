@@ -17,7 +17,7 @@
  * // Returns: { success: true, data: {...} }
  */
 
-const logger = require('../infrastructure/logger');
+const logger = require("../infrastructure/logger");
 
 /**
  * Permission Service - Core permission management and authorization system.
@@ -90,7 +90,7 @@ class PermissionService {
    */
   initialize(database) {
     this.db = database;
-    logger.info('PermissionService initialized');
+    logger.info("PermissionService initialized");
   }
 
   // ============================================
@@ -124,36 +124,46 @@ class PermissionService {
       // Check cache first
       const cacheKey = `user_permissions:${userId}:${JSON.stringify(context)}`;
       const cached = this.permissionCache.get(cacheKey);
-      if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+      if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
         return cached.permissions;
       }
 
       // Get user details
-      const user = await this.db.collection('AmexingUser').findOne({
+      const user = await this.db.collection("AmexingUser").findOne({
         id: userId,
         active: true,
         deleted: false,
       });
 
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
 
       const effectivePermissions = new Set();
 
       // 1. Start with system default permissions for role
       const rolePermissions = await this.getRolePermissions(user.role);
-      rolePermissions.forEach((permission) => effectivePermissions.add(permission));
+      rolePermissions.forEach((permission) =>
+        effectivePermissions.add(permission),
+      );
 
       // 2. Add department permissions if user belongs to department
       if (user.departmentId || context.departmentId) {
         const departmentId = context.departmentId || user.departmentId;
-        const departmentPermissions = await this.getDepartmentPermissions(departmentId, userId);
-        departmentPermissions.forEach((permission) => effectivePermissions.add(permission));
+        const departmentPermissions = await this.getDepartmentPermissions(
+          departmentId,
+          userId,
+        );
+        departmentPermissions.forEach((permission) =>
+          effectivePermissions.add(permission),
+        );
       }
 
       // 3. Add explicit user permissions (highest priority)
-      const userPermissions = await this.getUserSpecificPermissions(userId, context);
+      const userPermissions = await this.getUserSpecificPermissions(
+        userId,
+        context,
+      );
 
       // Apply user permissions (can grant or revoke)
       userPermissions.forEach((userPerm) => {
@@ -166,7 +176,7 @@ class PermissionService {
 
       // 4. Resolve permission dependencies
       const resolvedPermissions = await this.resolvePermissionDependencies(
-        Array.from(effectivePermissions)
+        Array.from(effectivePermissions),
       );
 
       // Cache result
@@ -175,10 +185,12 @@ class PermissionService {
         timestamp: Date.now(),
       });
 
-      logger.debug(`Resolved ${resolvedPermissions.length} permissions for user ${userId}`);
+      logger.debug(
+        `Resolved ${resolvedPermissions.length} permissions for user ${userId}`,
+      );
       return resolvedPermissions;
     } catch (error) {
-      logger.error('Permission resolution failed:', error);
+      logger.error("Permission resolution failed:", error);
       throw error;
     }
   }
@@ -209,17 +221,22 @@ class PermissionService {
   async hasPermission(userId, permissionCode, context = {}) {
     try {
       // Special case: superadmin has all permissions
-      const user = await this.db.collection('AmexingUser').findOne({ id: userId });
+      const user = await this.db
+        .collection("AmexingUser")
+        .findOne({ id: userId });
       if (user) {
         // Check if user has superadmin role (supports both string and Pointer)
-        const hasSupeAdminRole = await this.hasRole(user, 'superadmin');
+        const hasSupeAdminRole = await this.hasRole(user, "superadmin");
         if (hasSupeAdminRole) {
           return true;
         }
       }
 
       // Get effective permissions
-      const effectivePermissions = await this.getUserEffectivePermissions(userId, context);
+      const effectivePermissions = await this.getUserEffectivePermissions(
+        userId,
+        context,
+      );
 
       // Check for exact match
       if (effectivePermissions.includes(permissionCode)) {
@@ -227,7 +244,9 @@ class PermissionService {
       }
 
       // Check for wildcard permissions
-      const wildcardPermissions = effectivePermissions.filter((p) => p.endsWith('*'));
+      const wildcardPermissions = effectivePermissions.filter((p) =>
+        p.endsWith("*"),
+      );
       for (const wildcardPerm of wildcardPermissions) {
         const prefix = wildcardPerm.slice(0, -1); // Remove '*'
         if (permissionCode.startsWith(prefix)) {
@@ -239,12 +258,12 @@ class PermissionService {
       const hasContextualPermission = await this.checkContextualPermission(
         userId,
         permissionCode,
-        context
+        context,
       );
 
       return hasContextualPermission;
     } catch (error) {
-      logger.error('Permission check failed:', error);
+      logger.error("Permission check failed:", error);
       return false; // Fail secure - deny permission on error
     }
   }
@@ -269,7 +288,7 @@ class PermissionService {
    * const managerPerms = await permissionService.getRolePermissions('manager');
    */
   async getRolePermissions(roleCode) {
-    const role = await this.db.collection('Role').findOne({
+    const role = await this.db.collection("Role").findOne({
       code: roleCode,
       isActive: true,
     });
@@ -284,7 +303,7 @@ class PermissionService {
     // Include inherited role permissions
     if (role.inheritedRoles && role.inheritedRoles.length > 0) {
       for (const inheritedRoleId of role.inheritedRoles) {
-        const inheritedRole = await this.db.collection('Role').findOne({
+        const inheritedRole = await this.db.collection("Role").findOne({
           id: inheritedRoleId,
           isActive: true,
         });
@@ -316,13 +335,16 @@ class PermissionService {
    * const deptPerms = await permissionService.getDepartmentPermissions('dept_finance', 'user123');
    */
   async getDepartmentPermissions(departmentId, userId) {
-    const departmentPermissions = await this.db.collection('DepartmentPermission').find({
-      departmentId,
-      granted: true,
-    }).toArray();
+    const departmentPermissions = await this.db
+      .collection("DepartmentPermission")
+      .find({
+        departmentId,
+        granted: true,
+      })
+      .toArray();
 
     // Get user's role in department context
-    const employee = await this.db.collection('ClientEmployee').findOne({
+    const employee = await this.db.collection("ClientEmployee").findOne({
       userId,
       departmentId,
     });
@@ -332,7 +354,7 @@ class PermissionService {
     for (const deptPerm of departmentPermissions) {
       // Check if permission applies to this user based on their role
       if (this.doesDepartmentPermissionApply(deptPerm, employee)) {
-        const permission = await this.db.collection('Permission').findOne({
+        const permission = await this.db.collection("Permission").findOne({
           id: deptPerm.permissionId,
         });
         if (permission && permission.isActive) {
@@ -359,11 +381,8 @@ class PermissionService {
   async getUserSpecificPermissions(userId, context) {
     const query = {
       userId,
-      status: 'active',
-      $or: [
-        { expiresAt: null },
-        { expiresAt: { $gt: new Date() } },
-      ],
+      status: "active",
+      $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }],
     };
 
     // Add context filtering if provided
@@ -375,12 +394,15 @@ class PermissionService {
       ];
     }
 
-    const userPermissions = await this.db.collection('UserPermission').find(query).toArray();
+    const userPermissions = await this.db
+      .collection("UserPermission")
+      .find(query)
+      .toArray();
 
     // Resolve permission codes
     const permissions = [];
     for (const userPerm of userPermissions) {
-      const permission = await this.db.collection('Permission').findOne({
+      const permission = await this.db.collection("Permission").findOne({
         id: userPerm.permissionId,
       });
       if (permission) {
@@ -412,18 +434,27 @@ class PermissionService {
     const resolvedPermissions = new Set(permissionCodes);
 
     // Get all permissions with their dependencies
-    const permissions = await this.db.collection('Permission').find({
-      code: { $in: permissionCodes },
-      isActive: true,
-    }).toArray();
+    const permissions = await this.db
+      .collection("Permission")
+      .find({
+        code: { $in: permissionCodes },
+        isActive: true,
+      })
+      .toArray();
 
     for (const permission of permissions) {
       // Add implied permissions
-      if (permission.impliesPermissions && permission.impliesPermissions.length > 0) {
-        const impliedPermissions = await this.db.collection('Permission').find({
-          id: { $in: permission.impliesPermissions },
-          isActive: true,
-        }).toArray();
+      if (
+        permission.impliesPermissions &&
+        permission.impliesPermissions.length > 0
+      ) {
+        const impliedPermissions = await this.db
+          .collection("Permission")
+          .find({
+            id: { $in: permission.impliesPermissions },
+            isActive: true,
+          })
+          .toArray();
 
         impliedPermissions.forEach((impliedPerm) => {
           resolvedPermissions.add(impliedPerm.code);
@@ -449,23 +480,26 @@ class PermissionService {
    */
   async checkContextualPermission(userId, permissionCode, context) {
     // Get user permissions with conditions
-    const conditionalPermissions = await this.db.collection('UserPermission').find({
-      userId,
-      status: 'active',
-      conditions: { $exists: true, $ne: {} },
-      $or: [
-        { expiresAt: null },
-        { expiresAt: { $gt: new Date() } },
-      ],
-    }).toArray();
+    const conditionalPermissions = await this.db
+      .collection("UserPermission")
+      .find({
+        userId,
+        status: "active",
+        conditions: { $exists: true, $ne: {} },
+        $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }],
+      })
+      .toArray();
 
     for (const userPerm of conditionalPermissions) {
-      const permission = await this.db.collection('Permission').findOne({
+      const permission = await this.db.collection("Permission").findOne({
         id: userPerm.permissionId,
         code: permissionCode,
       });
 
-      if (permission && this.evaluatePermissionConditions(userPerm.conditions, context)) {
+      if (
+        permission &&
+        this.evaluatePermissionConditions(userPerm.conditions, context)
+      ) {
         return userPerm.granted;
       }
     }
@@ -492,16 +526,22 @@ class PermissionService {
         const now = new Date();
         const currentHour = now.getHours();
 
-        if (conditions.timeRestrictions.startHour
-            && conditions.timeRestrictions.endHour) {
-          if (currentHour < conditions.timeRestrictions.startHour
-              || currentHour > conditions.timeRestrictions.endHour) {
+        if (
+          conditions.timeRestrictions.startHour &&
+          conditions.timeRestrictions.endHour
+        ) {
+          if (
+            currentHour < conditions.timeRestrictions.startHour ||
+            currentHour > conditions.timeRestrictions.endHour
+          ) {
             return false;
           }
         }
 
-        if (conditions.timeRestrictions.weekdays
-            && !conditions.timeRestrictions.weekdays.includes(now.getDay())) {
+        if (
+          conditions.timeRestrictions.weekdays &&
+          !conditions.timeRestrictions.weekdays.includes(now.getDay())
+        ) {
           return false;
         }
       }
@@ -529,7 +569,7 @@ class PermissionService {
 
       return true;
     } catch (error) {
-      logger.error('Condition evaluation failed:', error);
+      logger.error("Condition evaluation failed:", error);
       return false;
     }
   }
@@ -553,7 +593,7 @@ class PermissionService {
    */
   async grantPermission(userId, permissionCode, options = {}) {
     try {
-      const permission = await this.db.collection('Permission').findOne({
+      const permission = await this.db.collection("Permission").findOne({
         code: permissionCode,
         isActive: true,
       });
@@ -563,26 +603,26 @@ class PermissionService {
       }
 
       // Check if permission already exists
-      const existingPerm = await this.db.collection('UserPermission').findOne({
+      const existingPerm = await this.db.collection("UserPermission").findOne({
         userId,
         permissionId: permission.id,
-        status: 'active',
+        status: "active",
       });
 
       if (existingPerm) {
-        throw new Error('Permission already granted');
+        throw new Error("Permission already granted");
       }
 
       const userPermission = {
-        id: require('uuid').v4(),
+        id: require("uuid").v4(),
         userId,
         permissionId: permission.id,
         granted: true,
-        source: options.source || 'manual',
+        source: options.source || "manual",
         context: options.context || null,
         expiresAt: options.expiresAt || null,
         conditions: options.conditions || {},
-        status: options.requiresApproval ? 'pending' : 'active',
+        status: options.requiresApproval ? "pending" : "active",
         approvedBy: options.approvedBy || null,
         approvedAt: options.requiresApproval ? null : new Date(),
         reason: options.reason || null,
@@ -591,14 +631,14 @@ class PermissionService {
         createdBy: options.createdBy,
       };
 
-      await this.db.collection('UserPermission').insertOne(userPermission);
+      await this.db.collection("UserPermission").insertOne(userPermission);
 
       // Clear cache for this user
       this.clearUserPermissionCache(userId);
 
       // Log permission grant
       await this.logPermissionChange({
-        action: 'grant',
+        action: "grant",
         userId,
         permissionCode,
         details: options,
@@ -608,7 +648,7 @@ class PermissionService {
       logger.info(`Permission granted: ${permissionCode} to user ${userId}`);
       return userPermission;
     } catch (error) {
-      logger.error('Permission grant failed:', error);
+      logger.error("Permission grant failed:", error);
       throw error;
     }
   }
@@ -628,7 +668,7 @@ class PermissionService {
    */
   async revokePermission(userId, permissionCode, options = {}) {
     try {
-      const permission = await this.db.collection('Permission').findOne({
+      const permission = await this.db.collection("Permission").findOne({
         code: permissionCode,
         isActive: true,
       });
@@ -638,25 +678,25 @@ class PermissionService {
       }
 
       // Find and revoke user permission
-      const result = await this.db.collection('UserPermission').updateMany(
+      const result = await this.db.collection("UserPermission").updateMany(
         {
           userId,
           permissionId: permission.id,
-          status: 'active',
+          status: "active",
         },
         {
           $set: {
-            status: 'revoked',
+            status: "revoked",
             updatedAt: new Date(),
             revokedBy: options.revokedBy,
             revokedAt: new Date(),
             revokedReason: options.reason,
           },
-        }
+        },
       );
 
       if (result.modifiedCount === 0) {
-        throw new Error('Permission not found or already revoked');
+        throw new Error("Permission not found or already revoked");
       }
 
       // Clear cache for this user
@@ -664,7 +704,7 @@ class PermissionService {
 
       // Log permission revocation
       await this.logPermissionChange({
-        action: 'revoke',
+        action: "revoke",
         userId,
         permissionCode,
         details: options,
@@ -673,7 +713,7 @@ class PermissionService {
 
       logger.info(`Permission revoked: ${permissionCode} from user ${userId}`);
     } catch (error) {
-      logger.error('Permission revoke failed:', error);
+      logger.error("Permission revoke failed:", error);
       throw error;
     }
   }
@@ -694,7 +734,7 @@ class PermissionService {
   async assignPermissionTemplate(userId, templateId, options = {}) {
     try {
       // Get template permissions (from Role or custom template)
-      const template = await this.db.collection('Role').findOne({
+      const template = await this.db.collection("Role").findOne({
         id: templateId,
         isActive: true,
       });
@@ -703,28 +743,35 @@ class PermissionService {
         throw new Error(`Permission template not found: ${templateId}`);
       }
 
-      const permissions = await this.db.collection('Permission').find({
-        id: { $in: template.permissions },
-        isActive: true,
-      }).toArray();
+      const permissions = await this.db
+        .collection("Permission")
+        .find({
+          id: { $in: template.permissions },
+          isActive: true,
+        })
+        .toArray();
 
       // Grant each permission
       for (const permission of permissions) {
         try {
           await this.grantPermission(userId, permission.code, {
             ...options,
-            source: 'template',
+            source: "template",
             reason: `Applied template: ${template.name}`,
           });
         } catch (error) {
           // Continue with other permissions if one fails
-          logger.warn(`Failed to grant permission ${permission.code}: ${error.message}`);
+          logger.warn(
+            `Failed to grant permission ${permission.code}: ${error.message}`,
+          );
         }
       }
 
-      logger.info(`Permission template applied: ${template.name} to user ${userId}`);
+      logger.info(
+        `Permission template applied: ${template.name} to user ${userId}`,
+      );
     } catch (error) {
-      logger.error('Permission template assignment failed:', error);
+      logger.error("Permission template assignment failed:", error);
       throw error;
     }
   }
@@ -749,14 +796,19 @@ class PermissionService {
     if (!employee) return false;
 
     // Check if permission applies to employees
-    if (deptPermission.appliesToEmployees
-        && (employee.role !== 'manager' && employee.role !== 'director')) {
+    if (
+      deptPermission.appliesToEmployees &&
+      employee.role !== "manager" &&
+      employee.role !== "director"
+    ) {
       return true;
     }
 
     // Check if permission applies to managers
-    if (deptPermission.appliesToManagers
-        && (employee.role === 'manager' || employee.role === 'director')) {
+    if (
+      deptPermission.appliesToManagers &&
+      (employee.role === "manager" || employee.role === "director")
+    ) {
       return true;
     }
 
@@ -797,8 +849,8 @@ class PermissionService {
    */
   async logPermissionChange(changeData) {
     const auditLog = {
-      id: require('uuid').v4(),
-      entityType: 'Permission',
+      id: require("uuid").v4(),
+      entityType: "Permission",
       entityId: changeData.userId,
       action: changeData.action,
       details: {
@@ -807,11 +859,11 @@ class PermissionService {
       },
       performedBy: changeData.performedBy,
       timestamp: new Date(),
-      ipAddress: changeData.ipAddress || 'unknown',
-      userAgent: changeData.userAgent || 'unknown',
+      ipAddress: changeData.ipAddress || "unknown",
+      userAgent: changeData.userAgent || "unknown",
     };
 
-    await this.db.collection('AuditLog').insertOne(auditLog);
+    await this.db.collection("AuditLog").insertOne(auditLog);
   }
 
   /**
@@ -825,9 +877,13 @@ class PermissionService {
    * // Returns: Promise resolving to operation result
    */
   async getPermissionHierarchy() {
-    const permissions = await this.db.collection('Permission').find({
-      isActive: true,
-    }).sort({ category: 1, resource: 1, action: 1 }).toArray();
+    const permissions = await this.db
+      .collection("Permission")
+      .find({
+        isActive: true,
+      })
+      .sort({ category: 1, resource: 1, action: 1 })
+      .toArray();
 
     const hierarchy = {};
 
@@ -867,14 +923,20 @@ class PermissionService {
    */
   async getUserPermissionSummary(userId) {
     const effectivePermissions = await this.getUserEffectivePermissions(userId);
-    const userSpecificPermissions = await this.getUserSpecificPermissions(userId);
+    const userSpecificPermissions =
+      await this.getUserSpecificPermissions(userId);
 
-    const user = await this.db.collection('AmexingUser').findOne({ id: userId });
+    const user = await this.db
+      .collection("AmexingUser")
+      .findOne({ id: userId });
     const rolePermissions = await this.getRolePermissions(user.role);
 
     let departmentPermissions = [];
     if (user.departmentId) {
-      departmentPermissions = await this.getDepartmentPermissions(user.departmentId, userId);
+      departmentPermissions = await this.getDepartmentPermissions(
+        user.departmentId,
+        userId,
+      );
     }
 
     return {
@@ -914,8 +976,8 @@ class PermissionService {
       // Check roleId Pointer
       if (user.roleId) {
         // If roleId is a string (object ID)
-        if (typeof user.roleId === 'string') {
-          const role = await this.db.collection('Role').findOne({
+        if (typeof user.roleId === "string") {
+          const role = await this.db.collection("Role").findOne({
             _id: user.roleId,
             exists: true,
             active: true,
@@ -931,7 +993,7 @@ class PermissionService {
 
       return false;
     } catch (error) {
-      logger.error('Error checking user role', {
+      logger.error("Error checking user role", {
         userId: user.id,
         roleName,
         error: error.message,

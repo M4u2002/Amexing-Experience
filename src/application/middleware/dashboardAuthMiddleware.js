@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const logger = require('../../infrastructure/logger');
+const jwt = require("jsonwebtoken");
+const logger = require("../../infrastructure/logger");
 
 /**
  * Simplified Dashboard Authentication Middleware
@@ -7,7 +7,7 @@ const logger = require('../../infrastructure/logger');
  */
 class DashboardAuthMiddleware {
   constructor() {
-    this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+    this.jwtSecret = process.env.JWT_SECRET || "your-secret-key";
     this.roleHierarchy = {
       superadmin: 7,
       admin: 6,
@@ -20,13 +20,21 @@ class DashboardAuthMiddleware {
 
     // Define role-based dashboard access permissions
     this.dashboardPermissions = {
-      superadmin: ['superadmin', 'admin', 'client', 'department_manager', 'employee', 'driver', 'guest'],
-      admin: ['admin', 'client', 'department_manager', 'employee', 'driver'],
-      client: ['client', 'department_manager', 'employee'],
-      department_manager: ['department_manager', 'employee'],
-      employee: ['employee'],
-      driver: ['driver'],
-      guest: ['guest'],
+      superadmin: [
+        "superadmin",
+        "admin",
+        "client",
+        "department_manager",
+        "employee",
+        "driver",
+        "guest",
+      ],
+      admin: ["admin", "client", "department_manager", "employee", "driver"],
+      client: ["client", "department_manager", "employee"],
+      department_manager: ["department_manager", "employee"],
+      employee: ["employee"],
+      driver: ["driver"],
+      guest: ["guest"],
     };
   }
 
@@ -48,7 +56,11 @@ class DashboardAuthMiddleware {
 
     // Guard condition: prevent circular redirects to login
     const currentPath = req.path;
-    if (currentPath === '/login' || currentPath.startsWith('/auth/') || currentPath === '/logout') {
+    if (
+      currentPath === "/login" ||
+      currentPath.startsWith("/auth/") ||
+      currentPath === "/logout"
+    ) {
       return next();
     }
 
@@ -56,15 +68,17 @@ class DashboardAuthMiddleware {
     const sessionToken = req.cookies?.sessionToken;
 
     if (!accessToken && !sessionToken) {
-      return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+      return res.redirect(
+        `/login?returnTo=${encodeURIComponent(req.originalUrl)}`,
+      );
     }
 
     // Extract user info from JWT token if available
     let user = {
-      id: 'unknown',
-      username: 'unknown',
-      role: 'guest',
-      name: 'Unknown User',
+      id: "unknown",
+      username: "unknown",
+      role: "guest",
+      name: "Unknown User",
       isActive: true,
     };
 
@@ -72,14 +86,14 @@ class DashboardAuthMiddleware {
       try {
         const decoded = jwt.verify(accessToken, this.jwtSecret);
         user = {
-          id: decoded.userId || 'unknown',
-          username: decoded.username || 'unknown',
-          role: decoded.role || 'guest',
-          name: decoded.username || 'Unknown User',
+          id: decoded.userId || "unknown",
+          username: decoded.username || "unknown",
+          role: decoded.role || "guest",
+          name: decoded.username || "Unknown User",
           isActive: true,
         };
       } catch (error) {
-        logger.warn('Invalid JWT token:', error.message);
+        logger.warn("Invalid JWT token:", error.message);
       }
     }
 
@@ -111,12 +125,18 @@ class DashboardAuthMiddleware {
     const currentPath = req.path;
 
     // Guard condition: skip role checks for auth routes
-    if (currentPath === '/login' || currentPath.startsWith('/auth/') || currentPath === '/logout') {
+    if (
+      currentPath === "/login" ||
+      currentPath.startsWith("/auth/") ||
+      currentPath === "/logout"
+    ) {
       return next();
     }
 
     if (!req.user) {
-      return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+      return res.redirect(
+        `/login?returnTo=${encodeURIComponent(req.originalUrl)}`,
+      );
     }
 
     const userRole = req.user.role;
@@ -124,7 +144,7 @@ class DashboardAuthMiddleware {
     const requiredLevel = this.roleHierarchy[requiredRole] || 0;
 
     if (userLevel < requiredLevel) {
-      logger.warn('Dashboard access denied - insufficient role:', {
+      logger.warn("Dashboard access denied - insufficient role:", {
         userId: req.user.id,
         userRole,
         requiredRole,
@@ -150,11 +170,13 @@ class DashboardAuthMiddleware {
    */
   requireDashboardAccess = (req, res, next) => {
     if (!req.user) {
-      return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
+      return res.redirect(
+        `/login?returnTo=${encodeURIComponent(req.originalUrl)}`,
+      );
     }
 
     // Extract requested dashboard role from URL
-    const urlParts = req.path.split('/');
+    const urlParts = req.path.split("/");
     const requestedDashboard = urlParts[2]; // /dashboard/{role}/...
 
     if (!requestedDashboard) {
@@ -166,20 +188,31 @@ class DashboardAuthMiddleware {
     const allowedDashboards = this.dashboardPermissions[userRole] || [];
 
     // Check if the requested dashboard is valid
-    if (!Object.prototype.hasOwnProperty.call(this.roleHierarchy, requestedDashboard)) {
-      logger.warn('Invalid dashboard requested - redirecting to user dashboard:', {
-        userId: req.user.id,
-        userRole,
+    if (
+      !Object.prototype.hasOwnProperty.call(
+        this.roleHierarchy,
         requestedDashboard,
-      });
+      )
+    ) {
+      logger.warn(
+        "Invalid dashboard requested - redirecting to user dashboard:",
+        {
+          userId: req.user.id,
+          userRole,
+          requestedDashboard,
+        },
+      );
       return res.redirect(`/dashboard/${userRole}`);
     }
 
     // Allow access if user has permission OR if it's their own dashboard
-    if (allowedDashboards.includes(requestedDashboard) || requestedDashboard === userRole) {
+    if (
+      allowedDashboards.includes(requestedDashboard) ||
+      requestedDashboard === userRole
+    ) {
       next();
     } else {
-      logger.warn('Dashboard access denied - redirecting to user dashboard:', {
+      logger.warn("Dashboard access denied - redirecting to user dashboard:", {
         userId: req.user.id,
         userRole,
         requestedDashboard,
@@ -206,10 +239,10 @@ class DashboardAuthMiddleware {
       try {
         const decoded = jwt.verify(accessToken, this.jwtSecret);
         const user = {
-          id: decoded.userId || 'unknown',
-          username: decoded.username || 'unknown',
-          role: decoded.role || 'guest',
-          name: decoded.username || 'Unknown User',
+          id: decoded.userId || "unknown",
+          username: decoded.username || "unknown",
+          role: decoded.role || "guest",
+          name: decoded.username || "Unknown User",
           isActive: true,
         };
 
@@ -243,20 +276,20 @@ class DashboardAuthMiddleware {
    */
   logout = async (req, res, next) => {
     // Clear authentication cookies with proper options
-    res.clearCookie('accessToken', {
+    res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
-    res.clearCookie('refreshToken', {
+    res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
-    res.clearCookie('sessionToken', {
+    res.clearCookie("sessionToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     // Clear user from request/locals immediately
@@ -271,20 +304,20 @@ class DashboardAuthMiddleware {
     if (req.session) {
       req.session.regenerate(async (err) => {
         if (err) {
-          logger.error('Session regeneration failed during logout:', err);
+          logger.error("Session regeneration failed during logout:", err);
           // Fallback: destroy and continue
           return req.session.destroy(() => next());
         }
 
         // Initialize CSRF secret for new session
         try {
-          const uidSafe = require('uid-safe');
+          const uidSafe = require("uid-safe");
           req.session.csrfSecret = await uidSafe(32);
-          logger.debug('New CSRF secret generated after logout', {
+          logger.debug("New CSRF secret generated after logout", {
             sessionID: req.session.id,
           });
         } catch (csrfErr) {
-          logger.error('CSRF secret generation failed during logout:', csrfErr);
+          logger.error("CSRF secret generation failed during logout:", csrfErr);
         }
 
         next();
@@ -312,7 +345,11 @@ class DashboardAuthMiddleware {
 
     // Guard condition: only apply to login/register pages
     const currentPath = req.path;
-    if (currentPath !== '/login' && currentPath !== '/register' && !currentPath.startsWith('/auth/')) {
+    if (
+      currentPath !== "/login" &&
+      currentPath !== "/register" &&
+      !currentPath.startsWith("/auth/")
+    ) {
       return next();
     }
 
@@ -330,7 +367,7 @@ class DashboardAuthMiddleware {
         const decoded = jwt.verify(accessToken, this.jwtSecret);
         if (decoded && decoded.role) {
           const returnTo = req.query.returnTo || `/dashboard/${decoded.role}`;
-          logger.info('Redirecting authenticated user from auth page:', {
+          logger.info("Redirecting authenticated user from auth page:", {
             from: currentPath,
             to: returnTo,
             userRole: decoded.role,
@@ -339,7 +376,7 @@ class DashboardAuthMiddleware {
         }
       } catch (error) {
         // Invalid token, clear it and allow access to auth pages
-        res.clearCookie('accessToken');
+        res.clearCookie("accessToken");
         return next();
       }
     }
