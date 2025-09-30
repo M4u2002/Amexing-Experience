@@ -35,8 +35,7 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
     window.AmexingConfig = {
         userRole: '<%= dashboardUserRole %>',
         userId: '<%= dashboardUserId %>',
-        apiEndpoint: '/api/v1',
-        wsEndpoint: '/ws'
+        apiEndpoint: '/api/v1'
     };
 
     // Dashboard Initialization Class
@@ -69,41 +68,34 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
             const popoverList = [...popoverTriggerList].map(popoverTriggerEl =>
                 new bootstrap.Popover(popoverTriggerEl)
             );
-
-            console.log('✅ Bootstrap components initialized');
         }
 
         setupNotifications() {
             // Setup real-time notifications based on user role
-            if (this.userRole !== 'guest') {
-                this.initializeWebSocketConnection();
-            }
-            console.log('🔔 Notifications initialized for role:', this.userRole);
+            // WebSocket functionality disabled - not implemented yet
         }
 
-        initializeWebSocketConnection() {
-            // WebSocket connection for real-time updates
-            try {
-                const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
-                this.ws = new WebSocket(wsUrl);
-
-                this.ws.onopen = () => console.log('🔗 WebSocket connected');
-                this.ws.onmessage = (event) => this.handleWebSocketMessage(event);
-                this.ws.onclose = () => console.log('🔌 WebSocket disconnected');
-                this.ws.onerror = (error) => console.error('❌ WebSocket error:', error);
-            } catch (error) {
-                console.log('ℹ️ WebSocket not available, using polling fallback');
-            }
-        }
-
-        handleWebSocketMessage(event) {
-            try {
-                const data = JSON.parse(event.data);
-                this.showNotification(data.message, data.type || 'info');
-            } catch (error) {
-                console.error('Error parsing WebSocket message:', error);
-            }
-        }
+        // WebSocket methods commented out - to be implemented in future
+        // initializeWebSocketConnection() {
+        //     // WebSocket connection for real-time updates
+        //     try {
+        //         const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+        //         this.ws = new WebSocket(wsUrl);
+        //
+        //         this.ws.onmessage = (event) => this.handleWebSocketMessage(event);
+        //         this.ws.onerror = (error) => console.error('❌ WebSocket error:', error);
+        //     } catch (error) {
+        //     }
+        // }
+        //
+        // handleWebSocketMessage(event) {
+        //     try {
+        //         const data = JSON.parse(event.data);
+        //         this.showNotification(data.message, data.type || 'info');
+        //     } catch (error) {
+        //         console.error('Error parsing WebSocket message:', error);
+        //     }
+        // }
 
         setupSearch() {
             const searchInput = document.querySelector('#global-search');
@@ -120,7 +112,6 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
         performSearch(query) {
             if (query.length < 2) return;
 
-            console.log('🔍 Searching:', query);
 
             // Implement search logic based on user role
             const searchEndpoint = `/api/v1/search?q=${encodeURIComponent(query)}&role=${this.userRole}`;
@@ -135,7 +126,6 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
             const searchResults = document.querySelector('#search-results');
             if (searchResults && results.data) {
                 // Display search results
-                console.log('📊 Search results:', results.data.length);
             }
         }
 
@@ -160,8 +150,6 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
             if (themeIcon) {
                 themeIcon.className = isDarkMode ? 'ti ti-sun' : 'ti ti-moon';
             }
-
-            console.log('🎨 Theme changed to:', isDarkMode ? 'dark' : 'light');
         }
 
         applySavedTheme() {
@@ -227,10 +215,7 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
         }
 
         logInitialization() {
-            console.log('🚀 Amexing Dashboard initialized');
-            console.log('👤 User Role:', this.userRole);
-            console.log('🆔 User ID:', this.userId);
-            console.log('⏰ Timestamp:', new Date().toISOString());
+            // Dashboard initialized silently
         }
     }
 
@@ -245,7 +230,6 @@ const dashboardUserId = typeof userId !== 'undefined' ? userId : null;
     // Handle page visibility changes
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
-            console.log('👁️ Page became visible, refreshing data...');
             // Refresh dashboard data if needed
         }
     });

@@ -242,8 +242,6 @@ const head = `
     <!-- Page-specific JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔴 SuperAdmin Users page ready');
-
             // Update total count when table loads (listen to custom event)
             document.addEventListener('usersTableLoaded', function(e) {
                 const count = e.detail?.count || 0;

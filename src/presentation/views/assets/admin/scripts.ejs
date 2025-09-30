@@ -40,12 +40,10 @@ const AmexingAdmin = {
 
     // Initialize the application
     init: function() {
-        console.log('🚀 Amexing Admin Dashboard initializing...');
         this.setupGlobalComponents();
         this.setupEventHandlers();
         this.setupNotifications();
         this.initializeDataTables();
-        console.log('✅ Dashboard initialized successfully');
     },
 
     // Setup global UI components
@@ -186,8 +184,6 @@ const AmexingAdmin = {
             setTimeout(() => this.initializeDataTables(), 300);
             return;
         }
-
-        console.log('📊 DataTables ready');
 
         // Auto-initialize tables with class 'data-table'
         $('.data-table').each(function() {
@@ -500,19 +496,12 @@ const AmexingAdmin = {
 
         cdnUrls.forEach(url => {
             fetch(url, { method: 'HEAD', cache: 'force-cache' })
-                .then(response => {
-                    if (!response.ok) {
-                        console.warn(`⚠️ CDN ${url}: ${response.status}`);
-                    }
-                })
-                .catch(err => console.warn('⚠️ CDN check failed:', err.message));
+                .catch(() => {}); // Silent check, errors handled by fallback
         });
     },
 
     // Load DataTables locally as fallback
     loadLocalDataTables: function() {
-        console.log('🔄 Loading local DataTables fallback...');
-
         // Load local DataTables CSS
         const cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';
@@ -527,30 +516,23 @@ const AmexingAdmin = {
             script.src = src;
             script.onload = callback;
             script.onerror = () => {
-                console.error('❌ Failed to load local DataTables script:', src);
+                console.error('Failed to load local DataTables script:', src);
             };
             document.head.appendChild(script);
         };
 
         // Load DataTables core first, then Bootstrap integration
         loadScript('/assets/libs/datatables/jquery.dataTables.min.js', () => {
-            console.log('📥 Local DataTables core loaded');
-
             loadScript('/assets/libs/datatables/dataTables.bootstrap5.min.js', () => {
-                console.log('📥 Local DataTables Bootstrap integration loaded');
-
                 // Reset retry counter and try initialization again
                 this.retryCount = 0;
 
                 // Wait a moment for scripts to be ready, then reinitialize
                 setTimeout(() => {
-                    console.log('🔄 Reinitializing with local DataTables...');
                     this.initializeDataTables();
                 }, 500);
             });
         });
-
-        this.showNotification('info', 'Cargando DataTables desde archivos locales...');
     }
 };
 
@@ -564,8 +546,6 @@ window.AmexingAdmin = AmexingAdmin;
 
 // jQuery document ready (for DataTables and other jQuery-dependent features)
 $(document).ready(function() {
-    console.log('📋 jQuery ready - DataTables and enhanced features available');
-
     // Set global AJAX defaults for DataTables
     $.ajaxSetup({
         headers: {
@@ -577,7 +557,6 @@ $(document).ready(function() {
     // Backup DataTables initialization - retry if not initialized yet
     setTimeout(function() {
         if (typeof $.fn.DataTable !== 'undefined' && $('.data-table:not(.dataTable)').length > 0) {
-            console.log('🔄 Backup DataTables initialization triggered');
             AmexingAdmin.initializeDataTables();
         }
     }, 1000);
@@ -590,24 +569,20 @@ $(document).ready(function() {
         // Role-specific initialization
         document.addEventListener('DOMContentLoaded', function() {
             const userRole = '<%= userRole %>';
-            console.log('👤 User role detected:', userRole);
 
             // Role-specific UI adjustments
             switch(userRole) {
                 case 'superadmin':
-                    console.log('🔴 SuperAdmin features enabled');
                     // Enable advanced features for superadmin
                     break;
                 case 'admin':
-                    console.log('🔵 Admin features enabled');
                     // Standard admin features
                     break;
                 case 'client':
-                    console.log('🟣 Client features enabled');
                     // Client-specific features
                     break;
                 default:
-                    console.log('👥 Standard user features');
+                    // Standard user features
             }
         });
     </script>

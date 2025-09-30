@@ -62,8 +62,6 @@ class PermissionContextSwitcher {
       if (this.options.autoRefresh > 0) {
         this.setupAutoRefresh();
       }
-
-      console.log('PermissionContextSwitcher initialized successfully');
     } catch (error) {
       console.error('Error initializing PermissionContextSwitcher:', error);
       this.renderError(error.message);

@@ -531,7 +531,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Track selection
-        console.log('🏢 Department selected:', deptName);
 
         if (typeof gtag !== 'undefined') {
             gtag('event', 'department_selected', {
@@ -583,7 +582,6 @@ document.addEventListener('DOMContentLoaded', function() {
         newButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const provider = this.dataset.provider;
-                console.log(`🔐 Department OAuth ${provider} login attempt for ${deptName}`);
 
                 // Show loading state
                 corporateSection.classList.add('loading');
@@ -604,7 +602,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Easter egg: triple click for admin mode
             this.clickCount = (this.clickCount || 0) + 1;
             if (this.clickCount === 3) {
-                console.log('🚀 Corporate admin mode activated');
                 // Could trigger admin features
                 this.clickCount = 0;
             }
@@ -622,7 +619,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    console.log('🏢 Corporate OAuth section initialized:', {
         hasCorporate: <%= !!hasCorporateConfig %>,
         hasDepartments: <%= hasMultipleDepartments %>,
         requireDepartment: <%= corpRequireDepartment %>,

@@ -37,7 +37,6 @@ class MobileOAuthOptimizer {
     this.setupAccessibility();
 
     // eslint-disable-next-line no-console
-    console.log('Mobile OAuth Optimizer initialized for', this.getDeviceType());
   }
 
   detectMobileDevice() {

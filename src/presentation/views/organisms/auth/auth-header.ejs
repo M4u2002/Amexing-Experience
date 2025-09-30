@@ -587,7 +587,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoLink = document.querySelector('.auth-logo-link');
     if (logoLink) {
         logoLink.addEventListener('click', function() {
-            console.log('🏠 Auth header logo clicked');
 
             if (typeof gtag !== 'undefined') {
                 gtag('event', 'auth_logo_click', {
@@ -615,7 +614,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const backButton = document.querySelector('.auth-back-btn');
     if (backButton) {
         backButton.addEventListener('click', function() {
-            console.log('⬅️ Auth back button clicked');
 
             if (typeof gtag !== 'undefined') {
                 gtag('event', 'auth_back_click', {
@@ -633,7 +631,6 @@ document.addEventListener('DOMContentLoaded', function() {
         languageItems.forEach(item => {
             item.addEventListener('click', function(e) {
                 const lang = this.href.split('lang=')[1];
-                console.log('🌐 Language selected:', lang);
 
                 if (typeof gtag !== 'undefined') {
                     gtag('event', 'language_change', {
@@ -673,7 +670,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    console.log('📋 Auth header initialized:', {
         page: authPage,
         showLogo: <%= authShowLogo %>,
         showNavigation: <%= authShowNavigation %>,

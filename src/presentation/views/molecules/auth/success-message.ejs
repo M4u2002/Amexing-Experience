@@ -378,7 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
     actionButtons.forEach(button => {
         button.addEventListener('click', function() {
             const buttonText = this.textContent.trim();
-            console.log('✅ Success action clicked:', buttonText);
 
             // Optional analytics
             if (typeof gtag !== 'undefined') {
@@ -445,6 +444,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    console.log('✅ Success message initialized:', successType);
 });
 </script>

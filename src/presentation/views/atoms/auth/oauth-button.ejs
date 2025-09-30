@@ -352,7 +352,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Track OAuth attempt
             const provider = this.getAttribute('data-provider');
-            console.log(`🔐 OAuth login attempt with ${provider}`);
 
             // Optional: Analytics tracking
             if (typeof gtag !== 'undefined') {
@@ -414,6 +413,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    console.log('🔑 OAuth buttons initialized:', oauthButtons.length);
 });
 </script>

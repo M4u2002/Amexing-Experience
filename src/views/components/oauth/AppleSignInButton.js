@@ -91,7 +91,6 @@ class AppleSignInButton {
       .then(() => {
         this.setupAppleID();
         // eslint-disable-next-line no-console
-        console.log('Apple Sign In initialized');
       })
       .catch((error) => {
         // eslint-disable-next-line no-console

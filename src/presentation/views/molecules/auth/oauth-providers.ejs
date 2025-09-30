@@ -380,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
 
             // Track OAuth attempt
-            console.log(`🔐 OAuth ${provider} ${isCorporate ? 'corporate' : 'standard'} login attempt`);
 
             // Optional analytics
             if (typeof gtag !== 'undefined') {
@@ -501,12 +500,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const href = this.href;
             if (href.includes('googleDomain=') || href.includes('tenant=')) {
                 // Additional corporate OAuth validation could go here
-                console.log('🏢 Corporate OAuth authentication initiated');
             }
         });
     });
 
-    console.log('🔑 OAuth providers initialized:', {
         total: oauthButtons.length,
         corporate: corporateButtons.length,
         standard: oauthButtons.length - corporateButtons.length

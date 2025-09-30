@@ -416,16 +416,13 @@
                 }
             });
 
-            // Performance monitoring
+            // Performance monitoring (silent)
             if ('performance' in window) {
                 window.addEventListener('load', function() {
                     const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-                    console.log('🚀 Dashboard loaded in', loadTime, 'ms');
+                    // Performance tracked silently
                 });
             }
-
-            console.log('📊 Dashboard layout initialized');
-            console.log('👤 User role:', '<%= typeof userRole !== "undefined" ? userRole : "guest" %>');
         });
 
         // Global error handler

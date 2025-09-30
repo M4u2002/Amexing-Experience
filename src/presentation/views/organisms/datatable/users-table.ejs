@@ -120,10 +120,8 @@ async function loadUsersAndInitializeTable(retryCount = 0) {
             detail: { count: users.length, users }
         }));
 
-        console.log('✅ Users table loaded:', users.length, 'records');
-
     } catch (error) {
-        console.error('❌ Error loading users:', error.message);
+        console.error('Error loading users:', error.message);
         // Initialize empty table on error
         initializeDataTableWithData([]);
     }
@@ -251,18 +249,16 @@ function initializeDataTableWithData(usersData) {
         window.usersTable = usersTable;
 
     } catch (error) {
-        console.error('❌ Failed to initialize DataTable:', error);
+        console.error('Failed to initialize DataTable:', error);
     }
 }
 
 // User action functions (placeholders)
 function editUser(userId) {
-    console.log('Edit user:', userId);
     // TODO: Implement edit functionality
 }
 
 function deleteUser(userId) {
-    console.log('Delete user:', userId);
     // TODO: Implement delete functionality
 }
 
