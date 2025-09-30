@@ -25,8 +25,11 @@ const navigationItems = {
         { section: 'Operations', icon: 'ti-dashboard', items: [
             { name: 'Dashboard', icon: 'dashboard', path: '/dashboard/admin', id: 'dashboard' },
             { name: 'Events Management', icon: 'calendar-event', path: '/dashboard/admin/events', id: 'events' },
-            { name: 'Client Management', icon: 'users', path: '/dashboard/admin/clients', id: 'clients' },
             { name: 'Bookings', icon: 'car', path: '/dashboard/admin/bookings', id: 'bookings' }
+        ]},
+        { section: 'Users Management', icon: 'ti-users', items: [
+            { name: 'Client Management', icon: 'users', path: '/dashboard/admin/clients', id: 'clients' },
+            { name: 'Employee Management', icon: 'ti-briefcase', path: '/dashboard/admin/employees', id: 'employees' }
         ]},
         { section: 'Resources', icon: 'ti-car', items: [
             { name: 'Vehicle Management', icon: 'car-garage', path: '/dashboard/admin/vehicles', id: 'vehicles' },
