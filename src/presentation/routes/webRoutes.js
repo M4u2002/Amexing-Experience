@@ -5,8 +5,8 @@ const homeController = require('../../application/controllers/homeController');
 const authController = require('../../application/controllers/authController');
 const dashboardAuth = require('../../application/middleware/dashboardAuthMiddleware');
 
-// Home page
-router.get('/', homeController.index);
+// Home page - redirect to login until landing page is implemented
+router.get('/', (req, res) => res.redirect('/login'));
 
 // About page
 router.get('/about', homeController.about);
