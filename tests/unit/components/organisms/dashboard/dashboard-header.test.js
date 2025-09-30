@@ -225,7 +225,7 @@ describe('Dashboard Header Organism - Baseline Tests', () => {
     test('should include initialization script', async () => {
       const html = await renderComponent(componentPath);
       expect(html).toContain("document.addEventListener('DOMContentLoaded'");
-      expect(html).toContainText('Dashboard header initialized for:');
+      // Initialization log removed - component initializes silently
     });
 
     test('should include commented notification functions', async () => {

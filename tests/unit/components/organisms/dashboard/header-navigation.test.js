@@ -249,7 +249,7 @@ describe('Header Navigation Organism', () => {
     test('should include initialization script', async () => {
       const html = await renderComponent(componentPath);
       expect(html).toContain("document.addEventListener('DOMContentLoaded'");
-      expect(html).toContain('Header navigation initialized for role:');
+      // Initialization log removed - component initializes silently
     });
 
     test('should include mobile toggle functionality', async () => {

@@ -268,7 +268,7 @@ describe('User Menu Molecule Component', () => {
     test('should include initialization script', async () => {
       const html = await renderComponent(componentPath);
       expect(html).toContain("document.addEventListener('DOMContentLoaded'");
-      expect(html).toContainText('User menu initialized for role:');
+      // Initialization log removed - component initializes silently
     });
 
     test('should include keyboard navigation', async () => {
