@@ -316,7 +316,7 @@ function registerCloudFunctions() {
      * const result = await Parse.Cloud.run('registerUser', {
      *   username: 'johndoe',
      *   email: 'john@example.com',
-     *   password: 'SecurePass123',
+     *   password: 'user-password',
      *   firstName: 'John',
      *   lastName: 'Doe'
      * });
@@ -346,7 +346,7 @@ function registerCloudFunctions() {
      * // Call from client
      * const result = await Parse.Cloud.run('loginUser', {
      *   identifier: 'johndoe',
-     *   password: 'SecurePass123'
+     *   password: 'user-password'
      * });
      */
     Parse.Cloud.define('loginUser', async (request) => {

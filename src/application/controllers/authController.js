@@ -400,7 +400,7 @@ class AuthController {
    * // Create new user
    * const newUser = await createUser({
    *   username: 'johndoe',
-   *   password: 'securePassword123',
+   *   password: 'user-password',
    *   email: 'john@example.com'
    * });
    * // Returns Parse.User object with id and session token
