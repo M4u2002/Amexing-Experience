@@ -1,35 +1,51 @@
 <%
 /**
- * Users DataTable Organism - Simplified Version
+ * Users DataTable Organism
  * Advanced DataTable component for user management with role-based features
  *
- * @param {string} tableId - Unique table identifier
- * @param {string} apiEndpoint - API endpoint for data loading
- * @param {string} userRole - Current user role for permission-based features
- * @param {boolean} showActions - Whether to show action buttons
+ * Atomic Design Level: Organism
+ * Category: Dashboard Data Tables
+ *
+ * Component Dependencies:
+ * - Requires: jQuery, Bootstrap 5, DataTables library
+ * - Uses: Bootstrap buttons, badges, modals (molecules)
+ * - Integrates: Alert system, loading states (atoms)
+ *
+ * @param {string} tableId - Unique table identifier (default: 'users-table')
+ * @param {string} apiEndpoint - API endpoint for data loading (default: '/api/users')
+ * @param {string} userRole - Current user role for permission-based features (default: 'guest')
+ * @param {boolean} showActions - Whether to show action buttons (default: true)
+ *
+ * Features:
+ * - Real-time data loading from API
+ * - Role-based action buttons (toggle status, delete)
+ * - Server-side rendering with client-side DataTable enhancement
+ * - Accessibility compliant (ARIA labels, keyboard navigation)
+ * - Responsive design with mobile-friendly layout
+ * - CSP-compliant event handling (no inline handlers)
  */
 
-// Default values
+// Component Configuration
 const dtTableId = typeof tableId !== 'undefined' ? tableId : 'users-table';
 const dtApiEndpoint = typeof apiEndpoint !== 'undefined' ? apiEndpoint : '/api/users';
 const dtShowActions = typeof showActions !== 'undefined' ? showActions : true;
 const dtUserRole = typeof userRole !== 'undefined' ? userRole : 'guest';
 
-// Permission checks
+// Role-Based Permission Checks
 const canEdit = ['superadmin', 'admin'].includes(dtUserRole);
 const canDelete = ['superadmin', 'admin'].includes(dtUserRole);
 const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 %>
 
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-gradient-primary text-white">
+    <div class="card-header text-white" style="background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%); border: none;">
         <div class="row align-items-center">
             <div class="col">
-                <h5 class="card-title mb-0">
+                <h5 class="card-title mb-0 text-white">
                     <i class="ti ti-users me-2"></i>
                     Gestión de Usuarios
                 </h5>
-                <small class="opacity-75">Administra usuarios del sistema con funciones avanzadas</small>
+                <small class="text-white" style="opacity: 0.9;">Administra usuarios del sistema con funciones avanzadas</small>
             </div>
             <div class="col-auto">
                 <% if (canCreate) { %>
@@ -67,9 +83,29 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
     </div>
 </div>
 
-<!-- DataTable Configuration Script -->
+<!-- DataTable Configuration and Initialization Script -->
 <script>
-// Function to load API data first, then initialize DataTable
+/**
+ * Users DataTable JavaScript Module
+ *
+ * Structure:
+ * 1. Data Loading & Initialization
+ * 2. DataTable Configuration
+ * 3. Alert/Notification System
+ * 4. User Action Functions (Toggle Status, Delete)
+ * 5. Event Delegation Setup
+ * 6. Module Initialization
+ */
+
+// ============================================================================
+// 1. Data Loading & Initialization
+// ============================================================================
+
+/**
+ * Load users from API and initialize DataTable
+ * Implements exponential backoff retry for library loading
+ * @param {number} retryCount - Current retry attempt
+ */
 async function loadUsersAndInitializeTable(retryCount = 0) {
     const MAX_RETRIES = 5;
     const BASE_DELAY = 200; // ms
@@ -127,7 +163,15 @@ async function loadUsersAndInitializeTable(retryCount = 0) {
     }
 }
 
-// Function to initialize DataTable with pre-loaded data
+// ============================================================================
+// 2. DataTable Configuration
+// ============================================================================
+
+/**
+ * Initialize DataTable with pre-loaded user data
+ * Configures columns, rendering, permissions, and event handlers
+ * @param {Array} usersData - Array of user objects from API
+ */
 function initializeDataTableWithData(usersData) {
     const tableId = '<%= dtTableId %>';
     const canEdit = <%= canEdit %>;
@@ -298,13 +342,15 @@ function initializeDataTableWithData(usersData) {
 }
 
 // ============================================================================
-// Note: CSRF Token is NOT required for /api/* routes
-// JWT authentication provides sufficient security for API endpoints
+// 3. Alert/Notification System
 // ============================================================================
 
-// ============================================================================
-// Alert/Notification System
-// ============================================================================
+/**
+ * Display alert notification to user
+ * @param {string} message - Alert message to display
+ * @param {string} type - Alert type (success, danger, warning, info)
+ * @param {number} duration - Auto-dismiss duration in ms (0 = no auto-dismiss)
+ */
 function showAlert(message, type = 'info', duration = 5000) {
     // Remove any existing alerts
     const existingAlert = document.querySelector('.user-management-alert');
@@ -356,11 +402,14 @@ function showWarningAlert(message) {
 }
 
 // ============================================================================
-// User Action Functions
+// 4. User Action Functions
 // ============================================================================
 
 /**
  * Confirm and delete user (sets active: false, exists: false)
+ * Shows confirmation modal before executing deletion
+ * @param {string} userId - User ID to delete
+ * @param {string} userName - User full name for confirmation display
  */
 function confirmDeleteUser(userId, userName) {
     // Create modal HTML
@@ -415,6 +464,8 @@ function confirmDeleteUser(userId, userName) {
 
 /**
  * Execute delete user (sets active: false, exists: false)
+ * Calls DELETE API endpoint and refreshes table on success
+ * @param {string} userId - User ID to delete
  */
 async function executeDeleteUser(userId) {
     try {
@@ -468,8 +519,14 @@ async function executeDeleteUser(userId) {
 }
 
 // ============================================================================
-// Event Delegation for Action Buttons (CSP Compliant)
+// 5. Event Delegation Setup (CSP-Compliant)
 // ============================================================================
+
+/**
+ * Setup event delegation for action buttons
+ * Uses event bubbling to handle dynamically created buttons
+ * CSP-compliant: No inline event handlers
+ */
 function setupEventDelegation() {
     // Use event delegation on document to handle dynamically created buttons
     document.addEventListener('click', function(event) {
@@ -495,11 +552,12 @@ function setupEventDelegation() {
     });
 }
 
-// ============================================================================
-// Toggle User Status Function
-// ============================================================================
 /**
  * Confirm and toggle user active status
+ * Shows confirmation modal before toggling status
+ * @param {string} userId - User ID to toggle
+ * @param {string} userName - User full name for confirmation display
+ * @param {boolean} currentStatus - Current active status
  */
 function confirmToggleUser(userId, userName, currentStatus) {
     const newStatus = !currentStatus;
@@ -560,6 +618,9 @@ function confirmToggleUser(userId, userName, currentStatus) {
 
 /**
  * Execute toggle user status
+ * Calls PATCH API endpoint and refreshes table on success
+ * @param {string} userId - User ID to toggle
+ * @param {boolean} newStatus - New active status to set
  */
 async function executeToggleUser(userId, newStatus) {
     try {
@@ -616,14 +677,23 @@ async function executeToggleUser(userId, newStatus) {
     }
 }
 
-// Start loading when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        setupEventDelegation();
-        loadUsersAndInitializeTable();
-    });
-} else {
+// ============================================================================
+// 6. Module Initialization
+// ============================================================================
+
+/**
+ * Initialize the Users DataTable module
+ * Sets up event delegation and loads data
+ */
+function initializeUsersTableModule() {
     setupEventDelegation();
     loadUsersAndInitializeTable();
+}
+
+// Start initialization when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeUsersTableModule);
+} else {
+    initializeUsersTableModule();
 }
 </script>
