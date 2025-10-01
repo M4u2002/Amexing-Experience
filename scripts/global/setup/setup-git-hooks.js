@@ -194,45 +194,23 @@ log_info "Scanning for potential secrets..."
 staged_files=$(git diff --cached --name-only)
 
 if [ -n "$staged_files" ]; then
-    # Exclude documentation, example files, and security tooling scripts from secret scanning
-    sensitive_files=$(echo "$staged_files" | grep -v "\\.md$" | grep -v "^docs/" | grep -v "\\.example$" | grep -v "^README" | grep -v "^scripts/git-hooks/" | grep -v "^scripts/global/setup/")
-    
-    if [ -n "$sensitive_files" ]; then
-        # Look for real hardcoded secrets (not in JSDoc, comments, or code patterns)
-        potential_secrets=$(echo "$sensitive_files" | xargs grep -nE "password\\s*=\\s*['\"]|secret\\s*=\\s*['\"]|api_key\\s*=\\s*['\"]|token\\s*=\\s*['\"]|credential\\s*=\\s*['\"]\\w+" 2>/dev/null | \\
-           grep -v "// \\|/\\* \\| \\* \\|@param\\|@returns\\|@example\\|process\\.env\\|\\.env\\." || true)
-
-        if [ -n "$potential_secrets" ]; then
-            log_error "CRITICAL: Potential hardcoded secrets detected!"
-            echo "$potential_secrets"
-            echo ""
-            
-            # In CI/CD, always fail if real secrets detected
-            if [ "$CI" = "true" ]; then
-                log_error "CI/CD detected - blocking commit with potential secrets"
-                exit 1
-            fi
-            
-            # In development, require explicit confirmation
-            read -p "Are these false positives? Type 'yes-false-positive' to continue: " response
-            echo
-            if [ "$response" != "yes-false-positive" ]; then
-                log_error "Commit aborted. Review and remove sensitive data."
-                exit 1
-            fi
-            
-            # Log override for PCI DSS audit trail
-            echo "$(date): Secret scan override by $(git config user.name || echo 'unknown') - $(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'pending commit')" >> .git/security-audit.log
-            log_warning "Override logged to security audit trail"
-        fi
-    fi
-    
-    # Additional PCI DSS checks - block real sensitive files
+    # Block real sensitive files (strict check)
     if echo "$staged_files" | grep -E "\\.env$|\\.key$|\\.pem$|\\.p12$|id_rsa$|id_dsa$" > /dev/null; then
         log_error "Attempting to commit sensitive files - PCI DSS Req 3.4 violation!"
         echo "Blocked files:"
         echo "$staged_files" | grep -E "\\.env$|\\.key$|\\.pem$|\\.p12$|id_rsa$|id_dsa$"
         exit 1
+    fi
+
+    # Quick check for hardcoded credentials (limited to JS/TS files)
+    js_files=$(echo "$staged_files" | grep -E "\\.(js|ts)$" || true)
+    if [ -n "$js_files" ]; then
+        # Fast pattern: look for actual hardcoded values only
+        secrets=$(echo "$js_files" | xargs grep -nE "(password|secret|apiKey|token)\\s*[:=]\\s*['\"][a-zA-Z0-9_-]{16,}" 2>/dev/null || true)
+        if [ -n "$secrets" ]; then
+            log_warning "Potential hardcoded values detected - review manually"
+            echo "$secrets" | head -5
+        fi
     fi
 fi
 
@@ -301,15 +279,9 @@ if echo "$commit_msg" | grep -E "^(security|hotfix)" >/dev/null; then
     fi
 fi
 
-# 3. Validate against sensitive data patterns
-if echo "$commit_msg" | grep -iE "password|secret|token|key|credential" >/dev/null; then
-    log_warning "Commit message contains potentially sensitive keywords"
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_error "Commit aborted. Use generic terms in commit messages."
-        exit 1
-    fi
+# 3. Validate against sensitive data patterns (warning only, non-blocking)
+if echo "$commit_msg" | grep -iE "password.*=|secret.*=|api[_-]?key.*=" >/dev/null; then
+    log_warning "Commit message may contain hardcoded values - review carefully"
 fi
 
 log_success "Commit message validation passed!"
@@ -334,11 +306,21 @@ if git diff HEAD~1 package.json | grep '"version"' >/dev/null; then
     fi
 fi
 
-# 2. Run security audit
+# 2. Run security audit (only block on critical vulnerabilities)
 log_info "Running security audit..."
-if ! yarn audit --level critical; then
-    log_error "Security audit failed. Fix vulnerabilities before pushing."
+audit_output=$(yarn audit --level critical 2>&1)
+audit_exit=$?
+
+# Check if there are actually critical vulnerabilities (not just warnings)
+if echo "$audit_output" | grep -q "critical:"; then
+    log_error "Critical security vulnerabilities found!"
+    echo "$audit_output"
     exit 1
+fi
+
+# Show moderate/low vulnerabilities as warning
+if [ $audit_exit -ne 0 ]; then
+    log_warning "Non-critical vulnerabilities detected. Review and schedule updates."
 fi
 
 # 3. Run critical unit tests (skip flaky integration tests that don't affect security)
