@@ -102,10 +102,12 @@ router.use(jwtMiddleware.authenticateToken);
 
 // User Management API routes
 const userManagementRoutes = require('./api/userManagementRoutes');
+const amexingUsersRoutes = require('./api/amexingUsersRoutes');
 // Notifications API controller
 const NotificationsController = require('../../application/controllers/api/NotificationsController');
 
 router.use('/users', userManagementRoutes);
+router.use('/amexingusers', amexingUsersRoutes);
 
 /**
  * @swagger
