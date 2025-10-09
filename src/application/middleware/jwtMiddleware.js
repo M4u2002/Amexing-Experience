@@ -70,6 +70,36 @@ const authenticateToken = async (req, res, next) => {
     req.userRole = result.role; // Backward compatibility
     req.roleObject = result.roleObject; // New role object
 
+    // Check if user is active and exists (not deleted)
+    if (req.user) {
+      const isActive = req.user.get('active');
+      const exists = req.user.get('exists');
+
+      if (isActive === false) {
+        logger.warn('Active session with deactivated account detected', {
+          userId: req.userId,
+          email: req.user.get('email'),
+        });
+        return res.status(401).json({
+          success: false,
+          error: 'Your account has been deactivated',
+          code: 'ACCOUNT_DEACTIVATED',
+        });
+      }
+
+      if (exists === false) {
+        logger.warn('Active session with deleted account detected', {
+          userId: req.userId,
+          email: req.user.get('email'),
+        });
+        return res.status(401).json({
+          success: false,
+          error: 'Account not found',
+          code: 'ACCOUNT_DELETED',
+        });
+      }
+    }
+
     // Cache the roleObject in the user instance to avoid re-fetching
     if (req.user && req.roleObject) {
       req.user._cachedRole = req.roleObject;

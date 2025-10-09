@@ -21,6 +21,7 @@ const Parse = require('parse/node');
 const AmexingUser = require('../../domain/models/AmexingUser');
 const BaseModel = require('../../domain/models/BaseModel');
 const logger = require('../../infrastructure/logger');
+const RoleAuthorizationService = require('./RoleAuthorizationService');
 
 /**
  * UserManagementService class implementing comprehensive user management
@@ -36,6 +37,7 @@ const logger = require('../../infrastructure/logger');
 class UserManagementService {
   constructor() {
     this.className = 'AmexingUser';
+    this.authService = new RoleAuthorizationService();
     this.allowedRoles = [
       'superadmin',
       'admin',
@@ -57,8 +59,8 @@ class UserManagementService {
   }
 
   /**
-   * Get users with role-based filtering and AI agent compliance.
-   * Always respects active/exists pattern for data lifecycle management.
+   * Get client organization users (client, department_manager, employee, driver, guest).
+   * This endpoint is focused on corporate client user management.
    * @param {object} currentUser - User making the request.
    * @param {object} options - Query options.
    * @param {string} options.targetRole - Role of users to retrieve.
@@ -93,6 +95,9 @@ class UserManagementService {
 
       // Include role data from Pointer
       query.include('roleId');
+
+      // Filter by client organization roles (exclude Amexing internal users)
+      await this.filterByOrganization(query, 'client');
 
       // Apply role-based access filtering
       await this.applyRoleBasedFiltering(query, currentUser, targetRole);
@@ -151,6 +156,116 @@ class UserManagementService {
         options,
       });
       throw new Error(`Failed to retrieve users: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get Amexing internal users (superadmin, admin, employee_amexing).
+   * Restricted to SuperAdmin and Admin roles only.
+   * @param {object} currentUser - User making the request.
+   * @param {object} options - Query options.
+   * @param {number} options.page - Page number for pagination (default: 1).
+   * @param {number} options.limit - Items per page (default: 25).
+   * @param {object} options.filters - Additional filters.
+   * @param {object} options.sort - Sorting configuration.
+   * @param explicitRole
+   * @returns {Promise<object>} - Amexing users data with pagination info.
+   * @example
+   * const result = await userManagementService.getAmexingUsers(currentUser, { page: 1, limit: 25 });
+   * // Returns: { users: [...], pagination: {...}, metadata: {...} }
+   */
+  async getAmexingUsers(currentUser, options = {}, explicitRole = null) {
+    try {
+      const {
+        page = 1,
+        limit = 25,
+        filters = {},
+        sort = { field: 'lastName', direction: 'asc' },
+      } = options;
+
+      // Validate authorization using centralized service
+      this.authService.validateRoleAccess(
+        currentUser,
+        ['superadmin', 'admin'],
+        {
+          throwError: true,
+          context: 'getAmexingUsers',
+          explicitRole, // Pass explicit role from controller (JWT middleware)
+        }
+      );
+
+      // Get current user's role for filtering logic
+      const currentUserRole = this.authService.extractUserRole(currentUser, explicitRole);
+
+      // Query all existing users from Amexing organization
+      const query = BaseModel.queryExisting(this.className);
+      query.fromNetwork();
+      query.include('roleId');
+
+      // Filter by Amexing organization roles
+      await this.filterByOrganization(query, 'amexing');
+
+      // Apply role-based filtering
+      if (currentUserRole === 'admin') {
+        // Admin cannot see superadmin users
+        await this.excludeRoleName(query, 'superadmin');
+      }
+      // SuperAdmin sees all Amexing users (no exclusion)
+
+      // Apply additional filters
+      this.applyAdvancedFilters(query, filters);
+
+      // Apply sorting
+      this.applySorting(query, sort);
+
+      // Calculate pagination
+      const skip = (page - 1) * limit;
+      query.skip(skip);
+      query.limit(limit);
+
+      // Execute queries in parallel for performance
+      const [users, totalCount] = await Promise.all([
+        query.find({ useMasterKey: true }),
+        this.getTotalAmexingUserCount(currentUser, filters),
+      ]);
+
+      // Transform users to safe format
+      const safeUsers = users.map((user) => this.transformUserToSafeFormat(user));
+
+      // Log activity for audit compliance
+      await this.logUserQueryActivity(currentUser, {
+        queryType: 'amexing_users',
+        page,
+        limit,
+        totalResults: totalCount,
+        filtersApplied: Object.keys(filters).length,
+      });
+
+      return {
+        users: safeUsers,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNext: page * limit < totalCount,
+          hasPrev: page > 1,
+        },
+        metadata: {
+          queriedAt: new Date(),
+          requestedBy: currentUser.id,
+          organizationType: 'amexing',
+          activeFilters: Object.keys(filters),
+        },
+      };
+    } catch (error) {
+      logger.error('Error in UserManagementService.getAmexingUsers', {
+        error: error.message,
+        stack: error.stack,
+        currentUser: currentUser?.id,
+        options,
+      });
+      throw new Error(`Failed to retrieve Amexing users: ${error.message}`);
     }
   }
 
@@ -897,6 +1012,7 @@ class UserManagementService {
    * @param {object} query - Query parameters object.
    * @param {object} currentUser - Current authenticated user object.
    * @param {string} targetRole - Target role for authorization check.
+   * @param explicitRole
    * @example
    * // User management service usage
    * const result = await usermanagementservice.applyRoleBasedFiltering(userId , data);
@@ -905,9 +1021,9 @@ class UserManagementService {
    * // Returns: Promise resolving to operation result
    * @returns {Promise<void>} - Operation result.
    */
-  async applyRoleBasedFiltering(query, currentUser, targetRole = null) {
-    // Get current user's role for permission checking
-    const currentUserRole = currentUser.role || currentUser.get?.('role') || 'guest';
+  async applyRoleBasedFiltering(query, currentUser, targetRole = null, explicitRole = null) {
+    // Get current user's role using centralized service
+    const currentUserRole = this.authService.extractUserRole(currentUser, explicitRole);
 
     switch (currentUserRole) {
       case 'superadmin':
@@ -1084,6 +1200,34 @@ class UserManagementService {
   }
 
   /**
+   * Get total count of Amexing users matching criteria.
+   * @param {object} currentUser - Current authenticated user object.
+   * @param {*} filters - Filters parameter.
+   * @returns {Promise<number>} - Total count of Amexing users.
+   * @example
+   * const count = await userManagementService.getTotalAmexingUserCount(currentUser, {});
+   * // Returns: 5
+   */
+  async getTotalAmexingUserCount(currentUser, filters) {
+    const countQuery = BaseModel.queryExisting(this.className);
+
+    // Filter by Amexing organization
+    await this.filterByOrganization(countQuery, 'amexing');
+
+    // Apply role-based filtering using centralized service
+    const currentUserRole = this.authService.extractUserRole(currentUser);
+    if (currentUserRole === 'admin') {
+      await this.excludeRoleName(countQuery, 'superadmin');
+    }
+
+    // Apply additional filters
+    this.applyAdvancedFilters(countQuery, filters);
+
+    const count = await countQuery.count({ useMasterKey: true });
+    return count;
+  }
+
+  /**
    * Get count of search results.
    * @param {object} currentUser - Current authenticated user object.
    * @param {*} searchParams - SearchParams parameter.
@@ -1144,6 +1288,7 @@ class UserManagementService {
     // Get role information from Pointer or fallback to string field
     const rolePointer = user.get('roleId');
     let roleName = user.get('role'); // Default to string role
+    let roleDisplayName = null; // Display name from Role object
     let roleObjectId = null;
 
     // Handle rolePointer safely
@@ -1152,6 +1297,7 @@ class UserManagementService {
         // Check if it's a fetched Parse Object with .get() method
         if (rolePointer.get && typeof rolePointer.get === 'function') {
           roleName = rolePointer.get('name') || roleName;
+          roleDisplayName = rolePointer.get('displayName') || rolePointer.get('name') || roleName;
           roleObjectId = rolePointer.id;
         } else if (typeof rolePointer === 'string') {
           // It's a string ID, keep the string role name
@@ -1182,6 +1328,7 @@ class UserManagementService {
       firstName: user.get('firstName'),
       lastName: user.get('lastName'),
       role: roleName || 'guest',
+      roleDisplayName: roleDisplayName || roleName || 'Invitado', // Fallback to roleName or default
       roleId: roleObjectId,
       active: active !== undefined ? active : true,
       exists: exists !== undefined ? exists : true,
@@ -1552,13 +1699,27 @@ class UserManagementService {
 
   /**
    * Filter query to include only users with specific role.
+   * Uses roleId Pointer to Role table.
    * @param {Parse.Query} query - Parse query object.
    * @param {string} roleName - Role name to filter by.
    * @example
    */
   async filterByRoleName(query, roleName) {
     try {
-      query.equalTo('role', roleName);
+      // Query Role table to get role by name
+      const roleQuery = new Parse.Query('Role');
+      roleQuery.equalTo('name', roleName);
+      roleQuery.equalTo('exists', true);
+      const role = await roleQuery.first({ useMasterKey: true });
+
+      if (role) {
+        // Filter users by roleId Pointer
+        query.equalTo('roleId', role);
+      } else {
+        // If role not found, return no results
+        logger.warn('Role not found for filtering', { roleName });
+        query.equalTo('objectId', 'non-existent-id');
+      }
     } catch (error) {
       logger.error('Failed to filter by role name', {
         error: error.message,
@@ -1570,13 +1731,24 @@ class UserManagementService {
 
   /**
    * Filter query to exclude users with specific role.
+   * Uses roleId Pointer to Role table.
    * @param {Parse.Query} query - Parse query object.
    * @param {string} roleName - Role name to exclude.
    * @example
    */
   async excludeRoleName(query, roleName) {
     try {
-      query.notEqualTo('role', roleName);
+      // Query Role table to get role by name
+      const roleQuery = new Parse.Query('Role');
+      roleQuery.equalTo('name', roleName);
+      roleQuery.equalTo('exists', true);
+      const role = await roleQuery.first({ useMasterKey: true });
+
+      if (role) {
+        // Exclude users with this roleId Pointer
+        query.notEqualTo('roleId', role);
+      }
+      // If role not found, no exclusion needed
     } catch (error) {
       logger.error('Failed to exclude role name', {
         error: error.message,
@@ -1588,17 +1760,78 @@ class UserManagementService {
 
   /**
    * Filter query to include only users with specific roles.
+   * Uses roleId Pointer to Role table.
    * @param {Parse.Query} query - Parse query object.
    * @param {string[]} roleNames - Array of role names to filter by.
    * @example
    */
   async filterByRoleNames(query, roleNames) {
     try {
-      query.containedIn('role', roleNames);
+      // Query Role table to get roles by names
+      const roleQuery = new Parse.Query('Role');
+      roleQuery.containedIn('name', roleNames);
+      roleQuery.equalTo('exists', true);
+      const roles = await roleQuery.find({ useMasterKey: true });
+
+      if (roles && roles.length > 0) {
+        // Filter users by roleId Pointers
+        query.containedIn('roleId', roles);
+      } else {
+        // If no roles found, return no results
+        logger.warn('No roles found for filtering', { roleNames });
+        query.equalTo('objectId', 'non-existent-id');
+      }
     } catch (error) {
       logger.error('Failed to filter by role names', {
         error: error.message,
         roleNames,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Filter query to include only users with specific organization type.
+   * Uses roleId Pointer to filter by role's organization field.
+   * @param {Parse.Query} query - Parse query object.
+   * @param {string} organizationType - Organization type ('amexing' or 'client').
+   * @example
+   */
+  async filterByOrganization(query, organizationType) {
+    try {
+      // Query Role table to get roles by organization
+      const roleQuery = new Parse.Query('Role');
+      roleQuery.equalTo('organization', organizationType);
+      roleQuery.equalTo('exists', true);
+
+      logger.info('Filtering by organization', {
+        organizationType,
+        queryConstraints: roleQuery.toJSON(),
+      });
+
+      const roles = await roleQuery.find({ useMasterKey: true });
+
+      logger.info('Roles found for organization', {
+        organizationType,
+        rolesCount: roles.length,
+        roleNames: roles.map((r) => r.get('name')),
+      });
+
+      if (roles && roles.length > 0) {
+        // Filter users by roleId Pointers
+        query.containedIn('roleId', roles);
+      } else {
+        // If no roles found, return no results
+        logger.warn('No roles found for organization type', {
+          organizationType,
+        });
+        query.equalTo('objectId', 'non-existent-id');
+      }
+    } catch (error) {
+      logger.error('Failed to filter by organization', {
+        error: error.message,
+        stack: error.stack,
+        organizationType,
       });
       throw error;
     }
