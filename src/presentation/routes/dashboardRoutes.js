@@ -25,6 +25,11 @@ router.get(
   (req, res) => superAdminController.users(req, res)
 );
 router.get(
+  '/superadmin/roles',
+  dashboardAuth.requireRole('superadmin'),
+  (req, res) => superAdminController.roles(req, res)
+);
+router.get(
   '/superadmin/clients',
   dashboardAuth.requireRole('superadmin'),
   (req, res) => superAdminController.clients(req, res)
