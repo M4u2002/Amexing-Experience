@@ -136,6 +136,44 @@ router.post('/login', async (req, res) => {
 
       // Check if Parse authentication was successful
       if (parseUser) {
+        // Check if user is active and exists (not deleted)
+        const isActive = parseUser.get('active');
+        const exists = parseUser.get('exists');
+
+        if (isActive === false) {
+          logger.warn('Login attempt with deactivated Parse User account', {
+            userId: parseUser.id,
+            email: parseUser.get('email'),
+          });
+          // Check if client expects HTML response
+          if (req.accepts('html')) {
+            return res.redirect(
+              `/login?error=${encodeURIComponent('Your account has been deactivated')}`
+            );
+          }
+          return res.status(401).json({
+            success: false,
+            error: 'Your account has been deactivated',
+          });
+        }
+
+        if (exists === false) {
+          logger.warn('Login attempt with deleted Parse User account', {
+            userId: parseUser.id,
+            email: parseUser.get('email'),
+          });
+          // Check if client expects HTML response
+          if (req.accepts('html')) {
+            return res.redirect(
+              `/login?error=${encodeURIComponent('Account not found')}`
+            );
+          }
+          return res.status(401).json({
+            success: false,
+            error: 'Account not found',
+          });
+        }
+
         // Get role name from the new Role relationship for Parse User too
         let roleName = 'guest';
         const rolePointer = parseUser.get('roleId');
@@ -250,6 +288,44 @@ router.post('/login', async (req, res) => {
           return res.status(401).json({
             success: false,
             error: 'Account is temporarily locked',
+          });
+        }
+
+        // Check if user is active and exists (not deleted)
+        const isActive = user.get('active');
+        const exists = user.get('exists');
+
+        if (isActive === false) {
+          logger.warn('Login attempt with deactivated account', {
+            userId: user.id,
+            email: user.get('email'),
+          });
+          // Check if client expects HTML response
+          if (req.accepts('html')) {
+            return res.redirect(
+              `/login?error=${encodeURIComponent('Your account has been deactivated')}`
+            );
+          }
+          return res.status(401).json({
+            success: false,
+            error: 'Your account has been deactivated',
+          });
+        }
+
+        if (exists === false) {
+          logger.warn('Login attempt with deleted account', {
+            userId: user.id,
+            email: user.get('email'),
+          });
+          // Check if client expects HTML response
+          if (req.accepts('html')) {
+            return res.redirect(
+              `/login?error=${encodeURIComponent('Account not found')}`
+            );
+          }
+          return res.status(401).json({
+            success: false,
+            error: 'Account not found',
           });
         }
 
