@@ -65,15 +65,16 @@ describe('RolesController', () => {
     /**
      * Helper to create mock role object
      */
-    const createMockRole = (displayName = currentDisplayName) => {
+    const createMockRole = (displayName = currentDisplayName, description = 'Test role description') => {
       let currentName = displayName;
+      let currentDesc = description;
       return {
         id: mockRoleId,
         get: jest.fn((field) => {
           const roleData = {
             displayName: currentName,
             name: 'testRole',
-            description: 'Test role description',
+            description: currentDesc,
             level: 1,
             scope: 'global',
             organization: null,
@@ -85,6 +86,9 @@ describe('RolesController', () => {
         set: jest.fn((field, value) => {
           if (field === 'displayName') {
             currentName = value;
+          }
+          if (field === 'description') {
+            currentDesc = value;
           }
         }),
         save: jest.fn().mockResolvedValue(true),
@@ -130,7 +134,6 @@ describe('RolesController', () => {
         });
 
         // Assert - Only displayName was updated
-        expect(mockRole.set).toHaveBeenCalledTimes(1);
         expect(mockRole.set).toHaveBeenCalledWith('displayName', newDisplayName);
 
         // Assert - Save was called with useMasterKey
@@ -138,11 +141,15 @@ describe('RolesController', () => {
 
         // Assert - Audit log was created
         expect(logger.info).toHaveBeenCalledWith(
-          'Role displayName updated successfully',
+          'Role updated successfully',
           expect.objectContaining({
             roleId: mockRoleId,
-            oldDisplayName: currentDisplayName,
-            newDisplayName: newDisplayName,
+            changes: expect.objectContaining({
+              displayName: expect.objectContaining({
+                old: currentDisplayName,
+                new: newDisplayName,
+              }),
+            }),
             updatedBy: mockUserId,
             updatedByEmail: mockUserEmail,
           })
@@ -357,13 +364,13 @@ describe('RolesController', () => {
         );
       });
 
-      it('should return 400 when displayName is missing', async () => {
+      it('should return 400 when neither displayName nor description provided', async () => {
         // Arrange
         const mockUser = createMockUser('superadmin');
         mockReq.user = mockUser;
         mockReq.userRole = 'superadmin';
         mockReq.params = { id: mockRoleId };
-        mockReq.body = {}; // No displayName
+        mockReq.body = {}; // No displayName or description
 
         // Act
         await rolesController.updateRole(mockReq, mockRes);
@@ -373,45 +380,30 @@ describe('RolesController', () => {
         expect(mockRes.json).toHaveBeenCalledWith(
           expect.objectContaining({
             success: false,
-            error: 'Display name is required and cannot be empty',
+            error: 'At least one field (displayName or description) must be provided',
           })
         );
       });
 
-      it('should return 400 when displayName is null', async () => {
+      it('should return 400 when only displayName provided but is empty', async () => {
         // Arrange
         const mockUser = createMockUser('superadmin');
         mockReq.user = mockUser;
         mockReq.userRole = 'superadmin';
         mockReq.params = { id: mockRoleId };
-        mockReq.body = { displayName: null };
+        mockReq.body = { displayName: '' }; // Empty string is falsy, triggers "at least one field" error
 
         // Act
         await rolesController.updateRole(mockReq, mockRes);
 
-        // Assert
+        // Assert - Empty string is treated as "no field provided"
         expect(mockRes.status).toHaveBeenCalledWith(400);
         expect(mockRes.json).toHaveBeenCalledWith(
           expect.objectContaining({
             success: false,
-            error: 'Display name is required and cannot be empty',
+            error: 'At least one field (displayName or description) must be provided',
           })
         );
-      });
-
-      it('should return 400 when displayName is empty string', async () => {
-        // Arrange
-        const mockUser = createMockUser('superadmin');
-        mockReq.user = mockUser;
-        mockReq.userRole = 'superadmin';
-        mockReq.params = { id: mockRoleId };
-        mockReq.body = { displayName: '' };
-
-        // Act
-        await rolesController.updateRole(mockReq, mockRes);
-
-        // Assert
-        expect(mockRes.status).toHaveBeenCalledWith(400);
       });
 
       it('should return 400 when displayName is only whitespace', async () => {
@@ -430,7 +422,7 @@ describe('RolesController', () => {
         expect(mockRes.json).toHaveBeenCalledWith(
           expect.objectContaining({
             success: false,
-            error: 'Display name is required and cannot be empty',
+            error: 'Display name cannot be empty',
           })
         );
       });
@@ -511,13 +503,13 @@ describe('RolesController', () => {
         expect(mockRes.json).toHaveBeenCalledWith(
           expect.objectContaining({
             success: false,
-            error: 'No changes detected. The display name is the same.',
+            error: 'No changes detected. The provided values are the same as current values.',
           })
         );
         expect(mockRole.save).not.toHaveBeenCalled();
       });
 
-      it('should return 400 when displayName with whitespace equals current', async () => {
+      it('should return 400 when displayName with whitespace equals current and no description', async () => {
         // Arrange
         const mockUser = createMockUser('superadmin');
         const mockRole = createMockRole('TestName');
@@ -535,7 +527,7 @@ describe('RolesController', () => {
         expect(mockRes.status).toHaveBeenCalledWith(400);
         expect(mockRes.json).toHaveBeenCalledWith(
           expect.objectContaining({
-            error: 'No changes detected. The display name is the same.',
+            error: 'No changes detected. The provided values are the same as current values.',
           })
         );
       });
@@ -804,12 +796,16 @@ describe('RolesController', () => {
 
         // Assert
         expect(logger.info).toHaveBeenCalledWith(
-          'Role displayName updated successfully',
+          'Role updated successfully',
           expect.objectContaining({
             roleId: mockRoleId,
             roleName: 'testRole',
-            oldDisplayName: currentDisplayName,
-            newDisplayName: newDisplayName,
+            changes: expect.objectContaining({
+              displayName: expect.objectContaining({
+                old: currentDisplayName,
+                new: newDisplayName,
+              }),
+            }),
             updatedBy: mockUserId,
             updatedByEmail: mockUserEmail,
             timestamp: expect.any(String),

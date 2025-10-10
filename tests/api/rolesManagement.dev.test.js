@@ -277,6 +277,89 @@ describe('Roles Management API - Integration Tests', () => {
 
         console.log('✓ Sequential updates successful');
       });
+
+      test('superadmin can update only description', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const newDescription = `Updated description ${Date.now()}`;
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: newDescription })
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.role.description).toBe(newDescription);
+
+        console.log(`✓ Description updated to: ${newDescription}`);
+      });
+
+      test('superadmin can update both displayName and description', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const newDisplayName = `Full Update ${Date.now()}`;
+        const newDescription = `Full description ${Date.now()}`;
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({
+            displayName: newDisplayName,
+            description: newDescription
+          })
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.role.displayName).toBe(newDisplayName);
+        expect(response.body.data.role.description).toBe(newDescription);
+
+        console.log(`✓ Both fields updated: ${newDisplayName}, ${newDescription}`);
+      });
+
+      test('can update description to empty string', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: '' })
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.role.description).toBe('');
+
+        console.log('✓ Description cleared successfully');
+      });
+
+      test('update trims whitespace from description', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const descWithSpaces = `  Trimmed Description ${Date.now()}  `;
+        const expectedDesc = descWithSpaces.trim();
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: descWithSpaces })
+          .expect(200);
+
+        expect(response.body.data.role.description).toBe(expectedDesc);
+
+        console.log('✓ Description whitespace correctly trimmed');
+      });
     });
 
     // AUTHENTICATION & AUTHORIZATION
@@ -475,11 +558,87 @@ describe('Roles Management API - Integration Tests', () => {
 
         console.log('✓ Non-existent role ID correctly returns 404');
       });
+
+      test('returns 400 when description exceeds 500 characters', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const longDescription = 'A'.repeat(501);
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: longDescription })
+          .expect(400);
+
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toMatch(/500 characters/i);
+
+        console.log('✓ Long description (>500 chars) correctly rejected');
+      });
+
+      test('accepts description with exactly 500 characters', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const exactDescription = 'A'.repeat(500);
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: exactDescription })
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.role.description).toBe(exactDescription);
+
+        console.log('✓ 500-character description accepted');
+      });
+
+      test('returns 400 when no fields are provided', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({})
+          .expect(400);
+
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toMatch(/at least one field/i);
+
+        console.log('✓ Empty update body correctly rejected');
+      });
+
+      test('returns 400 when description is not a string', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: 12345 })
+          .expect(400);
+
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toMatch(/string/i);
+
+        console.log('✓ Non-string description correctly rejected');
+      });
     });
 
     // SECURITY
     describe('Security', () => {
-      test('only displayName is updated, other fields are ignored', async () => {
+      test('only displayName and description are updated, other fields are ignored', async () => {
         if (!authTokens.superadmin || !testRoleId) {
           console.log('⊘ Skipping test - prerequisites not met');
           return;
@@ -496,28 +655,31 @@ describe('Roles Management API - Integration Tests', () => {
 
         // Attempt to update multiple fields
         const newDisplayName = `Security Test ${Date.now()}`;
+        const newDescription = `Security description ${Date.now()}`;
         await request(BASE_URL)
           .put(`/api/roles/${testRoleId}`)
           .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
           .send({
             displayName: newDisplayName,
+            description: newDescription,
             level: 7, // Attempt privilege escalation
             active: false, // Attempt deactivation
             basePermissions: ['admin.all'], // Attempt permission grant
           })
           .expect(200);
 
-        // Verify only displayName changed
+        // Verify only displayName and description changed
         const after = await request(BASE_URL)
           .get(`/api/roles/${testRoleId}`)
           .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
           .expect(200);
 
         expect(after.body.data.role.displayName).toBe(newDisplayName);
+        expect(after.body.data.role.description).toBe(newDescription);
         expect(after.body.data.role.level).toBe(originalLevel);
         expect(after.body.data.role.active).toBe(originalActive);
 
-        console.log('✓ Only displayName updated, other fields protected');
+        console.log('✓ Only displayName and description updated, other fields protected');
       });
 
       test('special characters in displayName are handled safely', async () => {
@@ -557,6 +719,45 @@ describe('Roles Management API - Integration Tests', () => {
         expect(response.body.data.role.displayName).toBe(unicodeName);
 
         console.log('✓ Unicode characters preserved');
+      });
+
+      test('special characters in description are handled safely', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const specialDescription = `Description with <script>alert("XSS")</script> & special chars ${Date.now()}`;
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: specialDescription })
+          .expect(200);
+
+        // Verify the data is stored as-is (not executed)
+        expect(response.body.data.role.description).toBe(specialDescription);
+
+        console.log('✓ Special characters in description handled safely');
+      });
+
+      test('unicode characters in description are preserved', async () => {
+        if (!authTokens.superadmin || !testRoleId) {
+          console.log('⊘ Skipping test - prerequisites not met');
+          return;
+        }
+
+        const unicodeDescription = `Descripción con emojis 🔒🛡️ y caracteres especiales ${Date.now()}`;
+
+        const response = await request(BASE_URL)
+          .put(`/api/roles/${testRoleId}`)
+          .set('Authorization', `Bearer ${authTokens.superadmin.accessToken}`)
+          .send({ description: unicodeDescription })
+          .expect(200);
+
+        expect(response.body.data.role.description).toBe(unicodeDescription);
+
+        console.log('✓ Unicode characters in description preserved');
       });
     });
   });

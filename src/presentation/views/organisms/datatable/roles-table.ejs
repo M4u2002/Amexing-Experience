@@ -1,7 +1,7 @@
 <%
 /**
  * Roles DataTable Organism
- * Advanced DataTable component for system role management with read-only features
+ * Advanced DataTable component for system role management with editing capabilities
  *
  * Atomic Design Level: Organism
  * Category: Dashboard Data Tables
@@ -18,7 +18,8 @@
  *
  * Features:
  * - Real-time data loading from API
- * - Read-only view for system roles
+ * - Edit role displayName and description (SuperAdmin only)
+ * - Real-time validation with character counters
  * - Server-side rendering with client-side DataTable enhancement
  * - Accessibility compliant (ARIA labels, keyboard navigation)
  * - Responsive design with mobile-friendly layout
@@ -45,12 +46,6 @@ const canView = dtUserRole === 'superadmin';
                     Roles del Sistema
                 </h5>
                 <small class="text-white" style="opacity: 0.9;">Administración y consulta de roles con sus permisos</small>
-            </div>
-            <div class="col-auto">
-                <span class="badge bg-light text-dark">
-                    <i class="ti ti-info-circle me-1"></i>
-                    Solo Consulta
-                </span>
             </div>
         </div>
     </div>
@@ -254,14 +249,16 @@ function initializeDataTableWithData(rolesData) {
 
                     let actions = '<div class="btn-group" role="group">';
 
-                    // Edit button - allows editing displayName
+                    // Edit button - allows editing displayName and description
+                    const roleDescription = row.description || '';
                     actions += `<button type="button"
                                 class="btn btn-sm btn-primary btn-edit-role"
                                 data-role-id="${row.id}"
                                 data-role-name="${roleName}"
+                                data-role-description="${roleDescription.replace(/"/g, '&quot;')}"
                                 data-bs-toggle="tooltip"
                                 data-bs-placement="top"
-                                title="Editar nombre del rol">
+                                title="Editar rol">
                                 <i class="ti ti-edit"></i>
                             </button>`;
 
@@ -412,26 +409,83 @@ function validateRoleDisplayName(displayName, currentDisplayName) {
 }
 
 /**
+ * Validate role description input
+ * @param {string} description - Role description to validate
+ * @param {string} currentDescription - Current description for comparison
+ * @returns {object} - { valid: boolean, error: string }
+ */
+function validateRoleDescription(description, currentDescription) {
+    // Description is optional, allow empty
+    if (description === undefined || description === null) {
+        return {
+            valid: true,
+            error: null
+        };
+    }
+
+    const trimmedDesc = description.trim();
+
+    // Check max length
+    if (trimmedDesc.length > 500) {
+        return {
+            valid: false,
+            error: 'La descripción no puede exceder 500 caracteres'
+        };
+    }
+
+    return {
+        valid: true,
+        error: null
+    };
+}
+
+/**
+ * Validate if any changes were made
+ * @param {string} displayName - New display name
+ * @param {string} currentDisplayName - Current display name
+ * @param {string} description - New description
+ * @param {string} currentDescription - Current description
+ * @returns {object} - { hasChanges: boolean, error: string }
+ */
+function validateHasChanges(displayName, currentDisplayName, description, currentDescription) {
+    const displayNameChanged = displayName.trim() !== currentDisplayName;
+    const descriptionChanged = description.trim() !== currentDescription;
+
+    if (!displayNameChanged && !descriptionChanged) {
+        return {
+            hasChanges: false,
+            error: 'No se detectaron cambios. Los valores son idénticos a los actuales'
+        };
+    }
+
+    return {
+        hasChanges: true,
+        error: null
+    };
+}
+
+/**
  * Show edit role modal with validation
  * @param {string} roleId - Role ID
  * @param {string} currentDisplayName - Current role display name
+ * @param {string} currentDescription - Current role description
  */
-function showEditRoleModal(roleId, currentDisplayName) {
+function showEditRoleModal(roleId, currentDisplayName, currentDescription = '') {
     // Create modal HTML
     const modalHtml = `
         <div class="modal fade" id="editRoleModal" tabindex="-1" aria-labelledby="editRoleModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title" id="editRoleModalLabel">
                             <i class="ti ti-edit me-2"></i>
-                            Editar Nombre del Rol
+                            Editar Rol
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted mb-3">
-                            Modifica el nombre de visualización del rol. Este cambio será visible para todos los usuarios del sistema.
+                        <p class="text-muted mb-4">
+                            Modifica el nombre y/o descripción del rol. Los cambios serán visibles para todos los usuarios del sistema.
                         </p>
 
                         <div class="mb-3">
@@ -454,9 +508,32 @@ function showEditRoleModal(roleId, currentDisplayName) {
                             <div id="displayNameValidationError" class="invalid-feedback" style="display: none;"></div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="roleDescriptionInput" class="form-label fw-bold">
+                                Descripción
+                            </label>
+                            <textarea
+                                class="form-control"
+                                id="roleDescriptionInput"
+                                rows="4"
+                                maxlength="500"
+                                placeholder="Ingresa una descripción del rol (opcional)"
+                                aria-label="Descripción del rol">${currentDescription}</textarea>
+                            <div class="d-flex justify-content-between">
+                                <div class="form-text">
+                                    <i class="ti ti-info-circle me-1"></i>
+                                    Máximo 500 caracteres (opcional)
+                                </div>
+                                <small id="descriptionCharCount" class="text-muted">
+                                    ${currentDescription.length}/500
+                                </small>
+                            </div>
+                            <div id="descriptionValidationError" class="invalid-feedback" style="display: none;"></div>
+                        </div>
+
                         <div class="alert alert-info d-flex align-items-center" role="alert">
                             <i class="ti ti-info-circle me-2 fs-5"></i>
-                            <small>Solo se puede modificar el nombre de visualización. Los permisos y configuraciones del rol permanecen sin cambios.</small>
+                            <small>Solo se puede modificar el nombre y la descripción. Los permisos y configuraciones del rol permanecen sin cambios.</small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -487,33 +564,90 @@ function showEditRoleModal(roleId, currentDisplayName) {
     const modalElement = document.getElementById('editRoleModal');
     const modal = new bootstrap.Modal(modalElement);
     const updateBtn = modalElement.querySelector('[data-action="update-role"]');
-    const inputField = document.getElementById('roleDisplayNameInput');
-    const validationErrorDiv = document.getElementById('displayNameValidationError');
+    const displayNameInput = document.getElementById('roleDisplayNameInput');
+    const descriptionInput = document.getElementById('roleDescriptionInput');
+    const displayNameErrorDiv = document.getElementById('displayNameValidationError');
+    const descriptionErrorDiv = document.getElementById('descriptionValidationError');
+    const charCountElement = document.getElementById('descriptionCharCount');
 
     // Focus input when modal opens
     modalElement.addEventListener('shown.bs.modal', function() {
-        inputField.focus();
-        inputField.select();
+        displayNameInput.focus();
+        displayNameInput.select();
     });
 
-    // Real-time validation on input
-    inputField.addEventListener('input', function() {
-        const validation = validateRoleDisplayName(this.value, currentDisplayName);
+    // Update character count for description
+    descriptionInput.addEventListener('input', function() {
+        const length = this.value.length;
+        charCountElement.textContent = `${length}/500`;
 
-        if (!validation.valid) {
-            inputField.classList.add('is-invalid');
-            validationErrorDiv.textContent = validation.error;
-            validationErrorDiv.style.display = 'block';
-            updateBtn.disabled = true;
+        // Change color based on length
+        if (length > 450) {
+            charCountElement.classList.add('text-warning');
+            charCountElement.classList.remove('text-muted');
+        } else if (length === 500) {
+            charCountElement.classList.add('text-danger');
+            charCountElement.classList.remove('text-warning', 'text-muted');
         } else {
-            inputField.classList.remove('is-invalid');
-            validationErrorDiv.style.display = 'none';
-            updateBtn.disabled = false;
+            charCountElement.classList.remove('text-warning', 'text-danger');
+            charCountElement.classList.add('text-muted');
         }
     });
 
-    // Handle Enter key
-    inputField.addEventListener('keypress', function(e) {
+    // Real-time validation function
+    function validateInputs() {
+        let isValid = true;
+
+        // Validate displayName
+        const displayNameValidation = validateRoleDisplayName(displayNameInput.value, currentDisplayName);
+        if (!displayNameValidation.valid) {
+            displayNameInput.classList.add('is-invalid');
+            displayNameErrorDiv.textContent = displayNameValidation.error;
+            displayNameErrorDiv.style.display = 'block';
+            isValid = false;
+        } else {
+            displayNameInput.classList.remove('is-invalid');
+            displayNameErrorDiv.style.display = 'none';
+        }
+
+        // Validate description
+        const descriptionValidation = validateRoleDescription(descriptionInput.value, currentDescription);
+        if (!descriptionValidation.valid) {
+            descriptionInput.classList.add('is-invalid');
+            descriptionErrorDiv.textContent = descriptionValidation.error;
+            descriptionErrorDiv.style.display = 'block';
+            isValid = false;
+        } else {
+            descriptionInput.classList.remove('is-invalid');
+            descriptionErrorDiv.style.display = 'none';
+        }
+
+        // Check if any changes were made
+        if (isValid) {
+            const changesValidation = validateHasChanges(
+                displayNameInput.value,
+                currentDisplayName,
+                descriptionInput.value,
+                currentDescription
+            );
+
+            if (!changesValidation.hasChanges) {
+                // Disable button but don't show error until submit
+                updateBtn.disabled = true;
+                return false;
+            }
+        }
+
+        updateBtn.disabled = !isValid;
+        return isValid;
+    }
+
+    // Real-time validation on input
+    displayNameInput.addEventListener('input', validateInputs);
+    descriptionInput.addEventListener('input', validateInputs);
+
+    // Handle Enter key in displayName
+    displayNameInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             if (!updateBtn.disabled) {
@@ -524,18 +658,36 @@ function showEditRoleModal(roleId, currentDisplayName) {
 
     // Handle update button click
     updateBtn.addEventListener('click', async function() {
-        const newDisplayName = inputField.value;
-        const validation = validateRoleDisplayName(newDisplayName, currentDisplayName);
+        const newDisplayName = displayNameInput.value;
+        const newDescription = descriptionInput.value;
 
-        if (!validation.valid) {
-            inputField.classList.add('is-invalid');
-            validationErrorDiv.textContent = validation.error;
-            validationErrorDiv.style.display = 'block';
+        // Final validation
+        const displayNameValidation = validateRoleDisplayName(newDisplayName, currentDisplayName);
+        const descriptionValidation = validateRoleDescription(newDescription, currentDescription);
+        const changesValidation = validateHasChanges(newDisplayName, currentDisplayName, newDescription, currentDescription);
+
+        // Show validation errors
+        if (!displayNameValidation.valid) {
+            displayNameInput.classList.add('is-invalid');
+            displayNameErrorDiv.textContent = displayNameValidation.error;
+            displayNameErrorDiv.style.display = 'block';
+            return;
+        }
+
+        if (!descriptionValidation.valid) {
+            descriptionInput.classList.add('is-invalid');
+            descriptionErrorDiv.textContent = descriptionValidation.error;
+            descriptionErrorDiv.style.display = 'block';
+            return;
+        }
+
+        if (!changesValidation.hasChanges) {
+            showValidationError(changesValidation.error);
             return;
         }
 
         // Execute update
-        await executeUpdateRole(roleId, newDisplayName.trim(), modal);
+        await executeUpdateRole(roleId, newDisplayName.trim(), newDescription.trim(), modal);
     });
 
     // Clean up modal on hide
@@ -551,11 +703,13 @@ function showEditRoleModal(roleId, currentDisplayName) {
  * Execute role update via API
  * @param {string} roleId - Role ID to update
  * @param {string} newDisplayName - New display name
+ * @param {string} newDescription - New description
  * @param {object} modal - Bootstrap modal instance
  */
-async function executeUpdateRole(roleId, newDisplayName, modal) {
+async function executeUpdateRole(roleId, newDisplayName, newDescription, modal) {
     const updateBtn = document.querySelector('#editRoleModal [data-action="update-role"]');
-    const inputField = document.getElementById('roleDisplayNameInput');
+    const displayNameInput = document.getElementById('roleDisplayNameInput');
+    const descriptionInput = document.getElementById('roleDescriptionInput');
 
     // Disable button and show loading state
     updateBtn.disabled = true;
@@ -563,6 +717,12 @@ async function executeUpdateRole(roleId, newDisplayName, modal) {
     updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Actualizando...';
 
     try {
+        // Build request body with both fields
+        const requestBody = {
+            displayName: newDisplayName,
+            description: newDescription
+        };
+
         const response = await fetch(`/api/roles/${roleId}`, {
             method: 'PUT',
             credentials: 'include',
@@ -570,7 +730,7 @@ async function executeUpdateRole(roleId, newDisplayName, modal) {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ displayName: newDisplayName })
+            body: JSON.stringify(requestBody)
         });
 
         const result = await response.json();
@@ -581,7 +741,7 @@ async function executeUpdateRole(roleId, newDisplayName, modal) {
 
         // Success
         modal.hide();
-        showSuccessAlert(`Rol actualizado exitosamente a "${newDisplayName}"`);
+        showSuccessAlert(`Rol "${newDisplayName}" actualizado exitosamente`);
 
         // Reload table data
         if (window.rolesTable) {
@@ -595,7 +755,7 @@ async function executeUpdateRole(roleId, newDisplayName, modal) {
         // Restore button state
         updateBtn.disabled = false;
         updateBtn.innerHTML = originalBtnContent;
-        inputField.focus();
+        displayNameInput.focus();
     }
 }
 
@@ -614,11 +774,12 @@ function setupEventDelegation() {
         const target = event.target.closest('button');
         if (!target) return;
 
-        // Edit button - opens modal to edit displayName
+        // Edit button - opens modal to edit displayName and description
         if (target.classList.contains('btn-edit-role')) {
             const roleId = target.getAttribute('data-role-id');
             const roleName = target.getAttribute('data-role-name');
-            showEditRoleModal(roleId, roleName);
+            const roleDescription = target.getAttribute('data-role-description') || '';
+            showEditRoleModal(roleId, roleName, roleDescription);
             return;
         }
     });

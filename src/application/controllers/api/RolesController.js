@@ -267,20 +267,20 @@ class RolesController {
   }
 
   /**
-   * PUT /api/roles/:id - Update role displayName only.
-   * Only SuperAdmin can update roles, and only displayName can be modified.
+   * PUT /api/roles/:id - Update role displayName and/or description.
+   * Only SuperAdmin can update roles, and only displayName and description can be modified.
    * @param {object} req - Express request object.
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
    * PUT /api/roles/abc123
-   * Body: { displayName: "New Role Name" }
+   * Body: { displayName: "New Role Name", description: "New description" }
    */
   async updateRole(req, res) {
     try {
       const currentUser = req.user;
       const roleId = req.params.id;
-      const { displayName } = req.body;
+      const { displayName, description } = req.body;
 
       if (!currentUser) {
         return this.sendError(res, 'Authentication required', 401);
@@ -303,16 +303,37 @@ class RolesController {
         return this.sendError(res, 'Role ID is required', 400);
       }
 
-      // Validate displayName
-      if (!displayName || typeof displayName !== 'string' || !displayName.trim()) {
-        return this.sendError(res, 'Display name is required and cannot be empty', 400);
+      // Validate that at least one field is provided
+      if (!displayName && description === undefined) {
+        return this.sendError(res, 'At least one field (displayName or description) must be provided', 400);
       }
 
-      const trimmedDisplayName = displayName.trim();
+      // Validate displayName if provided
+      let trimmedDisplayName = null;
+      if (displayName !== undefined) {
+        if (typeof displayName !== 'string' || !displayName.trim()) {
+          return this.sendError(res, 'Display name cannot be empty', 400);
+        }
+        trimmedDisplayName = displayName.trim();
 
-      // Validate displayName length
-      if (trimmedDisplayName.length > 100) {
-        return this.sendError(res, 'Display name cannot exceed 100 characters', 400);
+        // Validate displayName length
+        if (trimmedDisplayName.length > 100) {
+          return this.sendError(res, 'Display name cannot exceed 100 characters', 400);
+        }
+      }
+
+      // Validate description if provided
+      let trimmedDescription = null;
+      if (description !== undefined) {
+        if (typeof description !== 'string') {
+          return this.sendError(res, 'Description must be a string', 400);
+        }
+        trimmedDescription = description.trim();
+
+        // Validate description length (allow empty, but limit max length)
+        if (trimmedDescription.length > 500) {
+          return this.sendError(res, 'Description cannot exceed 500 characters', 400);
+        }
       }
 
       // Get current role
@@ -325,22 +346,45 @@ class RolesController {
       }
 
       const currentDisplayName = role.get('displayName');
+      const currentDescription = role.get('description') || '';
 
-      // Check if no changes were made
-      if (currentDisplayName === trimmedDisplayName) {
-        return this.sendError(res, 'No changes detected. The display name is the same.', 400);
+      // Track changes
+      const changes = {};
+      let hasChanges = false;
+
+      // Check displayName changes
+      if (trimmedDisplayName !== null && currentDisplayName !== trimmedDisplayName) {
+        changes.displayName = {
+          old: currentDisplayName,
+          new: trimmedDisplayName,
+        };
+        role.set('displayName', trimmedDisplayName);
+        hasChanges = true;
       }
 
-      // Update only displayName (security: prevent modifying other fields)
-      role.set('displayName', trimmedDisplayName);
+      // Check description changes
+      if (trimmedDescription !== null && currentDescription !== trimmedDescription) {
+        changes.description = {
+          old: currentDescription,
+          new: trimmedDescription,
+        };
+        role.set('description', trimmedDescription);
+        hasChanges = true;
+      }
+
+      // Check if no changes were made
+      if (!hasChanges) {
+        return this.sendError(res, 'No changes detected. The provided values are the same as current values.', 400);
+      }
+
+      // Save changes (security: only displayName and description are modified)
       await role.save(null, { useMasterKey: true });
 
       // Audit logging
-      logger.info('Role displayName updated successfully', {
+      logger.info('Role updated successfully', {
         roleId,
         roleName: role.get('name'),
-        oldDisplayName: currentDisplayName,
-        newDisplayName: trimmedDisplayName,
+        changes,
         updatedBy: currentUser.id,
         updatedByEmail: currentUser.get?.('email') || currentUser.email,
         timestamp: new Date().toISOString(),
