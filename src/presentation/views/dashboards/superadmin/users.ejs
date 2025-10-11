@@ -50,29 +50,100 @@ const currentPath = '/dashboard/superadmin/users';
             tableId: 'users-table',
             apiEndpoint: '/api/amexingusers',
             userRole: currentUserRole,
-            showActions: true
+            showActions: true,
+            modalId: 'createUserModal'
         }) %>
     </div>
 </div>
 
 <!-- User Management Modals -->
 <!-- Create User Modal -->
-<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createUserModalLabel">
-                    <i class="ti ti-user-plus me-2"></i>Crear Nuevo Usuario
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Create user form will go here -->
-                <p class="text-muted">Formulario de creación de usuario pendiente de implementar</p>
-            </div>
-        </div>
-    </div>
-</div>
+<%- include('../../organisms/dashboard/modals/add-modal.ejs', {
+  data: {
+    modalId: 'createUserModal',
+    title: 'Agregar Usuario',
+    icon: 'user-plus',
+    description: 'Completa los datos para registrar un nuevo usuario.',
+    dataAction: 'ADD_USER',
+    primaryLabel: 'Agregar Usuario',
+    inputs: [
+      { 
+        id: 'userName',
+        name: 'username',
+        label: 'Nombre',
+        type: 'text',
+        required: true,
+        maxLength: 100,
+        placeholder: 'Ej. Juan',
+      },
+      { 
+        id: 'firstName',
+        name: 'firstName',
+        label: 'Apellido Paterno',
+        type: 'text',
+        required: true,
+        maxLength: 100,
+        placeholder: 'Ej. Pérez',
+      },
+      { 
+        id: 'lastName',
+        name: 'lastName',
+        label: 'Apellido Materno',
+        type: 'text',
+        required: true,
+        maxLength: 100,
+        placeholder: 'Ej. Pérez',
+      },
+      { 
+        id: 'userEmail',
+        name: 'email',
+        label: 'Correo electrónico',
+        type: 'email',
+        required: true,
+        maxLength: 120,
+        placeholder: 'Ej. user@example.com',
+      },
+      { 
+        id: 'organizationId',
+        name: 'organizationId',
+        label: 'Organización',
+        type: 'text',
+        value: 'amexing',
+        required: true,
+        maxLength: 120,
+        placeholder: '',
+        hidden: true,
+      },
+      { 
+        id: 'userRole',
+        label: 'Rol',
+        type: 'select',
+        required: true,
+        helper: 'Ej. admin, superadmin o amexing_employee',
+        multiple: '',
+        options: [
+          { 
+            value: '',
+            label: "Ninguno"
+          },
+          { 
+            value: 'admin-id',
+            label: "Admin"
+          },
+          {
+            value: 'superadmin-id',
+            label: "Superadmin"
+          },
+          {
+            value: 'amexing_employee-id',
+            label: "Empleado Amexing"
+          },
+        ]
+      },
+    ],
+    headerStyle: 'background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%);'
+  }
+}) %>
 
 <!-- Edit User Modal -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
