@@ -99,8 +99,11 @@ class UserManagementService {
       // Filter by client organization roles (exclude Amexing internal users)
       await this.filterByOrganization(query, 'client');
 
-      // Apply role-based access filtering
-      await this.applyRoleBasedFiltering(query, currentUser, targetRole);
+      // Apply role-based access filtering (targetRole specific filter)
+      // Note: Admin already filtered by organization, only apply specific targetRole if provided
+      if (targetRole) {
+        await this.filterByRoleName(query, targetRole);
+      }
 
       // Apply additional filters
       this.applyAdvancedFilters(query, filters);
@@ -118,6 +121,20 @@ class UserManagementService {
         query.find({ useMasterKey: true }),
         this.getTotalUserCount(currentUser, targetRole, filters),
       ]);
+
+      logger.info('User query performed', {
+        usersFound: users.length,
+        totalCount,
+        targetRole,
+        userSample: users.slice(0, 2).map((u) => ({
+          id: u.id,
+          username: u.get('username'),
+          firstName: u.get('firstName'),
+          lastName: u.get('lastName'),
+          roleId: u.get('roleId')?.id || 'NO_ROLE_ID',
+          hasRoleId: !!u.get('roleId'),
+        })),
+      });
 
       // Transform users to safe format
       const safeUsers = users.map((user) => this.transformUserToSafeFormat(user));
@@ -1791,8 +1808,49 @@ class UserManagementService {
   }
 
   /**
+   * Get organization role filters for building queries.
+   * Returns roles and role names for both new RBAC and legacy formats.
+   * @param {string} organizationType - Organization type ('amexing' or 'client').
+   * @returns {Promise<{roles: Array, roleNames: Array}>} Role filters.
+   * @example
+   */
+  async getOrganizationRoleFilters(organizationType) {
+    try {
+      // Query Role table to get roles by organization
+      const roleQuery = new Parse.Query('Role');
+      roleQuery.equalTo('organization', organizationType);
+      roleQuery.equalTo('exists', true);
+
+      logger.info('Getting organization role filters', {
+        organizationType,
+      });
+
+      const roles = await roleQuery.find({ useMasterKey: true });
+      const roleNames = roles.map((r) => r.get('name'));
+
+      logger.info('Organization roles retrieved', {
+        organizationType,
+        rolesCount: roles.length,
+        roleNames,
+      });
+
+      return {
+        roles,
+        roleNames,
+      };
+    } catch (error) {
+      logger.error('Failed to get organization role filters', {
+        error: error.message,
+        stack: error.stack,
+        organizationType,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Filter query to include only users with specific organization type.
-   * Uses roleId Pointer to filter by role's organization field.
+   * Uses roleId Pointer to filter by role's organization field (new RBAC format).
    * @param {Parse.Query} query - Parse query object.
    * @param {string} organizationType - Organization type ('amexing' or 'client').
    * @example
@@ -1806,7 +1864,6 @@ class UserManagementService {
 
       logger.info('Filtering by organization', {
         organizationType,
-        queryConstraints: roleQuery.toJSON(),
       });
 
       const roles = await roleQuery.find({ useMasterKey: true });
@@ -1815,11 +1872,17 @@ class UserManagementService {
         organizationType,
         rolesCount: roles.length,
         roleNames: roles.map((r) => r.get('name')),
+        roleIds: roles.map((r) => r.id),
       });
 
       if (roles && roles.length > 0) {
         // Filter users by roleId Pointers
         query.containedIn('roleId', roles);
+
+        logger.info('Applied roleId filter to query', {
+          organizationType,
+          rolesCount: roles.length,
+        });
       } else {
         // If no roles found, return no results
         logger.warn('No roles found for organization type', {
