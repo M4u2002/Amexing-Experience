@@ -49,10 +49,16 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             </div>
             <div class="col-auto">
                 <% if (canCreate) { %>
-                    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createClientModal">
-                        <i class="ti ti-plus me-1"></i>
-                        Nuevo Cliente
-                    </button>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#createClientModal">
+                            <i class="ti ti-plus me-1"></i>
+                            Nuevo Cliente
+                        </button>
+                        <button type="button" class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#bulkImportModal">
+                            <i class="ti ti-file-upload me-1"></i>
+                            Carga Masiva
+                        </button>
+                    </div>
                 <% } %>
             </div>
         </div>
@@ -64,10 +70,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             <table id="<%= dtTableId %>" class="table table-hover data-table" style="width:100%">
                 <thead class="table-light">
                     <tr>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>Email</th>
                         <th>Empresa</th>
+                        <th>Email</th>
                         <th>Estado</th>
                         <th>Registro</th>
                         <% if (dtShowActions && (canEdit || canDelete)) { %>
@@ -78,6 +82,17 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 <tbody>
                     <!-- Data will be loaded via JavaScript -->
                 </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th>Empresa</th>
+                        <th>Email</th>
+                        <th>Estado</th>
+                        <th>Registro</th>
+                        <% if (dtShowActions && (canEdit || canDelete)) { %>
+                            <th>Acciones</th>
+                        <% } %>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
@@ -102,51 +117,17 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 // ============================================================================
 
 /**
- * Load clients data from API endpoint
- * @returns {Promise<void>}
+ * Initialize table with server-side processing
+ * No need to pre-load data, DataTable will fetch it via AJAX
+ * @returns {void}
  */
-async function loadClientsAndInitializeTable() {
+function loadClientsAndInitializeTable() {
     try {
-        console.log('Fetching clients from: <%= dtApiEndpoint %>');
-
-        const response = await fetch('<%= dtApiEndpoint %>', {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        });
-
-        console.log('Response status:', response.status);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Response error:', errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('API result:', result);
-
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to load clients');
-        }
-
-        const clients = result.data.users || result.data.clients || [];
-        console.log('Clients loaded:', clients.length, clients);
-
-        // Dispatch custom event with count
-        document.dispatchEvent(new CustomEvent('clientsTableLoaded', {
-            detail: { count: result.data.pagination?.totalCount || clients.length }
-        }));
-
-        // Initialize DataTable with loaded data
-        initializeClientsDataTable(clients);
-
+        // Initialize DataTable - it will handle data loading via AJAX
+        initializeClientsDataTable();
     } catch (error) {
-        console.error('Error loading clients:', error);
-        showErrorAlert('Error al cargar los clientes: ' + error.message);
+        console.error('Error initializing clients table:', error);
+        showErrorAlert('Error al inicializar la tabla de clientes: ' + error.message);
     }
 }
 
@@ -155,43 +136,112 @@ async function loadClientsAndInitializeTable() {
 // ============================================================================
 
 /**
- * Initialize DataTables with client data
- * @param {Array} clients - Array of client objects
+ * Initialize DataTables with server-side processing
+ * @param {number} totalCount - Total number of records
  */
-function initializeClientsDataTable(clients) {
+function initializeClientsDataTable(totalCount) {
     // Destroy existing table if it exists
     if (window.clientsTable) {
         window.clientsTable.destroy();
     }
 
-    // Initialize DataTable
+    // Initialize DataTable with server-side processing
     window.clientsTable = $('#<%= dtTableId %>').DataTable({
-        data: clients,
+        processing: false, // Disable native processing indicator, using custom loader
+        serverSide: true,
+        searchDelay: 500, // Wait 500ms after user stops typing before searching
+        ajax: function(data, callback, settings) {
+            // Show loading overlay
+            const $table = $('#<%= dtTableId %>');
+            const $wrapper = $table.closest('.dataTables_wrapper');
+
+            // Add loading state
+            $wrapper.addClass('datatable-loading');
+            $table.css('opacity', '0.5');
+
+            // Disable pagination buttons during load
+            $wrapper.find('.paginate_button').addClass('disabled').css('pointer-events', 'none');
+
+            // Map DataTables parameters to API parameters
+            const params = new URLSearchParams({
+                page: Math.floor(data.start / data.length) + 1,
+                limit: data.length,
+                sortField: data.columns[data.order[0].column].data || 'companyName',
+                sortDirection: data.order[0].dir
+            });
+
+            // Add search parameter if provided
+            if (data.search.value) {
+                params.append('search', data.search.value);
+            }
+
+            fetch(`<%= dtApiEndpoint %>?${params.toString()}`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(json => {
+                if (!json.success) {
+                    throw new Error(json.error || 'Failed to load clients');
+                }
+
+                // Update total count display
+                const totalCount = json.data?.pagination?.totalCount || 0;
+                document.dispatchEvent(new CustomEvent('clientsTableLoaded', {
+                    detail: { count: totalCount }
+                }));
+
+                // Return data in the format DataTables expects
+                callback({
+                    draw: data.draw,
+                    recordsTotal: totalCount,
+                    recordsFiltered: totalCount,
+                    data: json.data?.users || []
+                });
+            })
+            .catch(error => {
+                console.error('DataTable AJAX error:', error);
+                showErrorAlert('Error al cargar los datos de clientes: ' + error.message);
+
+                // Return empty result on error
+                callback({
+                    draw: data.draw,
+                    recordsTotal: 0,
+                    recordsFiltered: 0,
+                    data: []
+                });
+            })
+            .finally(() => {
+                // Remove loading state
+                $wrapper.removeClass('datatable-loading');
+                $table.css('opacity', '1');
+
+                // Re-enable pagination buttons
+                $wrapper.find('.paginate_button').removeClass('disabled').css('pointer-events', '');
+            });
+        },
         columns: [
             {
-                data: 'firstName',
+                data: 'companyName',
                 render: function(data, type, row) {
-                    return data || '-';
-                }
-            },
-            {
-                data: 'lastName',
-                render: function(data, type, row) {
-                    return data || '-';
+                    // Get company name from various possible fields
+                    const companyName = row.companyName || row.organizationName || row.company || '-';
+                    return `<strong class="text-dark">${companyName}</strong>`;
                 }
             },
             {
                 data: 'email',
                 render: function(data, type, row) {
                     return `<a href="mailto:${data}" class="text-decoration-none">${data}</a>`;
-                }
-            },
-            {
-                data: null,
-                render: function(data, type, row) {
-                    // Get company name from various possible fields
-                    const companyName = row.companyName || row.organizationName || row.company || '-';
-                    return `<span class="badge bg-light-primary text-primary">${companyName}</span>`;
                 }
             },
             {
@@ -259,14 +309,43 @@ function initializeClientsDataTable(clients) {
             }
             <% } %>
         ],
-        language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-        },
         pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
         responsive: true,
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-        order: [[1, 'asc']], // Order by last name
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        order: [[0, 'asc']], // Order by company name
+        pagingType: 'full_numbers', // Shows: First Previous [1] [2] [3] ... [40] Next Last
+        language: {
+            processing: "Procesando...",
+            search: "Buscar:",
+            lengthMenu: "Mostrar _MENU_ registros",
+            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            infoEmpty: "Mostrando 0 a 0 de 0 registros",
+            infoFiltered: "(filtrado de _MAX_ registros totales)",
+            loadingRecords: "Cargando...",
+            zeroRecords: "No se encontraron registros coincidentes",
+            emptyTable: "No hay datos disponibles en la tabla",
+            paginate: {
+                first: "Primero",
+                previous: "Anterior",
+                next: "Siguiente",
+                last: "Último"
+            }
+        },
         drawCallback: function(settings) {
+            // Customize pagination: mark ellipsis with class for better UX
+            const $pagination = $('.dataTables_paginate');
+            $pagination.find('.paginate_button').each(function() {
+                const $btn = $(this);
+                const text = $btn.text().trim();
+
+                // Mark ellipsis buttons to make them visually distinct
+                if (text === '…' || text === '...') {
+                    $btn.addClass('ellipsis');
+                    $btn.prop('title', 'Más páginas disponibles');
+                }
+            });
+
             // Reinitialize tooltips after table redraw
             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -406,7 +485,8 @@ async function executeToggleStatus(clientId, newStatus) {
         }
 
         showSuccessAlert(`Cliente ${newStatus ? 'activado' : 'desactivado'} exitosamente`);
-        await loadClientsAndInitializeTable();
+        // Reload table data
+        window.clientsTable.ajax.reload(null, false);
 
     } catch (error) {
         console.error('Error toggling client status:', error);
@@ -481,7 +561,8 @@ async function executeDeleteClient(clientId, clientName) {
         }
 
         showSuccessAlert(`Cliente "${clientName}" eliminado exitosamente`);
-        await loadClientsAndInitializeTable();
+        // Reload table data
+        window.clientsTable.ajax.reload(null, false);
 
     } catch (error) {
         console.error('Error deleting client:', error);
@@ -550,6 +631,18 @@ document.addEventListener('DOMContentLoaded', function() {
     letter-spacing: 0.5px;
     background-color: #f8f9fa !important;
     border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.data-table tfoot th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    background-color: #f8f9fa !important;
+    border-top: 2px solid #dee2e6;
+    padding: 0.75rem;
+    color: #5a6a85;
 }
 
 .data-table tbody tr:hover {
@@ -564,5 +657,123 @@ document.addEventListener('DOMContentLoaded', function() {
 .badge {
     padding: 0.375rem 0.75rem;
     font-weight: 500;
+}
+
+/* DataTables pagination styling - Bootstrap compatible */
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 1rem;
+    float: right;
+}
+
+.dataTables_wrapper .dataTables_info {
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 1rem;
+}
+
+/* Clean pagination buttons without double borders */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    box-sizing: border-box;
+    display: inline-block;
+    min-width: 2rem;
+    padding: 0.25rem 0.5rem;
+    margin-left: 2px;
+    text-align: center;
+    text-decoration: none !important;
+    cursor: pointer;
+    color: #5a6a85 !important;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: white !important;
+    background: #f76b1c;
+    border: 1px solid #f76b1c;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled):not(.ellipsis) {
+    color: white !important;
+    background: #fa984f;
+    border: 1px solid #fa984f;
+}
+
+/* Disabled buttons (First/Previous when on first page, Next/Last when on last page) */
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
+    cursor: not-allowed;
+    color: #d1d5db !important;
+    background: transparent;
+    border: 1px solid transparent;
+    opacity: 0.5;
+}
+
+/* Ellipsis (...) - Make it clear it's not clickeable */
+.dataTables_wrapper .dataTables_paginate .ellipsis {
+    cursor: default !important;
+    color: #9ca3af !important;
+    background: transparent !important;
+    border: none !important;
+    pointer-events: none;
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+}
+
+.dataTables_wrapper .dataTables_paginate .ellipsis:hover {
+    background: transparent !important;
+    color: #9ca3af !important;
+}
+
+/* Loading state styling */
+.dataTables_wrapper.datatable-loading {
+    position: relative;
+}
+
+.dataTables_wrapper.datatable-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dataTables_wrapper.datatable-loading::after {
+    content: 'Cargando...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    background: #f76b1c;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Additional disabled state for loading */
+.dataTables_wrapper.datatable-loading .paginate_button {
+    opacity: 0.5;
+    cursor: wait !important;
+}
+
+/* Hide native DataTables processing indicator (we use custom loader) */
+.dataTables_processing {
+    display: none !important;
 }
 </style>

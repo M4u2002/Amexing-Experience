@@ -12,6 +12,41 @@ jest.mock('../../../../src/infrastructure/logger', () => ({
   debug: jest.fn(),
 }));
 
+// Mock Parse Query for Role lookups
+jest.mock('parse/node', () => {
+  const mockQuery = {
+    equalTo: jest.fn().mockReturnThis(),
+    first: jest.fn().mockResolvedValue({ id: 'role-department-manager-id' }),
+  };
+  return {
+    Object: class MockParseObject {
+      constructor() {
+        this.className = '';
+      }
+
+      static extend(className) {
+        return class extends MockParseObject {
+          constructor() {
+            super();
+            this.className = className;
+          }
+        };
+      }
+
+      static registerSubclass() {}
+
+      set() {}
+
+      get() {}
+
+      save() {
+        return Promise.resolve(this);
+      }
+    },
+    Query: jest.fn(() => mockQuery),
+  };
+});
+
 const ClientsController = require('../../../../src/application/controllers/api/ClientsController');
 const UserManagementService = require('../../../../src/application/services/UserManagementService');
 const logger = require('../../../../src/infrastructure/logger');
@@ -201,7 +236,10 @@ describe('ClientsController', () => {
     it('should create client successfully', async () => {
       mockReq.user = mockUser;
       mockReq.userRole = 'admin';
-      mockReq.body = validClientData;
+      mockReq.body = {
+        ...validClientData,
+        companyName: 'Test Company',
+      };
 
       const createdClient = { user: { id: 'new-client-id', ...validClientData, role: 'department_manager' } };
       mockUserService.createUser = jest.fn().mockResolvedValue(createdClient);
@@ -210,8 +248,14 @@ describe('ClientsController', () => {
 
       expect(mockUserService.createUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          ...validClientData,
+          email: validClientData.email,
+          firstName: validClientData.firstName,
+          lastName: validClientData.lastName,
           role: 'department_manager', // Should force role
+          roleId: 'role-department-manager-id', // Pointer ID
+          organizationId: 'client',
+          mustChangePassword: true,
+          // password is auto-generated
         }),
         mockUser
       );
@@ -220,7 +264,6 @@ describe('ClientsController', () => {
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
-          data: createdClient,
         })
       );
     });
@@ -230,6 +273,7 @@ describe('ClientsController', () => {
       mockReq.userRole = 'admin';
       mockReq.body = {
         ...validClientData,
+        companyName: 'Test Company',
         role: 'admin', // Try to set different role
       };
 
@@ -241,6 +285,7 @@ describe('ClientsController', () => {
       expect(mockUserService.createUser).toHaveBeenCalledWith(
         expect.objectContaining({
           role: 'department_manager', // Should override to department_manager
+          roleId: 'role-department-manager-id', // Pointer ID
         }),
         mockUser
       );
@@ -250,30 +295,32 @@ describe('ClientsController', () => {
       mockReq.user = mockUser;
       mockReq.userRole = 'admin';
       mockReq.body = {
-        username: 'incomplete@test.com',
-        // Missing required fields
+        email: 'incomplete@test.com',
+        // Missing required fields (firstName, lastName, companyName)
       };
-
-      const error = new Error('Missing required field: password');
-      mockUserService.createUser = jest.fn().mockRejectedValue(error);
 
       await clientsController.createClient(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(500);
+      // Should return 400 for missing required fields, not call service
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockUserService.createUser).not.toHaveBeenCalled();
     });
 
     it('should handle duplicate email error', async () => {
       mockReq.user = mockUser;
       mockReq.userRole = 'admin';
-      mockReq.body = validClientData;
+      mockReq.body = {
+        ...validClientData,
+        companyName: 'Test Company', // Add required field
+      };
 
-      const error = new Error('Email already exists');
+      const error = new Error('User with this email already exists');
       mockUserService.createUser = jest.fn().mockRejectedValue(error);
 
       await clientsController.createClient(mockReq, mockRes);
 
       expect(logger.error).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.status).toHaveBeenCalledWith(409); // Conflict status code
     });
   });
 
