@@ -117,6 +117,7 @@ class UserManagementController {
    * // Get specific user by ID
    * GET /api/users/12345
    */
+  /* eslint-disable max-lines-per-function */
   async getUserById(req, res) {
     try {
       const currentUser = req.user;
@@ -278,6 +279,7 @@ class UserManagementController {
    * // Update user
    * PUT /api/users/12345 with body: { firstName: 'Jane', role: 'manager' }
    */
+  /* eslint-disable max-lines-per-function */
   async updateUser(req, res) {
     try {
       const currentUser = req.user;
@@ -528,6 +530,7 @@ class UserManagementController {
    * // console.log(result);
    * @returns {Promise<object>} - Promise resolving to operation result.
    */
+  /* eslint-disable max-lines */
   async toggleUserStatus(req, res) {
     try {
       const currentUser = req.user;

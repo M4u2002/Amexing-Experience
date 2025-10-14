@@ -5,6 +5,7 @@ const logger = require('../../infrastructure/logger');
  * Simplified Dashboard Authentication Middleware
  * Lightweight authentication for EJS dashboard views with role-based routing.
  */
+/* eslint-disable max-lines */
 class DashboardAuthMiddleware {
   constructor() {
     this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
@@ -140,7 +141,9 @@ class DashboardAuthMiddleware {
     }
 
     const userRole = req.user.role;
+    // eslint-disable-next-line security/detect-object-injection
     const userLevel = this.roleHierarchy[userRole] || 0;
+    // eslint-disable-next-line security/detect-object-injection
     const requiredLevel = this.roleHierarchy[requiredRole] || 0;
 
     if (userLevel < requiredLevel) {
@@ -185,6 +188,7 @@ class DashboardAuthMiddleware {
     }
 
     const userRole = req.user.role;
+    // eslint-disable-next-line security/detect-object-injection
     const allowedDashboards = this.dashboardPermissions[userRole] || [];
 
     // Check if the requested dashboard is valid

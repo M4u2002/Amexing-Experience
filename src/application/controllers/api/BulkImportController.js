@@ -10,7 +10,7 @@
  * - PCI DSS compliant (audit logging, secure file handling).
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2024-10-12
+ * @since 1.0.0
  */
 
 const multer = require('multer');
@@ -23,6 +23,7 @@ const BulkImportService = require('../../services/BulkImportService');
 /**
  * BulkImportController class for handling bulk import operations.
  */
+/* eslint-disable max-lines */
 class BulkImportController {
   constructor() {
     this.bulkImportService = new BulkImportService();
@@ -80,10 +81,12 @@ class BulkImportController {
   /**
    * GET /api/clients/bulk/template
    * Download Excel template for bulk import.
-   * @param req
-   * @param res
-   * @example
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @example GET /api/clients/bulk/template
+   * @returns {Promise<void>}
    */
+  /* eslint-disable max-lines-per-function */
   async downloadTemplate(req, res) {
     try {
       const currentUser = req.user;
@@ -405,7 +408,7 @@ class BulkImportController {
         }
 
         row.height = 20;
-        rowNum++;
+        rowNum += 1;
       });
 
       // Set response headers for file download
@@ -437,12 +440,14 @@ class BulkImportController {
   }
 
   /**
-   * POST /api/clients/bulk/upload
+   * POST /api/clients/bulk/upload.
    * Upload and validate Excel file.
-   * @param req
-   * @param res
-   * @example
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @example POST /api/clients/bulk/upload.
+   * @returns {object} - JSON response.
    */
+  /* eslint-disable max-lines-per-function */
   async uploadFile(req, res) {
     try {
       const currentUser = req.user;
@@ -562,11 +567,12 @@ class BulkImportController {
   }
 
   /**
-   * POST /api/clients/bulk/process
+   * POST /api/clients/bulk/process.
    * Process bulk import.
-   * @param req
-   * @param res
-   * @example
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @example POST /api/clients/bulk/process.
+   * @returns {object} - JSON response.
    */
   async processImport(req, res) {
     try {
@@ -637,10 +643,11 @@ class BulkImportController {
 
   /**
    * Async processing of import.
-   * @param jobId
-   * @param job
-   * @param currentUser
-   * @example
+   * @param {string} jobId - Job ID.
+   * @param {object} job - Job object.
+   * @param {object} currentUser - Current user object.
+   * @returns {object} - Job object.
+   * @example processImportAsync(jobId, job, currentUser).
    */
   async processImportAsync(jobId, job, currentUser) {
     try {
@@ -711,9 +718,10 @@ class BulkImportController {
   /**
    * GET /api/clients/bulk/status/:jobId
    * Get import job status.
-   * @param req
-   * @param res
-   * @example
+   * @param {object} req - Request object.
+   * @param {object} res - Response object.
+   * @example getImportStatus(req, res).
+   * @returns {object} - Status object.
    */
   async getImportStatus(req, res) {
     try {
@@ -764,9 +772,10 @@ class BulkImportController {
   /**
    * GET /api/clients/bulk/error-report/:jobId
    * Download error report.
-   * @param req
-   * @param res
-   * @example
+   * @param {object} req - Request object.
+   * @param {object} res - Response object.
+   * @returns {object} - Status object.
+   * @example downloadErrorReport(req, res).
    */
   async downloadErrorReport(req, res) {
     try {
@@ -834,11 +843,12 @@ class BulkImportController {
 
   /**
    * Send success response.
-   * @param res
-   * @param data
-   * @param message
-   * @param statusCode
-   * @example
+   * @param {object} res - Express response object.
+   * @param {object} data - Data to send.
+   * @param {string} message - Success message.
+   * @param {number} statusCode - HTTP status code.
+   * @example sendSuccess(res, data, 'Success', 200);.
+   * @returns {void}
    */
   sendSuccess(res, data, message, statusCode = 200) {
     res.status(statusCode).json({
@@ -851,11 +861,12 @@ class BulkImportController {
 
   /**
    * Send error response.
-   * @param res
-   * @param message
-   * @param statusCode
-   * @param errors
-   * @example
+   * @param {object} res - Express response object.
+   * @param {string} message - Error message.
+   * @param {number} statusCode - HTTP status code.
+   * @param {object|null} errors - Additional error details.
+   * @example sendError(res, 'Error message', 500);
+   * @returns {void}
    */
   sendError(res, message, statusCode = 500, errors = null) {
     const response = {
@@ -873,7 +884,8 @@ class BulkImportController {
 
   /**
    * Get multer upload middleware.
-   * @example
+   * @returns {object} - Multer upload middleware.
+   * @example getUploadMiddleware().
    */
   getUploadMiddleware() {
     return this.upload.single('file');

@@ -350,6 +350,8 @@ class AmexingUsersController {
    * @param {object} query - Query parameters from request.
    * @returns {object} - Parsed options object.
    * @example
+   * // Parses query parameters into usable pagination and filters
+   * parseQueryParams({ page: '1', limit: '10', active: 'true' });
    */
   parseQueryParams(query) {
     const page = parseInt(query.page, 10) || 1;
@@ -388,7 +390,7 @@ class AmexingUsersController {
    * @param {object} data - Data to send.
    * @param {string} message - Success message.
    * @param {number} statusCode - HTTP status code.
-   * @example
+   * @example sendSuccess(res, data, 'Success', 200);
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     res.status(statusCode).json({
@@ -405,6 +407,11 @@ class AmexingUsersController {
    * @param {string} message - Error message.
    * @param {number} statusCode - HTTP status code.
    * @example
+   * res.status(500).json({
+   *   success: false,
+   *   error: 'Error message',
+   *   timestamp: new Date().toISOString(),
+   * });
    */
   sendError(res, message, statusCode = 500) {
     res.status(statusCode).json({

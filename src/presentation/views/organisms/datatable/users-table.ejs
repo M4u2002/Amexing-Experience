@@ -30,6 +30,7 @@ const dtTableId = typeof tableId !== 'undefined' ? tableId : 'users-table';
 const dtApiEndpoint = typeof apiEndpoint !== 'undefined' ? apiEndpoint : '/api/users';
 const dtShowActions = typeof showActions !== 'undefined' ? showActions : true;
 const dtUserRole = typeof userRole !== 'undefined' ? userRole : 'guest';
+const createUserModalId = typeof modalId !== 'undefined' ? modalId : 'createUserModal';
 
 // Role-Based Permission Checks
 const canEdit = ['superadmin', 'admin'].includes(dtUserRole);
@@ -49,7 +50,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             </div>
             <div class="col-auto">
                 <% if (canCreate) { %>
-                    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#<%=createUserModalId%>">
                         <i class="ti ti-plus me-1"></i>
                         Nuevo Usuario
                     </button>

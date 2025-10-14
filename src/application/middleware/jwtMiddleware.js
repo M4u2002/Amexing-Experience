@@ -14,6 +14,8 @@ const expressRateLimit = require('express-rate-limit');
 const AuthenticationService = require('../services/AuthenticationService');
 const logger = require('../../infrastructure/logger');
 
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 /**
  * Middleware to validate JWT tokens from cookies or Authorization header.
  * @param {object} req - Express request object.

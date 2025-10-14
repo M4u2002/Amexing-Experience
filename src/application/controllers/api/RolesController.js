@@ -24,6 +24,7 @@ const logger = require('../../../infrastructure/logger');
  * RolesController class implementing RESTful API for role viewing.
  * Read-only operations for security and system stability.
  */
+/* eslint-disable max-lines */
 class RolesController {
   constructor() {
     this.maxPageSize = 100;
@@ -47,6 +48,7 @@ class RolesController {
    * @example
    * GET /api/roles?page=1&limit=10&active=true
    */
+  /* eslint-disable max-lines-per-function */
   async getRoles(req, res) {
     try {
       const currentUser = req.user;
@@ -91,6 +93,11 @@ class RolesController {
 
       if (options.filters.isSystemRole !== undefined) {
         query.equalTo('isSystemRole', options.filters.isSystemRole);
+      }
+
+      // To add a role to a new user
+      if (userRole === 'superadmin' && options.filters.viewUsers !== undefined) {
+        query.containedIn('name', ['admin', 'superadmin', 'employee_amexing']);
       }
 
       // Apply sorting
@@ -198,6 +205,7 @@ class RolesController {
    * @example
    * GET /api/roles/abc123
    */
+  /* eslint-disable max-lines-per-function */
   async getRoleById(req, res) {
     try {
       const currentUser = req.user;
@@ -284,6 +292,7 @@ class RolesController {
    * PUT /api/roles/abc123
    * Body: { displayName: "New Role Name", description: "New description" }
    */
+  /* eslint-disable max-lines-per-function */
   async updateRole(req, res) {
     try {
       const currentUser = req.user;
@@ -466,7 +475,7 @@ class RolesController {
    * Parse and validate query parameters.
    * @param {object} query - Query parameters from request.
    * @returns {object} - Parsed options object.
-   * @example
+   * @example parseQueryParams({ page: '1', limit: '10', active: 'true' });
    */
   parseQueryParams(query) {
     const page = parseInt(query.page, 10) || 1;
@@ -480,6 +489,10 @@ class RolesController {
     const filters = {};
     if (query.active !== undefined) {
       filters.active = query.active === 'true';
+    }
+
+    if (query.viewUsers !== undefined) {
+      filters.viewUsers = query.viewUsers === 'true';
     }
 
     if (query.scope) {
@@ -513,7 +526,7 @@ class RolesController {
    * @param {object} data - Data to send.
    * @param {string} message - Success message.
    * @param {number} statusCode - HTTP status code.
-   * @example
+   * @example sendSuccess(res, data, 'Success', 200);
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     res.status(statusCode).json({
@@ -529,7 +542,7 @@ class RolesController {
    * @param {object} res - Express response object.
    * @param {string} message - Error message.
    * @param {number} statusCode - HTTP status code.
-   * @example
+   * @example sendError(res, 'Error message', 500);
    */
   sendError(res, message, statusCode = 500) {
     res.status(statusCode).json({

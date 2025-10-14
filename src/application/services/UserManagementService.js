@@ -47,6 +47,7 @@ class UserManagementService {
       'employee_amexing',
       'driver',
       'guest',
+      'employee_amexing',
     ];
     this.roleHierarchy = {
       superadmin: 7,
