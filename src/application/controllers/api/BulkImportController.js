@@ -80,9 +80,9 @@ class BulkImportController {
   /**
    * GET /api/clients/bulk/template
    * Download Excel template for bulk import.
-   * @param req
-   * @param res
-   * @example
+   * @param {object} req - Express request object
+   * @param {object} res - Express response object
+   * @example GET /api/clients/bulk/template
    */
   async downloadTemplate(req, res) {
     try {
