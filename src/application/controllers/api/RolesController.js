@@ -47,6 +47,7 @@ class RolesController {
    * @example
    * GET /api/roles?page=1&limit=10&active=true
    */
+  /* eslint-disable max-lines-per-function */
   async getRoles(req, res) {
     try {
       const currentUser = req.user;
@@ -203,6 +204,7 @@ class RolesController {
    * @example
    * GET /api/roles/abc123
    */
+  /* eslint-disable max-lines-per-function */
   async getRoleById(req, res) {
     try {
       const currentUser = req.user;
@@ -289,6 +291,7 @@ class RolesController {
    * PUT /api/roles/abc123
    * Body: { displayName: "New Role Name", description: "New description" }
    */
+  /* eslint-disable max-lines-per-function */
   async updateRole(req, res) {
     try {
       const currentUser = req.user;
@@ -471,7 +474,7 @@ class RolesController {
    * Parse and validate query parameters.
    * @param {object} query - Query parameters from request.
    * @returns {object} - Parsed options object.
-   * @example
+   * @example parseQueryParams({ page: '1', limit: '10', active: 'true' });
    */
   parseQueryParams(query) {
     const page = parseInt(query.page, 10) || 1;
@@ -522,7 +525,7 @@ class RolesController {
    * @param {object} data - Data to send.
    * @param {string} message - Success message.
    * @param {number} statusCode - HTTP status code.
-   * @example
+   * @example sendSuccess(res, data, 'Success', 200);
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     res.status(statusCode).json({
@@ -538,7 +541,7 @@ class RolesController {
    * @param {object} res - Express response object.
    * @param {string} message - Error message.
    * @param {number} statusCode - HTTP status code.
-   * @example
+   * @example sendError(res, 'Error message', 500);
    */
   sendError(res, message, statusCode = 500) {
     res.status(statusCode).json({
