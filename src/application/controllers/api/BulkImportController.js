@@ -845,7 +845,7 @@ class BulkImportController {
    * @param {string} message - Success message.
    * @param {number} statusCode - HTTP status code.
    * @example sendSuccess(res, data, 'Success', 200);.
-   * @returns {object} - Status object.
+   * @returns {void}
    */
   sendSuccess(res, data, message, statusCode = 200) {
     res.status(statusCode).json({
@@ -863,7 +863,7 @@ class BulkImportController {
    * @param {number} statusCode - HTTP status code.
    * @param {object|null} errors - Additional error details.
    * @example sendError(res, 'Error message', 500);
-   * @returns {object} - Status object.
+   * @returns {void}
    */
   sendError(res, message, statusCode = 500, errors = null) {
     const response = {
