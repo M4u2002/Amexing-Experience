@@ -90,7 +90,7 @@
             <div class="mb-3" <%=input.hidden ? 'hidden' : ''%>>
 
               <label for="<%= input.id %>" class="form-label fw-bold">
-                <%- input.label %>
+                <%= input.label %>
                 <% if (input.required) { %>
                   <span class="text-danger">*</span>
                 <% } %>
@@ -120,7 +120,7 @@
                   <%= input.required ? 'required' : '' %>
                   <%= input.multiple %>>
                     <% input.options.forEach((option) => { %>
-                      <option value="<%- option.value %>" data-custom-properties='<%= JSON.stringify({ name: option.dataName }) %>'><%= option.label %></option>
+                      <option value="<%= option.value %>" data-custom-properties='<%= JSON.stringify({ name: option.dataName }) %>'><%= option.label %></option>
                     <% }) %>
                 </select>
 
