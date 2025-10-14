@@ -192,11 +192,10 @@ class ClientsController {
       }
 
       // Validate required fields
-      const missingFields = [];
-      if (!clientData.firstName?.toString().trim()) missingFields.push('firstName');
-      if (!clientData.lastName?.toString().trim()) missingFields.push('lastName');
-      if (!clientData.email?.toString().trim()) missingFields.push('email');
-      if (!clientData.role?.toString().trim()) missingFields.push('role');
+      const requiredFields = ['firstName', 'lastName', 'email', 'companyName'];
+      const missingFields = requiredFields.filter(
+        (field) => !clientData[field]?.trim()
+      );
 
       if (missingFields.length > 0) {
         return this.sendError(
@@ -479,7 +478,6 @@ class ClientsController {
    * @returns {object} - Parsed options object.
    * @example parseQueryParams({ page: '1', limit: '10', active: 'true' });
    */
-  /* eslint-disable max-lines-per-function */
   parseQueryParams(query) {
     const page = parseInt(query.page, 10) || 1;
     let limit = parseInt(query.limit, 10) || this.defaultPageSize;
@@ -574,7 +572,7 @@ class ClientsController {
     password += specialChars[Math.floor(Math.random() * specialChars.length)];
 
     // Fill remaining characters (12 total - 4 already added = 8 more)
-    for (let i = 0; i < 8; i += 1) {
+    for (let i = 0; i < 8; i++) {
       password += allChars[Math.floor(Math.random() * allChars.length)];
     }
 
