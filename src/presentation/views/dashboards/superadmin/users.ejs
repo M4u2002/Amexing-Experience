@@ -58,14 +58,18 @@ const currentPath = '/dashboard/superadmin/users';
 
 <!-- User Management Modals -->
 <!-- Create User Modal -->
+<!--rechargeData:  Used to inject JavaScript into a part of the component code.  -->
 <%- include('../../organisms/dashboard/modals/add-modal.ejs', {
   data: {
+    addScripts: true,
     modalId: 'createUserModal',
     title: 'Agregar Usuario',
     icon: 'user-plus',
     description: 'Completa los datos para registrar un nuevo usuario.',
     dataAction: 'ADD_USER',
     primaryLabel: 'Agregar Usuario',
+    actionURL: '/api/users/',
+    rechargeData: 'if (window.usersTable) { loadUsersAndInitializeTable(); }',
     inputs: [
       { 
         id: 'userName',
@@ -104,6 +108,16 @@ const currentPath = '/dashboard/superadmin/users';
         placeholder: 'Ej. user@example.com',
       },
       { 
+        id: 'password',
+        name: 'password',
+        label: 'Contraseña',
+        type: 'password',
+        required: true,
+        maxLength: 120,
+        placeholder: '*****',
+        helper: "La contraseña debe tener al menos 12 caracteres, una mayúscula, un número y un símbolo.",
+      },
+      { 
         id: 'organizationId',
         name: 'organizationId',
         label: 'Organización',
@@ -116,28 +130,17 @@ const currentPath = '/dashboard/superadmin/users';
       },
       { 
         id: 'userRole',
+        name: 'roleId',
         label: 'Rol',
         type: 'select',
         required: true,
-        helper: 'Ej. admin, superadmin o amexing_employee',
+        helper: 'Ej. admin, superadmin o employee_amexing',
         multiple: '',
         options: [
-          { 
+          { dataName: '',
             value: '',
-            label: "Ninguno"
-          },
-          { 
-            value: 'admin-id',
-            label: "Admin"
-          },
-          {
-            value: 'superadmin-id',
-            label: "Superadmin"
-          },
-          {
-            value: 'amexing_employee-id',
-            label: "Empleado Amexing"
-          },
+            label: "Ninguno",
+          }
         ]
       },
     ],

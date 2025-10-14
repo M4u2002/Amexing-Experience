@@ -93,6 +93,11 @@ class RolesController {
         query.equalTo('isSystemRole', options.filters.isSystemRole);
       }
 
+      // To add a role to a new user
+      if (userRole === 'superadmin' && options.filters.viewUsers !== undefined) {
+        query.containedIn('name', ['admin', 'superadmin', 'employee_amexing']);
+      }
+
       // Apply sorting
       const sortField = options.sort.field;
       if (options.sort.direction === 'desc') {
@@ -480,6 +485,10 @@ class RolesController {
     const filters = {};
     if (query.active !== undefined) {
       filters.active = query.active === 'true';
+    }
+
+    if (query.viewUsers !== undefined) {
+      filters.viewUsers = query.viewUsers === 'true';
     }
 
     if (query.scope) {

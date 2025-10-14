@@ -46,6 +46,7 @@ class UserManagementService {
       'employee',
       'driver',
       'guest',
+      'employee_amexing',
     ];
     this.roleHierarchy = {
       superadmin: 7,
@@ -53,6 +54,7 @@ class UserManagementService {
       client: 5,
       department_manager: 4,
       employee: 3,
+      employee_amexing: 3,
       driver: 2,
       guest: 1,
     };
