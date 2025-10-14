@@ -159,7 +159,7 @@
                     maxlength="<%= input.maxLength || 100 %>"
                     placeholder="<%= input.placeholder || '' %>"
                     aria-label="<%= input.label %>"
-                    <%- input.required ? 'required' : '' %>>
+                    <%= input.required ? 'required' : '' %>>
 
                 <% } %>
 
@@ -519,8 +519,11 @@
           }
           showSuccessAlert(` Usuario agregado exitosamente`);
 
-          // Reload table data
-          <%- rechargeData %>
+          // Reload Users table data
+          const rechargeData = <%= rechargeData %>;
+          if (rechargeData && window.usersTable) {
+            loadUsersAndInitializeTable();
+          }
 
       } catch (error) {
         console.log(error)
