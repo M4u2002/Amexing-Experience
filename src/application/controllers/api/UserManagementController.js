@@ -530,6 +530,7 @@ class UserManagementController {
    * // console.log(result);
    * @returns {Promise<object>} - Promise resolving to operation result.
    */
+  /* eslint-disable max-lines */
   async toggleUserStatus(req, res) {
     try {
       const currentUser = req.user;
