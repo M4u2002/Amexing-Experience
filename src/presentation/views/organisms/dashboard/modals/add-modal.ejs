@@ -120,7 +120,8 @@
                   <%= input.required ? 'required' : '' %>
                   <%= input.multiple %>>
                     <% input.options.forEach((option) => { %>
-                      <option value="<%= option.value %>" data-custom-properties='<%= JSON.stringify({ name: option.dataName }) %>'><%= option.label %></option>
+                      <% /* eslint-disable-next-line security/detect-object-injection */ %>
+                      <option value="<%= option.value %>" data-custom-properties='<%- JSON.stringify({ name: option.dataName }) %>'><%= option.label %></option>
                     <% }) %>
                 </select>
 
@@ -307,7 +308,8 @@
     // Documentación: https://getbootstrap.com/docs/5.3/components/modal/
     // ============================================================================
     //Obtains the IDs of the inputs for field validation
-    const idsInputsModalAdd = <%= JSON.stringify(inputs.map(input => input.required ? input.id : '')) %>;
+    <% /* eslint-disable-next-line security/detect-object-injection */ %>
+    const idsInputsModalAdd = <%- JSON.stringify(inputs.map(input => input.required ? input.id : '')) %>;
     const btnAddUserModalAdd = document.querySelector('[data-action="<%= dataAction %>"]');
 
     /**
@@ -473,7 +475,8 @@
     */
     async function AddUserModalAdd() {
       const updateBtn = document.querySelector('#<%= modalId %> [data-action="<%= dataAction %>"]');
-      const idsInputs = <%= JSON.stringify(inputs.map(input => input.required ? input.id : '')) %>;
+      <% /* eslint-disable-next-line security/detect-object-injection */ %>
+      const idsInputs = <%- JSON.stringify(inputs.map(input => input.required ? input.id : '')) %>;
 
       // Disable button and show loading state
       updateBtn.disabled = true;
