@@ -173,6 +173,7 @@ class EmployeesController {
    *   notes: 'Operations coordinator'
    * }
    */
+  /* eslint-disable max-lines-per-function */
   async createEmployee(req, res) {
     try {
       const currentUser = req.user;
@@ -193,10 +194,11 @@ class EmployeesController {
       }
 
       // Validate required fields
-      const requiredFields = ['firstName', 'lastName', 'email', 'role'];
-      const missingFields = requiredFields.filter(
-        (field) => !employeeData[field]?.trim()
-      );
+      const missingFields = [];
+      if (!employeeData.firstName?.toString().trim()) missingFields.push('firstName');
+      if (!employeeData.lastName?.toString().trim()) missingFields.push('lastName');
+      if (!employeeData.email?.toString().trim()) missingFields.push('email');
+      if (!employeeData.role?.toString().trim()) missingFields.push('role');
 
       if (missingFields.length > 0) {
         return this.sendError(
@@ -485,7 +487,7 @@ class EmployeesController {
    * Parse and validate query parameters.
    * @param {object} query - Query parameters from request.
    * @returns {object} - Parsed options object.
-   * @example
+   * @example parseQueryParams({ page: '1', limit: '10', active: 'true' });
    */
   parseQueryParams(query) {
     const page = parseInt(query.page, 10) || 1;
@@ -529,7 +531,7 @@ class EmployeesController {
    * @param {object} data - Data to send.
    * @param {string} message - Success message.
    * @param {number} statusCode - HTTP status code.
-   * @example
+   * @example sendSuccess(res, data, 'Success', 200);
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     res.status(statusCode).json({
@@ -545,7 +547,7 @@ class EmployeesController {
    * @param {object} res - Express response object.
    * @param {string} message - Error message.
    * @param {number} statusCode - HTTP status code.
-   * @example
+   * @example sendError(res, 'Error message', 500);
    */
   sendError(res, message, statusCode = 500) {
     res.status(statusCode).json({
@@ -581,7 +583,7 @@ class EmployeesController {
     password += specialChars[Math.floor(Math.random() * specialChars.length)];
 
     // Fill remaining characters (12 total - 4 already added = 8 more)
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; i += 1) {
       password += allChars[Math.floor(Math.random() * allChars.length)];
     }
 
