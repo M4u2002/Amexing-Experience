@@ -23,6 +23,7 @@ const BulkImportService = require('../../services/BulkImportService');
 /**
  * BulkImportController class for handling bulk import operations.
  */
+/* eslint-disable max-lines */
 class BulkImportController {
   constructor() {
     this.bulkImportService = new BulkImportService();
