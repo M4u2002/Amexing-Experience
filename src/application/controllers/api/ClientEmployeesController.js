@@ -241,11 +241,11 @@ class ClientEmployeesController {
       }
 
       // Validate required fields FIRST (before database queries)
-      const requiredFields = ['firstName', 'lastName', 'email', 'role'];
-      // eslint-disable-next-line security/detect-object-injection
-      const missingFields = requiredFields.filter(
-        (field) => !employeeData[field]?.toString().trim()
-      );
+      const missingFields = [];
+      if (!employeeData.firstName?.toString().trim()) missingFields.push('firstName');
+      if (!employeeData.lastName?.toString().trim()) missingFields.push('lastName');
+      if (!employeeData.email?.toString().trim()) missingFields.push('email');
+      if (!employeeData.role?.toString().trim()) missingFields.push('role');
 
       if (missingFields.length > 0) {
         return this.sendError(
