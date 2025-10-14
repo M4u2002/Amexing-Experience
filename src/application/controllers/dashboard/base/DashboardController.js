@@ -272,6 +272,11 @@ class DashboardController extends BaseController {
    * @param {string} roleName - Role name to check.
    * @returns {Promise<boolean>} - True if user has the role.
    * @example
+   * // Usage example
+   * const result = await hasRole({ user: 'example', roleName: 'example' });
+   * // Returns: operation result
+   * // controller.methodName(req, res)
+   * // Handles HTTP request and sends appropriate response
    */
   async hasRole(user, roleName) {
     try {
