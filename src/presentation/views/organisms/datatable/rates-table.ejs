@@ -88,6 +88,18 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                             <div class="form-text">Nombre de la tarifa</div>
                         </div>
 
+                        <!-- Color Picker -->
+                        <%- include('../../atoms/common/color-picker-input', {
+                            id: 'color',
+                            name: 'color',
+                            label: 'Color de Etiqueta',
+                            value: '#6366F1',
+                            required: false,
+                            helpText: 'Selecciona un color para identificar visualmente esta tarifa',
+                            showPreview: true,
+                            previewText: 'Vista previa'
+                        }) %>
+
                         <div class="mb-3">
                             <label for="percentage" class="form-label">Porcentaje <span class="text-danger">*</span></label>
                             <div class="input-group">
@@ -148,6 +160,41 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         const canEdit = <%= canEdit %>;
         const canDelete = <%= canDelete %>;
 
+        /**
+         * Calculate relative luminance of a color for contrast determination.
+         * Uses WCAG 2.0 formula for luminance calculation.
+         * @param {string} hex - Hex color code (#RRGGBB)
+         * @returns {number} Luminance value between 0 (darkest) and 1 (brightest)
+         */
+        function calculateLuminance(hex) {
+            // Remove # if present
+            const cleanHex = hex.replace('#', '');
+
+            // Parse RGB values
+            const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+            const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+            const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
+
+            // Apply gamma correction
+            const rLinear = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+            const gLinear = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+            const bLinear = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+
+            // Calculate luminance using WCAG formula
+            return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+        }
+
+        /**
+         * Determine optimal text color (dark or light) based on background luminance.
+         * @param {string} backgroundColor - Hex color code of background
+         * @returns {string} '#1F2937' for dark text or '#FFFFFF' for light text
+         */
+        function getContrastTextColor(backgroundColor) {
+            const luminance = calculateLuminance(backgroundColor);
+            // Threshold at 0.5 for optimal contrast
+            return luminance > 0.5 ? '#1F2937' : '#FFFFFF';
+        }
+
         // Get JWT token from cookies
         function getAccessToken() {
             const cookies = document.cookie.split(';');
@@ -188,8 +235,10 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             columns: [
                 {
                     data: 'name',
-                    render: function(data) {
-                        return `<div class="fw-semibold">${data || '-'}</div>`;
+                    render: function(data, type, row) {
+                        const color = row.color || '#6366F1';
+                        const textColor = getContrastTextColor(color);
+                        return `<span class="badge px-3 py-2" style="background-color: ${color}; color: ${textColor}; font-size: 0.875rem;">${data || '-'}</span>`;
                     }
                 },
                 {
@@ -338,6 +387,15 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         $('#rateId').val(rate.id);
                         $('#name').val(rate.name);
                         $('#percentage').val(rate.percentage);
+
+                        // Update color picker and hex input
+                        const colorValue = rate.color || '#6366F1';
+                        $('#color').val(colorValue);
+                        $('#colorHex').val(colorValue);
+
+                        // Trigger color update to sync preview
+                        const colorChangeEvent = new Event('input', { bubbles: true });
+                        document.getElementById('color').dispatchEvent(colorChangeEvent);
                     } else {
                         showErrorAlert('Formato de respuesta inválido');
                     }
@@ -362,7 +420,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
             const rateData = {
                 name: $('#name').val().trim(),
-                percentage: parseFloat($('#percentage').val())
+                percentage: parseFloat($('#percentage').val()),
+                color: $('#color').val() || '#6366F1'
             };
 
             // Validate percentage

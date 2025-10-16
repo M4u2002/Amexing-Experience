@@ -70,13 +70,21 @@ class ServiceController {
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Column mapping for sorting (matches frontend columns order)
-      const columns = ['originPOI.name', 'destinationPOI.name', 'vehicleType.name', 'price', 'active'];
+      const columns = [
+        'originPOI.name',
+        'destinationPOI.name',
+        'vehicleType.name',
+        'price',
+        'active',
+      ];
       const sortField = columns[sortColumnIndex] || 'price';
 
       // Get total records count (without search filter)
       const totalRecordsQuery = new Parse.Query('Service');
       totalRecordsQuery.equalTo('exists', true);
-      const recordsTotal = await totalRecordsQuery.count({ useMasterKey: true });
+      const recordsTotal = await totalRecordsQuery.count({
+        useMasterKey: true,
+      });
 
       // Build base query for all existing records
       const baseQuery = new Parse.Query('Service');
@@ -235,18 +243,18 @@ class ServiceController {
         };
       });
 
-      return this.sendSuccess(res, options, 'Active services retrieved successfully');
+      return this.sendSuccess(
+        res,
+        options,
+        'Active services retrieved successfully'
+      );
     } catch (error) {
       logger.error('Error in ServiceController.getActiveServices', {
         error: error.message,
         stack: error.stack,
       });
 
-      return this.sendError(
-        res,
-        'Error al obtener los servicios activos',
-        500
-      );
+      return this.sendError(res, 'Error al obtener los servicios activos', 500);
     }
   }
 
@@ -353,7 +361,11 @@ class ServiceController {
       }
 
       if (originPOI === destinationPOI) {
-        return this.sendError(res, 'El origen y destino deben ser diferentes', 400);
+        return this.sendError(
+          res,
+          'El origen y destino deben ser diferentes',
+          400
+        );
       }
 
       if (!vehicleType) {
@@ -365,7 +377,11 @@ class ServiceController {
       }
 
       if (note && note.length > 500) {
-        return this.sendError(res, 'La nota debe tener 500 caracteres o menos', 400);
+        return this.sendError(
+          res,
+          'La nota debe tener 500 caracteres o menos',
+          400
+        );
       }
 
       // Check if route already exists
@@ -389,25 +405,35 @@ class ServiceController {
       const existingCount = await existingQuery.count({ useMasterKey: true });
 
       if (existingCount > 0) {
-        return this.sendError(res, 'Ya existe un servicio con esta ruta y tipo de vehículo', 409);
+        return this.sendError(
+          res,
+          'Ya existe un servicio con esta ruta y tipo de vehículo',
+          409
+        );
       }
 
       // Verify POIs exist
       const originQuery = new Parse.Query('POI');
-      const originPOIObj = await originQuery.get(originPOI, { useMasterKey: true });
+      const originPOIObj = await originQuery.get(originPOI, {
+        useMasterKey: true,
+      });
       if (!originPOIObj) {
         return this.sendError(res, 'El origen no existe', 404);
       }
 
       const destQuery = new Parse.Query('POI');
-      const destPOIObj = await destQuery.get(destinationPOI, { useMasterKey: true });
+      const destPOIObj = await destQuery.get(destinationPOI, {
+        useMasterKey: true,
+      });
       if (!destPOIObj) {
         return this.sendError(res, 'El destino no existe', 404);
       }
 
       // Verify VehicleType exists
       const vehicleQuery = new Parse.Query('VehicleType');
-      const vehicleTypeObj = await vehicleQuery.get(vehicleType, { useMasterKey: true });
+      const vehicleTypeObj = await vehicleQuery.get(vehicleType, {
+        useMasterKey: true,
+      });
       if (!vehicleTypeObj) {
         return this.sendError(res, 'El tipo de vehículo no existe', 404);
       }
@@ -507,7 +533,9 @@ class ServiceController {
       // Update originPOI if provided
       if (originPOI) {
         const originQuery = new Parse.Query('POI');
-        const originPOIObj = await originQuery.get(originPOI, { useMasterKey: true });
+        const originPOIObj = await originQuery.get(originPOI, {
+          useMasterKey: true,
+        });
         if (!originPOIObj) {
           return this.sendError(res, 'El origen no existe', 404);
         }
@@ -517,7 +545,9 @@ class ServiceController {
       // Update destinationPOI if provided
       if (destinationPOI) {
         const destQuery = new Parse.Query('POI');
-        const destPOIObj = await destQuery.get(destinationPOI, { useMasterKey: true });
+        const destPOIObj = await destQuery.get(destinationPOI, {
+          useMasterKey: true,
+        });
         if (!destPOIObj) {
           return this.sendError(res, 'El destino no existe', 404);
         }
@@ -528,13 +558,19 @@ class ServiceController {
       const currentOrigin = service.get('originPOI');
       const currentDest = service.get('destinationPOI');
       if (currentOrigin && currentDest && currentOrigin.id === currentDest.id) {
-        return this.sendError(res, 'El origen y destino deben ser diferentes', 400);
+        return this.sendError(
+          res,
+          'El origen y destino deben ser diferentes',
+          400
+        );
       }
 
       // Update vehicleType if provided
       if (vehicleType) {
         const vehicleQuery = new Parse.Query('VehicleType');
-        const vehicleTypeObj = await vehicleQuery.get(vehicleType, { useMasterKey: true });
+        const vehicleTypeObj = await vehicleQuery.get(vehicleType, {
+          useMasterKey: true,
+        });
         if (!vehicleTypeObj) {
           return this.sendError(res, 'El tipo de vehículo no existe', 404);
         }
@@ -544,7 +580,11 @@ class ServiceController {
       // Update note if provided
       if (note !== undefined) {
         if (note.length > 500) {
-          return this.sendError(res, 'La nota debe tener 500 caracteres o menos', 400);
+          return this.sendError(
+            res,
+            'La nota debe tener 500 caracteres o menos',
+            400
+          );
         }
         service.set('note', note);
       }
@@ -632,7 +672,11 @@ class ServiceController {
       }
 
       if (typeof active !== 'boolean') {
-        return this.sendError(res, 'El estado activo debe ser un valor booleano', 400);
+        return this.sendError(
+          res,
+          'El estado activo debe ser un valor booleano',
+          400
+        );
       }
 
       const result = await this.serviceService.toggleServiceStatus(
@@ -643,7 +687,11 @@ class ServiceController {
         req.userRole // Pass userRole from JWT middleware
       );
 
-      return this.sendSuccess(res, result.service, result.message || 'Estado actualizado exitosamente');
+      return this.sendSuccess(
+        res,
+        result.service,
+        result.message || 'Estado actualizado exitosamente'
+      );
     } catch (error) {
       logger.error('Error in ServiceController.toggleServiceStatus', {
         error: error.message,
@@ -652,7 +700,11 @@ class ServiceController {
         userId: req.user?.id,
       });
 
-      return this.sendError(res, error.message || 'Error al cambiar el estado del servicio', 500);
+      return this.sendError(
+        res,
+        error.message || 'Error al cambiar el estado del servicio',
+        500
+      );
     }
   }
 
@@ -692,7 +744,11 @@ class ServiceController {
         userId: req.user?.id,
       });
 
-      return this.sendError(res, error.message || 'Error al eliminar el servicio', 500);
+      return this.sendError(
+        res,
+        error.message || 'Error al eliminar el servicio',
+        500
+      );
     }
   }
 

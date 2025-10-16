@@ -286,6 +286,7 @@ class RateService {
         percentage !== undefined && percentage !== null
           ? `${percentage}%`
           : '-',
+      color: rate.get('color') || '#6366F1',
       active: rate.get('active'),
       createdAt: rate.createdAt,
       updatedAt: rate.updatedAt,

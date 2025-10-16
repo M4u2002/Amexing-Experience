@@ -121,6 +121,7 @@ class RateController {
             percentage !== undefined && percentage !== null
               ? `${percentage}%`
               : '-',
+          color: rate.get('color') || '#6366F1',
           active: rate.get('active'),
           createdAt: rate.createdAt,
           updatedAt: rate.updatedAt,
@@ -183,6 +184,7 @@ class RateController {
             percentage !== undefined && percentage !== null
               ? `${percentage}%`
               : '-',
+          color: rate.get('color') || '#6366F1',
         };
       });
 
@@ -238,6 +240,7 @@ class RateController {
           percentage !== undefined && percentage !== null
             ? `${percentage}%`
             : '-',
+        color: rate.get('color') || '#6366F1',
         active: rate.get('active'),
         createdAt: rate.createdAt,
         updatedAt: rate.updatedAt,
@@ -260,7 +263,8 @@ class RateController {
    *
    * Body Parameters:
    * - name: string (required) - Display name
-   * - percentage: number (required) - Percentage value (0-100).
+   * - percentage: number (required) - Percentage value (0-100)
+   * - color: string (optional) - Hex color code for visual tagging (#RRGGBB).
    * @param {object} req - Express request object.
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
@@ -273,7 +277,7 @@ class RateController {
         return this.sendError(res, 'Autenticación requerida', 401);
       }
 
-      const { name, percentage } = req.body;
+      const { name, percentage, color } = req.body;
 
       // Validate required fields
       if (!name || name.trim().length === 0) {
@@ -304,6 +308,18 @@ class RateController {
         );
       }
 
+      // Validate color format if provided
+      if (color) {
+        const hexColorRegex = /^#[0-9A-F]{6}$/i;
+        if (!hexColorRegex.test(color)) {
+          return this.sendError(
+            res,
+            'El color debe estar en formato hexadecimal (#RRGGBB)',
+            400
+          );
+        }
+      }
+
       // Check name uniqueness
       const checkQuery = new Parse.Query('Rate');
       checkQuery.matches('name', `^${name.trim()}$`, 'i');
@@ -320,6 +336,7 @@ class RateController {
 
       rate.set('name', name.trim());
       rate.set('percentage', percentage);
+      rate.set('color', color || '#6366F1'); // Default indigo color
       rate.set('active', true);
       rate.set('exists', true);
 
@@ -338,6 +355,7 @@ class RateController {
         name: rate.get('name'),
         percentage: rate.get('percentage'),
         formattedPercentage: `${percentage}%`,
+        color: rate.get('color'),
         active: rate.get('active'),
       };
 
@@ -383,7 +401,9 @@ class RateController {
         return this.sendError(res, 'Tarifa no encontrada', 404);
       }
 
-      const { name, percentage, active } = req.body;
+      const {
+        name, percentage, active, color,
+      } = req.body;
 
       // Update name if provided
       if (name && name.trim().length > 0) {
@@ -432,6 +452,19 @@ class RateController {
         rate.set('percentage', percentage);
       }
 
+      // Update color if provided
+      if (color) {
+        const hexColorRegex = /^#[0-9A-F]{6}$/i;
+        if (!hexColorRegex.test(color)) {
+          return this.sendError(
+            res,
+            'El color debe estar en formato hexadecimal (#RRGGBB)',
+            400
+          );
+        }
+        rate.set('color', color);
+      }
+
       // Update active status if provided
       if (typeof active === 'boolean') {
         rate.set('active', active);
@@ -457,6 +490,7 @@ class RateController {
           finalPercentage !== undefined && finalPercentage !== null
             ? `${finalPercentage}%`
             : '-',
+        color: rate.get('color'),
         active: rate.get('active'),
         updatedAt: rate.updatedAt,
       };
