@@ -9,12 +9,35 @@
  * @param {function} isActiveMenuItem - Helper function to check active state
  */
 
+const rolesHierarchy = {
+  superadmin: 7,
+  admin: 6,
+  client: 5,
+  department_manager: 4,
+  employee: 3,
+  driver: 2,
+  guest: 1
+};
+
+const allDashboards = [
+  { name: "Dashboard Super Admin", icon: "settings", path: "/dashboard/superadmin", level: 7 },
+  { name: "Dashboard Admin", icon: "shield-check", path: "/dashboard/admin", level: 6 },
+  { name: "Dashboard Department Manager", icon: "screen-share", path: "/dashboard/department-manager", level: 5 },
+  { name: "Dashboard Employee", icon: "building", path: "/dashboard/employee", level: 4 },
+  { name: "Dashboard Driver", icon: "steering-wheel", path: "/dashboard/driver", level: 3 },
+  { name: "Dashboard Client", icon: "user", path: "/dashboard/client", level: 2 },
+  { name: "Dashboard Guest", icon: "world", path: "/dashboard/guest", level: 1 }
+];
+const dashboards =allDashboards.filter( dashboard => dashboard.level <= rolesHierarchy[user.role] );
+
 // Navigation items based on role
 const navigationItems = {
     superadmin: [
         // System Management Section - Only Dashboard
         { section: 'System Management', icon: 'ti-settings', items: [
-            { name: 'Dashboard', icon: 'dashboard', path: '/dashboard/superadmin', id: 'dashboard' }
+            { name: 'Dashboard Super Admin', icon: 'settings', path: '/dashboard/superadmin', id: 'dashboard',
+              dropdown: dashboards
+            }
         ]},
         // Users System Section - User Management and Role Management
         { section: 'Users System', icon: 'ti-users', items: [
@@ -23,6 +46,12 @@ const navigationItems = {
         ]}
     ],
     admin: [
+        // System Management Section - Only Dashboard
+        { section: 'System Management', icon: 'ti-settings', items: [
+            { name: 'Dashboard Admin', icon: 'shield-check', path: '/dashboard/admin', id: 'dashboard',
+              dropdown: dashboards
+            }
+        ]},
         { section: 'Operaciones Principales', icon: 'ti-dashboard', items: [
             { name: 'Tablero', icon: 'dashboard', path: '/dashboard/admin', id: 'dashboard' },
             { name: 'Gestión de Clientes', icon: 'users', path: '/dashboard/admin/clients', id: 'clients' },
@@ -42,6 +71,12 @@ const navigationItems = {
         ]}
     ],
     client: [
+        // System Management Section - Only Dashboard
+        { section: 'System Management', icon: 'ti-settings', items: [
+            { name: 'Dashboard Client', icon: 'user', path: '/dashboard/client', id: 'dashboard',
+              dropdown: dashboards
+            }
+        ]},
         { section: 'My Business', icon: 'ti-building', items: [
             { name: 'Dashboard', icon: 'dashboard', path: '/dashboard/client', id: 'dashboard' },
             { name: 'My Events', icon: 'calendar-event', path: '/dashboard/client/events', id: 'events' },
@@ -54,6 +89,12 @@ const navigationItems = {
         ]}
     ],
     department_manager: [
+        // System Management Section - Only Dashboard
+        { section: 'System Management', icon: 'ti-settings', items: [
+            { name: 'Dashboard Department Manager', icon: 'screen-share', path: '/dashboard/department-manager', id: 'dashboard',
+              dropdown: dashboards
+            }
+        ]},
         { section: 'Team Management', icon: 'ti-users', items: [
             { name: 'Dashboard', icon: 'dashboard', path: '/dashboard/department-manager', id: 'dashboard' },
             { name: 'My Team', icon: 'users', path: '/dashboard/department-manager/team', id: 'team' },
@@ -66,6 +107,12 @@ const navigationItems = {
         ]}
     ],
     employee: [
+        // System Management Section - Only Dashboard
+        { section: 'System Management', icon: 'ti-settings', items: [
+            { name: 'Dashboard Employee', icon: 'building', path: '/dashboard/employee', id: 'dashboard',
+              dropdown: dashboards
+            }
+        ]},
         { section: 'My Services', icon: 'ti-user', items: [
             { name: 'Dashboard', icon: 'dashboard', path: '/dashboard/employee', id: 'dashboard' },
             { name: 'My Bookings', icon: 'car', path: '/dashboard/employee/bookings', id: 'bookings' },
@@ -74,6 +121,12 @@ const navigationItems = {
         ]}
     ],
     driver: [
+        // System Management Section - Only Dashboard
+        { section: 'System Management', icon: 'ti-settings', items: [
+            { name: 'Dashboard Driver', icon: 'steering-wheel', path: '/dashboard/driver', id: 'dashboard',
+              dropdown: dashboards
+            }
+        ]},
         { section: 'My Trips', icon: 'ti-car', items: [
             { name: 'Dashboard', icon: 'dashboard', path: '/dashboard/driver', id: 'dashboard' },
             { name: 'Active Trips', icon: 'route', path: '/dashboard/driver/trips', id: 'trips' },
@@ -83,6 +136,12 @@ const navigationItems = {
         ]}
     ],
     guest: [
+        // System Management Section - Only Dashboard
+        { section: 'System Management', icon: 'ti-settings', items: [
+            { name: 'Dashboard Guest', icon: 'world', path: '/dashboard/guest', id: 'dashboard',
+              dropdown: dashboards
+            }
+        ]},
         { section: 'Welcome', icon: 'ti-home', items: [
             { name: 'Home', icon: 'home', path: '/', id: 'home' }
         ]}
@@ -112,7 +171,8 @@ const menuSections = navigationItems[userRole] || navigationItems.guest;
                 badge: item.badge,
                 submenu: item.submenu,
                 id: item.id,
-                external: item.external
+                external: item.external,
+                dropdown: item.dropdown ? item.dropdown : [],
             }) %>
         <% }); %>
     <% }); %>

@@ -302,7 +302,8 @@
                 <div class="container-fluid">
                     <!-- Breadcrumb -->
                     <% if (typeof breadcrumb !== 'undefined' && breadcrumb) { %>
-                    <div class="card breadcrumb-card">
+                    <% const breadcrumbId = breadcrumb.title ? breadcrumb.title.replace(/\s+/g, '-').toLowerCase() : 'principal-title' %>
+                    <div class="card breadcrumb-card" id="breadcrumb-<%=breadcrumbId%>">
                         <div class="card-body p-4">
                             <div class="row align-items-center">
                                 <div class="col-md-8">
@@ -462,6 +463,14 @@
     <% if (typeof footerScripts !== 'undefined' && footerScripts) { %>
         <%- footerScripts %>
     <% } %>
+
+    <!--Delete principal breadcrumb-->
+    <script>
+      <%
+        const breadcrumbDeleteId = breadcrumb ? breadcrumb.title ? breadcrumb.title.replace(/\s+/g, '-').toLowerCase() : 'principal-title' : 'principal-title';
+      %>
+      document.getElementById('breadcrumb-<%= breadcrumbDeleteId %>').remove();
+    </script>
 
 </body>
 </html>
