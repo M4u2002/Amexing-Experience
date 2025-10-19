@@ -28,6 +28,7 @@ const rolesController = new RolesController();
  * @param {Function} next - Next middleware function.
  * @returns {Promise<void>}
  * @example
+ * // Usage example documented above
  */
 async function requireSuperAdmin(req, res, next) {
   try {

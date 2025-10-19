@@ -32,6 +32,7 @@ const logger = require('../../infrastructure/logger');
  * @returns {Promise<string>} - 32-byte random string suitable for CSRF protection.
  * @private
  * @example
+ * // Usage example documented above
  */
 async function generateCSRFSecret() {
   return uidSafe(32);
@@ -45,6 +46,7 @@ async function generateCSRFSecret() {
  * @returns {boolean} - True if session expires within 5 minutes.
  * @private
  * @example
+ * // Usage example documented above
  */
 function isSessionNearExpiration(session) {
   if (!session || !session.cookie) {

@@ -10,8 +10,8 @@
  * - Context-aware authorization
  * - Rate limiting per user role.
  * @author Claude Code + Technical Team
- * @version 2.0
- * @date 2025-09-11
+ * @version 1.0
+ * @date 2024-09-11
  * @example
  * // Authentication middleware usage
  * app.use('/api', authMiddleware);
@@ -43,8 +43,8 @@ const PermissionService = require('../services/PermissionService');
  * - Token expiration and renewal mechanisms.
  * @class AmexingAuthMiddleware
  * @author Claude Code + Technical Team
- * @version 2.0
- * @since 2025-09-11
+ * @version 1.0
+ * @since 2024-09-11
  * @example
  * // const result = await authService.login(credentials);
  * // Returns: { success: true, user: {...}, tokens: {...} }
@@ -627,7 +627,6 @@ class AmexingAuthMiddleware {
   /**
    * Update session activity timestamp.
    * @param {string} jti - JWT ID.
-   * @param {*} jti - _jti parameter.
    * @param _jti
    * @example
    * // Authentication middleware usage
@@ -789,7 +788,6 @@ class AmexingAuthMiddleware {
   /**
    * Validate OAuth token.
    * @param {string} token - OAuth token.
-   * @param token
    * @param _token
    * @returns {object | null} - Operation result Token data.
    * @example

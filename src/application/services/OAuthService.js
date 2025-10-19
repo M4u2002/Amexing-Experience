@@ -3,7 +3,7 @@
  * OAuth Service - Handles OAuth 2.0 authentication with multiple providers
  * Production implementation with Google, Microsoft, and Apple OAuth integration.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 2.0.0
  * @example
  * // OAuth service usage
@@ -33,7 +33,7 @@ const logger = require('../../infrastructure/logger');
  * - PCI DSS compliant token handling.
  * @class OAuthService
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 2.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -939,7 +939,6 @@ class OAuthService {
   /**
    * Generates username from email.
    * @param {string} email - Email address.
-   * @param email
    * @returns {string} - Operation result Generated username.
    * @example
    * // OAuth service usage
@@ -1065,7 +1064,6 @@ class OAuthService {
   /**
    * Masks email for logging.
    * @param {string} email - Email to mask.
-   * @param email
    * @returns {string} - Operation result Masked email.
    * @example
    * // OAuth service usage
@@ -1425,7 +1423,6 @@ class OAuthService {
   /**
    * Checks if an email domain is configured for corporate SSO.
    * @param {string} email - Email address to check.
-   * @param email
    * @returns {object | null} - Operation result Corporate configuration if found.
    * @example
    * // OAuth service usage

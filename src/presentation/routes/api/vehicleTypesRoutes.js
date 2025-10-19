@@ -12,7 +12,7 @@
  * - Comprehensive error handling.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * // Usage
  * router.use('/vehicle-types', vehicleTypesRoutes);

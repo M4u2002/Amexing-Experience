@@ -117,6 +117,10 @@ class AdminController extends RoleBasedController {
         return this.handleError(res, new Error('Cliente no encontrado'), 404);
       }
 
+      // PCI DSS Audit: Log individual READ access to client data from dashboard
+      const { logReadAccess } = require('../../utils/auditHelper');
+      await logReadAccess(req, client, 'Client');
+
       // Log role for debugging (optional - can be removed in production)
       const role = client.roleId || client.role;
       const roleName = typeof role === 'string' ? role : role?.name;
@@ -350,6 +354,50 @@ class AdminController extends RoleBasedController {
       await this.renderRoleView(req, res, 'events', {
         title: 'Gestión de Eventos',
         breadcrumb: null, // Disable automatic breadcrumb
+      });
+    } catch (error) {
+      this.handleError(res, error);
+    }
+  }
+
+  /**
+   * Experiences management page.
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @example
+   * // Usage example
+   * const result = await experiences(parameters);
+   * // Returns: operation result
+   * // controller.methodName(req, res)
+   * // Handles HTTP request and sends appropriate response
+   * // Example usage:
+   * // const result = await methodName(params);
+   * // console.log(result);
+   * @returns {Promise<object>} - Promise resolving to operation result.
+   */
+  async experiences(req, res) {
+    try {
+      // Get section from query parameter (default: experiences)
+      const section = req.query.section || 'experiences';
+
+      await this.renderRoleView(req, res, 'experiences', {
+        title: 'Gestión de Experiencias',
+        section, // Pass section to view
+        breadcrumb: null, // Disable automatic breadcrumb
+        pageStyles: [
+          'https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css',
+          'https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css',
+          'https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css',
+        ],
+        footerScripts: `
+          <!-- DataTables Core -->
+          <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+          <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+          <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+          <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+          <!-- Tom Select for Enhanced Multi-Select -->
+          <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+        `,
       });
     } catch (error) {
       this.handleError(res, error);
@@ -630,8 +678,18 @@ class AdminController extends RoleBasedController {
   async reports(req, res) {
     try {
       await this.renderRoleView(req, res, 'reports', {
-        title: 'Reportes Operacionales',
+        title: 'Reportes de Auditoría',
         breadcrumb: null, // Disable automatic breadcrumb
+        pageStyles: [
+          'https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css',
+          'https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css',
+        ],
+        footerScripts: `
+          <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+          <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+          <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+          <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+        `,
       });
     } catch (error) {
       this.handleError(res, error);

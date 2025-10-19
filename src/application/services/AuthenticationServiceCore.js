@@ -114,7 +114,6 @@ class AuthenticationServiceCore {
   /**
    * Checks if user already exists.
    * @param {string} email - Email to check.
-   * @param email
    * @param {string} username - Username to check.
    * @throws {Parse.Error} If user exists.
    * @example
@@ -178,7 +177,6 @@ class AuthenticationServiceCore {
   /**
    * Finds user by email.
    * @param {string} email - User email.
-   * @param email
    * @returns {Promise<AmexingUser|null>} - User object or null.
    * @example
    * // Authentication service usage
@@ -322,7 +320,6 @@ class AuthenticationServiceCore {
   /**
    * Masks email for logging purposes.
    * @param {string} email - Email to mask.
-   * @param email
    * @returns {string} - Operation result Masked email.
    * @example
    * // Authentication service usage

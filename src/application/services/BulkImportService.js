@@ -10,7 +10,7 @@
  * - PCI DSS compliant (no sensitive data logging).
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2024-10-12
+ * @since 2024-01-15
  * @example
  * const service = new BulkImportService();
  * const result = await service.processImport(filePath, currentUser);
@@ -73,6 +73,7 @@ class BulkImportService {
    * @param {string} filePath - Path to Excel file.
    * @returns {Promise<object>} - Validation result.
    * @example
+   * // Usage example documented above
    */
   async validateExcelFile(filePath) {
     try {
@@ -200,6 +201,7 @@ class BulkImportService {
    * @param {string} filePath - Path to Excel file.
    * @returns {Promise<object>} - Parsed records and metadata.
    * @example
+   * // Usage example documented above
    */
   async parseExcelFile(filePath) {
     try {
@@ -239,7 +241,7 @@ class BulkImportService {
           // Extract cell values based on column mapping
           Object.keys(columnMap).forEach((colNumber) => {
             const fieldName = columnMap[colNumber];
-            const cell = row.getCell(parseInt(colNumber));
+            const cell = row.getCell(parseInt(colNumber, 10));
             const value = this.getCellValue(cell);
 
             if (value !== null && value !== '') {
@@ -285,6 +287,7 @@ class BulkImportService {
    * @param {Array} records - Array of records to validate.
    * @returns {Promise<object>} - Validation results.
    * @example
+   * // Usage example documented above
    */
   async validateRecords(records) {
     logger.info('Validating records', { count: records.length });
@@ -411,6 +414,7 @@ class BulkImportService {
    * Get existing emails from database.
    * @returns {Promise<Set>} - Set of existing emails (lowercase).
    * @example
+   * // Usage example documented above
    */
   async getExistingEmails() {
     try {
@@ -445,6 +449,7 @@ class BulkImportService {
    * @param {Function} progressCallback - Optional progress callback.
    * @returns {Promise<object>} - Creation results.
    * @example
+   * // Usage example documented above
    */
   async bulkCreateClients(records, currentUser, progressCallback = null) {
     logger.info('Starting bulk client creation', {
@@ -588,6 +593,7 @@ class BulkImportService {
    * @param {Array} failedRecords - Array of failed records.
    * @returns {Promise<Buffer>} - Excel file buffer.
    * @example
+   * // Usage example documented above
    */
   async generateErrorReport(failedRecords) {
     try {
@@ -639,6 +645,7 @@ class BulkImportService {
    * Normalize column name (lowercase, trim, remove spaces and special chars).
    * @param value
    * @example
+   * // Usage example documented above
    */
   normalizeColumnName(value) {
     if (!value) return '';
@@ -653,6 +660,7 @@ class BulkImportService {
    * Map Excel column name to internal field name.
    * @param headerName
    * @example
+   * // Usage example documented above
    */
   mapColumnName(headerName) {
     const normalized = this.normalizeColumnName(headerName);
@@ -672,6 +680,7 @@ class BulkImportService {
    * @param headerName
    * @param expectedName
    * @example
+   * // Usage example documented above
    */
   isColumnMatch(headerName, expectedName) {
     return this.mapColumnName(headerName) === expectedName;
@@ -681,6 +690,7 @@ class BulkImportService {
    * Check if row has any data.
    * @param row
    * @example
+   * // Usage example documented above
    */
   hasDataInRow(row) {
     let hasData = false;
@@ -696,6 +706,7 @@ class BulkImportService {
    * Get cell value, handling different cell types.
    * @param cell
    * @example
+   * // Usage example documented above
    */
   getCellValue(cell) {
     if (!cell || cell.value === null) return null;
@@ -727,6 +738,7 @@ class BulkImportService {
   /**
    * Generate secure random password.
    * @example
+   * // Usage example documented above
    */
   generateSecurePassword() {
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';

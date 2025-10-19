@@ -24,7 +24,6 @@ const auditService = new PermissionAuditService();
 /**
  * Get available departments for OAuth.
  * @param {object} request - Parse Cloud Code request object.
- * @param {object} request.user - Current authenticated user.
  * @returns {Promise<object>} - Available departments for user.
  * @example
  * // Cloud function usage

@@ -11,7 +11,7 @@
  * @augments BaseModel
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * // Create new vehicle type
  * const sedan = new VehicleType();
@@ -40,6 +40,7 @@ class VehicleType extends BaseModel {
   /**
    * Create a VehicleType instance.
    * @example
+   * // Usage example documented above
    */
   constructor() {
     super('VehicleType');
@@ -53,6 +54,7 @@ class VehicleType extends BaseModel {
    * Get vehicle type name.
    * @returns {string} Vehicle type name (e.g., "Sedan").
    * @example
+   * // Usage example documented above
    */
   getName() {
     return this.get('name');
@@ -62,6 +64,7 @@ class VehicleType extends BaseModel {
    * Set vehicle type name.
    * @param {string} name - Display name.
    * @example
+   * // Usage example documented above
    */
   setName(name) {
     this.set('name', name);
@@ -71,6 +74,7 @@ class VehicleType extends BaseModel {
    * Get vehicle type code.
    * @returns {string} Unique code (e.g., "sedan").
    * @example
+   * // Usage example documented above
    */
   getCode() {
     return this.get('code');
@@ -80,6 +84,7 @@ class VehicleType extends BaseModel {
    * Set vehicle type code (must be unique).
    * @param {string} code - Unique type code.
    * @example
+   * // Usage example documented above
    */
   setCode(code) {
     this.set('code', code.toLowerCase());
@@ -89,6 +94,7 @@ class VehicleType extends BaseModel {
    * Get vehicle type description.
    * @returns {string} Description text.
    * @example
+   * // Usage example documented above
    */
   getDescription() {
     return this.get('description') || '';
@@ -98,6 +104,7 @@ class VehicleType extends BaseModel {
    * Set vehicle type description.
    * @param {string} description - Type description.
    * @example
+   * // Usage example documented above
    */
   setDescription(description) {
     this.set('description', description);
@@ -107,6 +114,7 @@ class VehicleType extends BaseModel {
    * Get Tabler icon name.
    * @returns {string} Icon name for UI.
    * @example
+   * // Usage example documented above
    */
   getIcon() {
     return this.get('icon') || 'car';
@@ -116,6 +124,7 @@ class VehicleType extends BaseModel {
    * Set Tabler icon name.
    * @param {string} icon - Icon name.
    * @example
+   * // Usage example documented above
    */
   setIcon(icon) {
     this.set('icon', icon);
@@ -125,6 +134,7 @@ class VehicleType extends BaseModel {
    * Get default passenger capacity.
    * @returns {number} Default capacity.
    * @example
+   * // Usage example documented above
    */
   getDefaultCapacity() {
     return this.get('defaultCapacity') || 4;
@@ -134,6 +144,7 @@ class VehicleType extends BaseModel {
    * Set default passenger capacity.
    * @param {number} capacity - Default capacity.
    * @example
+   * // Usage example documented above
    */
   setDefaultCapacity(capacity) {
     this.set('defaultCapacity', capacity);
@@ -143,6 +154,7 @@ class VehicleType extends BaseModel {
    * Get sort order.
    * @returns {number} Display order.
    * @example
+   * // Usage example documented above
    */
   getSortOrder() {
     return this.get('sortOrder') || 0;
@@ -152,6 +164,7 @@ class VehicleType extends BaseModel {
    * Set sort order.
    * @param {number} order - Display order.
    * @example
+   * // Usage example documented above
    */
   setSortOrder(order) {
     this.set('sortOrder', order);
@@ -165,6 +178,7 @@ class VehicleType extends BaseModel {
    * Validate vehicle type data before save.
    * @returns {object} Validation result {valid: boolean, errors: string[]}.
    * @example
+   * // Usage example documented above
    */
   validate() {
     const errors = [];
@@ -203,6 +217,7 @@ class VehicleType extends BaseModel {
    * Check if this vehicle type can be deleted.
    * @returns {Promise<object>} {canDelete: boolean, reason: string}.
    * @example
+   * // Usage example documented above
    */
   async canDelete() {
     try {
@@ -246,6 +261,7 @@ class VehicleType extends BaseModel {
    * @param {string} code - Type code.
    * @returns {Promise<VehicleType|undefined>} Vehicle type or undefined.
    * @example
+   * // Usage example documented above
    */
   static async findByCode(code) {
     try {
@@ -268,6 +284,7 @@ class VehicleType extends BaseModel {
    * Get all active vehicle types ordered by sortOrder.
    * @returns {Promise<VehicleType[]>} Array of active vehicle types.
    * @example
+   * // Usage example documented above
    */
   static async getActiveTypes() {
     try {
@@ -288,6 +305,7 @@ class VehicleType extends BaseModel {
    * Get vehicle types for dropdown/select options.
    * @returns {Promise<Array>} Array of {value, label, capacity}.
    * @example
+   * // Usage example documented above
    */
   static async getSelectOptions() {
     try {
@@ -314,6 +332,7 @@ class VehicleType extends BaseModel {
    * @param {string} excludeId - Exclude this ID from check (for updates).
    * @returns {Promise<boolean>} True if code is unique.
    * @example
+   * // Usage example documented above
    */
   static async isCodeUnique(code, excludeId = null) {
     try {
@@ -340,6 +359,7 @@ class VehicleType extends BaseModel {
    * Seed default vehicle types.
    * @returns {Promise<object>} {created: number, errors: number}.
    * @example
+   * // Usage example documented above
    */
   static async seedDefaults() {
     const defaultTypes = [

@@ -26,9 +26,6 @@ class EmployeeController extends RoleBasedController {
    * @function index
    * @async
    * @param {object} req - Express request object containing authenticated user information.
-   * @param {object} req.user - Authenticated user object with employee role.
-   * @param {string} req.user.id - Employee user ID.
-   * @param {string} req.user.role - User role (must be 'employee').
    * @param {object} res - Express response object for rendering dashboard view.
    * @returns {Promise<void>} Renders the employee dashboard index view.
    * @throws {Error} If user is not authenticated or lacks employee permissions.
@@ -69,8 +66,6 @@ class EmployeeController extends RoleBasedController {
    * @function bookings
    * @async
    * @param {object} req - Express request object containing authenticated user information.
-   * @param {object} req.user - Authenticated user object with employee role.
-   * @param {string} req.user.id - Employee user ID for filtering bookings.
    * @param {object} res - Express response object for rendering bookings view.
    * @returns {Promise<void>} Renders the employee bookings view.
    * @throws {Error} If user is not authenticated or database query fails.
@@ -112,8 +107,6 @@ class EmployeeController extends RoleBasedController {
    * @function history
    * @async
    * @param {object} req - Express request object containing authenticated user information.
-   * @param {object} req.user - Authenticated user object with employee role.
-   * @param {string} req.user.id - Employee user ID for filtering trip history.
    * @param {object} res - Express response object for rendering history view.
    * @returns {Promise<void>} Renders the employee trip history view.
    * @throws {Error} If user is not authenticated or database query fails.
@@ -155,8 +148,6 @@ class EmployeeController extends RoleBasedController {
    * @function profile
    * @async
    * @param {object} req - Express request object containing authenticated user information.
-   * @param {object} req.user - Authenticated user object with employee role.
-   * @param {string} req.user.id - Employee user ID for fetching profile data.
    * @param {object} res - Express response object for rendering profile view.
    * @returns {Promise<void>} Renders the employee profile view.
    * @throws {Error} If user is not authenticated or profile data cannot be retrieved.

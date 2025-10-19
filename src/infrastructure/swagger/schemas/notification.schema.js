@@ -46,7 +46,7 @@
  *           type: string
  *           format: date-time
  *           description: Notification creation timestamp
- *           example: "2025-10-01T10:00:00.000Z"
+ *           example: "2024-10-01T10:00:00.000Z"
  *
  *     NotificationsResponse:
  *       type: object

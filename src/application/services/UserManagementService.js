@@ -22,6 +22,7 @@ const AmexingUser = require('../../domain/models/AmexingUser');
 const BaseModel = require('../../domain/models/BaseModel');
 const logger = require('../../infrastructure/logger');
 const RoleAuthorizationService = require('./RoleAuthorizationService');
+const { extractUserContext, saveWithContext } = require('../utils/parseQueryHelper');
 
 /**
  * UserManagementService class implementing comprehensive user management
@@ -66,11 +67,6 @@ class UserManagementService {
    * This endpoint is focused on corporate client user management.
    * @param {object} currentUser - User making the request.
    * @param {object} options - Query options.
-   * @param {string} options.targetRole - Role of users to retrieve.
-   * @param {number} options.page - Page number for pagination (default: 1).
-   * @param {number} options.limit - Items per page (default: 25).
-   * @param {object} options.filters - Additional filters.
-   * @param {object} options.sort - Sorting configuration.
    * @returns {Promise<object>} - Users data with pagination info.
    * @example
    * // User management service usage
@@ -206,10 +202,6 @@ class UserManagementService {
    * Restricted to SuperAdmin and Admin roles only.
    * @param {object} currentUser - User making the request.
    * @param {object} options - Query options.
-   * @param {number} options.page - Page number for pagination (default: 1).
-   * @param {number} options.limit - Items per page (default: 25).
-   * @param {object} options.filters - Additional filters.
-   * @param {object} options.sort - Sorting configuration.
    * @param explicitRole
    * @returns {Promise<object>} - Amexing users data with pagination info.
    * @example
@@ -331,7 +323,10 @@ class UserManagementService {
       // AI Agent Rule: Use queryActive for business operations
       const query = BaseModel.queryActive(this.className);
       query.include('roleId'); // Include role data
-      const user = await query.get(userId, { useMasterKey: true });
+
+      // Pass user context for audit trail
+      const context = extractUserContext(currentUser);
+      const user = await query.get(userId, { useMasterKey: true, context });
 
       if (!user) {
         return null;
@@ -410,8 +405,8 @@ class UserManagementService {
         await user.setPassword(userData.password);
       }
 
-      // Save with master key for admin operations
-      await user.save(null, { useMasterKey: true });
+      // Save with user context for proper audit trail
+      await saveWithContext(user, createdBy);
 
       // Log creation activity
       await this.logUserCRUDActivity(createdBy, 'create', user.id, {
@@ -454,7 +449,7 @@ class UserManagementService {
     try {
       // Get existing user using AI agent compliant query
       const query = BaseModel.queryActive(this.className);
-      const user = await query.get(userId, { useMasterKey: true });
+      const user = await query.get(userId, { useMasterKey: true, context: extractUserContext(modifiedBy) });
 
       if (!user) {
         throw new Error('User not found or not accessible');
@@ -499,8 +494,8 @@ class UserManagementService {
         user.set('passwordChangedAt', new Date());
       }
 
-      // Save changes
-      await user.save(null, { useMasterKey: true });
+      // Save changes with user context for proper audit trail
+      await saveWithContext(user, modifiedBy);
 
       // Log update activity with field changes
       await this.logUserCRUDActivity(modifiedBy, 'update', userId, {
@@ -548,7 +543,7 @@ class UserManagementService {
     try {
       // Get user using existing records query (includes archived)
       const query = BaseModel.queryExisting(this.className);
-      const user = await query.get(userId, { useMasterKey: true });
+      const user = await query.get(userId, { useMasterKey: true, context: extractUserContext(deactivatedBy) });
 
       if (!user) {
         throw new Error('User not found');
@@ -610,7 +605,7 @@ class UserManagementService {
     try {
       // Query archived users (deactivated but still exist)
       const query = BaseModel.queryArchived(this.className);
-      const user = await query.get(userId, { useMasterKey: true });
+      const user = await query.get(userId, { useMasterKey: true, context: extractUserContext(reactivatedBy) });
 
       if (!user) {
         throw new Error('User not found or permanently deleted');
@@ -676,11 +671,11 @@ class UserManagementService {
       let user;
 
       try {
-        user = await query.get(userId, { useMasterKey: true });
+        user = await query.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
       } catch (error) {
         // If user not found in active query, try archived query
         const archivedQuery = BaseModel.queryArchived(this.className);
-        user = await archivedQuery.get(userId, { useMasterKey: true });
+        user = await archivedQuery.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
       }
 
       if (!user) {
@@ -709,7 +704,8 @@ class UserManagementService {
       user.set('exists', true); // Ensure exists remains true
       user.set('updatedAt', new Date());
 
-      await user.save(null, { useMasterKey: true });
+      // Save with user context for proper audit trail
+      await saveWithContext(user, currentUser);
 
       // Log activity
       await this.logUserCRUDActivity(
@@ -772,11 +768,11 @@ class UserManagementService {
       let user;
 
       try {
-        user = await query.get(userId, { useMasterKey: true });
+        user = await query.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
       } catch (error) {
         // If user not found in active query, try archived query
         const archivedQuery = BaseModel.queryArchived(this.className);
-        user = await archivedQuery.get(userId, { useMasterKey: true });
+        user = await archivedQuery.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
       }
 
       if (!user) {
@@ -807,7 +803,8 @@ class UserManagementService {
       user.set('exists', false);
       user.set('updatedAt', new Date());
 
-      await user.save(null, { useMasterKey: true });
+      // Save with user context for proper audit trail
+      await saveWithContext(user, currentUser);
 
       // Log archiving activity
       await this.logUserCRUDActivity(currentUser, 'archive', userId, {
@@ -845,7 +842,6 @@ class UserManagementService {
    * Search users with advanced filtering and role-based access.
    * @param {object} currentUser - User performing the search.
    * @param {object} searchParams - Search parameters.
-   * @param {*} currentUser - _currentUser parameter.
    * @param _currentUser
    * @returns {Promise<object>} - Search results with pagination.
    * @example
@@ -1491,7 +1487,6 @@ class UserManagementService {
    * @param {object} userData - User registration/update data.
    * @param {*} operation - Operation parameter.
    * @param {*} existingUser - ExistingUser parameter.
-   * @param {*} existingUser - _existingUser parameter.
    * @param _existingUser
    * @example
    * // User management service usage
@@ -1542,7 +1537,6 @@ class UserManagementService {
   /**
    * Check if user with email already exists.
    * @param {string} email - User email address.
-   * @param email
    * @example
    * // User management service usage
    * const result = await usermanagementservice.checkExistingUser(userId , data);
@@ -1844,6 +1838,7 @@ class UserManagementService {
    * @param {Parse.Query} query - Parse query object.
    * @param {string} roleName - Role name to filter by.
    * @example
+   * // Usage example documented above
    */
   async filterByRoleName(query, roleName) {
     try {
@@ -1876,6 +1871,7 @@ class UserManagementService {
    * @param {Parse.Query} query - Parse query object.
    * @param {string} roleName - Role name to exclude.
    * @example
+   * // Usage example documented above
    */
   async excludeRoleName(query, roleName) {
     try {
@@ -1905,6 +1901,7 @@ class UserManagementService {
    * @param {Parse.Query} query - Parse query object.
    * @param {string[]} roleNames - Array of role names to filter by.
    * @example
+   * // Usage example documented above
    */
   async filterByRoleNames(query, roleNames) {
     try {
@@ -1937,6 +1934,7 @@ class UserManagementService {
    * @param {string} organizationType - Organization type ('amexing' or 'client').
    * @returns {Promise<{roles: Array, roleNames: Array}>} Role filters.
    * @example
+   * // Usage example documented above
    */
   async getOrganizationRoleFilters(organizationType) {
     try {
@@ -1978,6 +1976,7 @@ class UserManagementService {
    * @param {Parse.Query} query - Parse query object.
    * @param {string} organizationType - Organization type ('amexing' or 'client').
    * @example
+   * // Usage example documented above
    */
   async filterByOrganization(query, organizationType) {
     try {

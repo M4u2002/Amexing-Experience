@@ -21,7 +21,7 @@ const securityMiddlewares = require('../../infrastructure/security/securityMiddl
  * - Mobile and web responsive interfaces.
  * @class AuthController
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -314,10 +314,11 @@ class AuthController {
    * Checks that username, password, and email are provided in the registration
    * request and returns validation result with error messages if validation fails.
    * @function validateRegistration
-   * @param {object} data - Registration data object.
-   * @param {string} data.username - Username for the new account.
-   * @param {string} data.password - Password for the new account.
-   * @param {string} data.email - Email address for the new account.
+   * @param root0
+   * @param root0.username
+   * @param root0.password
+   * @param root0.email
+   * @param data.username
    * @returns {{isValid: boolean, error?: string}} Validation result object with isValid flag and optional error message.
    * @example
    * // Valid registration data
@@ -391,10 +392,11 @@ class AuthController {
    * Initializes a Parse.User object, sets username, password, and email,
    * and persists the user to the database through Parse Server's signUp method.
    * @function createUser
-   * @param {object} userData - User registration data.
-   * @param {string} userData.username - Username for the new account.
-   * @param {string} userData.password - Password for the new account.
-   * @param {string} userData.email - Email address for the new account.
+   * @param root0
+   * @param root0.username
+   * @param root0.password
+   * @param root0.email
+   * @param userData.username
    * @returns {Promise<Parse.User>} - Promise resolving to the created Parse User object.
    * @throws {Parse.Error} - Throws Parse error if username exists or validation fails.
    * @example

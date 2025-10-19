@@ -34,7 +34,7 @@ const logger = require('../infrastructure/logger');
  * - Security policy enforcement and compliance reporting.
  * @class OAuthSecurityValidator
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -214,7 +214,6 @@ class OAuthSecurityValidator {
   /**
    * Validate OAuth token security.
    * @param {string} token - Authentication token.
-   * @param token
    * @param {*} tokenType - TokenType parameter.
    * @example
    * // Validation utility usage
@@ -309,7 +308,6 @@ class OAuthSecurityValidator {
    * Audits token structure for security analysis without JWT library.
    * This method manually parses JWT structure for security auditing.
    * @param {string} token - JWT token to audit.
-   * @param token
    * @returns {object|null} - Operation result Decoded token structure or null if invalid.
    * @private
    * @example
@@ -466,7 +464,6 @@ class OAuthSecurityValidator {
   /**
    * Validate token signature.
    * @param {string} token - Authentication token.
-   * @param token
    * @param {*} algorithm - Algorithm parameter.
    * @example
    * // Validation utility usage

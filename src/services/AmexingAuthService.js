@@ -9,8 +9,8 @@
  * - JWT session management
  * - Corporate SSO with auto-provisioning.
  * @author Claude Code + Technical Team
- * @version 2.0
- * @since 2025-09-11
+ * @version 1.0
+ * @since 2024-09-11
  * @example
  * // Authentication service usage
  * const result = await amexingauthservice.require(userData);
@@ -46,8 +46,8 @@ const logger = require('../infrastructure/logger');
  * - Account lockout and security features.
  * @class AmexingAuthService
  * @author Claude Code + Technical Team
- * @version 2.0
- * @since 2025-09-11
+ * @version 1.0
+ * @since 2024-09-11
  * @example
  * // const result = await authService.login(credentials);
  * // Returns: { success: true, user: {...}, tokens: {...} }
@@ -213,7 +213,6 @@ class AmexingAuthService {
   /**
    * Authenticate user with email/password.
    * @param {string} email - User email.
-   * @param email
    * @param {string} password - User password.
    * @returns {object} - Operation result User and tokens.
    * @example
@@ -800,7 +799,6 @@ class AmexingAuthService {
   /**
    * Get user's effective permissions (role + department + individual).
    * @param {string} userId - User ID.
-   * @param {*} userId - _userId parameter.
    * @param _userId
    * @returns {Array} - Array of results Array of permission codes.
    * @example
@@ -821,9 +819,6 @@ class AmexingAuthService {
    * @param {string} userId - User ID.
    * @param {string} permissionCode - Permission code to check.
    * @param {object} context - Optional context (department, client, etc.).
-   * @param {*} userId - _userId parameter.
-   * @param {*} permissionCode - _permissionCode parameter.
-   * @param {*} context - _context parameter.
    * @param _permissionCode
    * @param _context
    * @returns {boolean} - Boolean result Has permission.
@@ -847,7 +842,6 @@ class AmexingAuthService {
   /**
    * Find user by email.
    * @param {string} email - User email.
-   * @param email
    * @returns {object | null} - Operation result User object or null.
    * @example
    * // Authentication service usage
@@ -1059,7 +1053,6 @@ class AmexingAuthService {
   /**
    * Generate username from email (deprecated - now uses email directly).
    * @param {string} email - Email address.
-   * @param email
    * @returns {string} - Operation result Email as username.
    * @deprecated Use email directly as username for consistency.
    * @example
@@ -1077,7 +1070,6 @@ class AmexingAuthService {
   /**
    * Check if email domain is personal (non-corporate).
    * @param {string} domain - Email domain.
-   * @param domain
    * @returns {boolean} - Boolean result Is personal domain.
    * @example
    * // Authentication service usage
@@ -1216,7 +1208,6 @@ class AmexingAuthService {
   /**
    * Encrypt sensitive token for storage.
    * @param {string} token - Token to encrypt.
-   * @param token
    * @returns {string} - Operation result Encrypted token.
    * @example
    * // Authentication service usage
@@ -1308,7 +1299,6 @@ class AmexingAuthService {
   /**
    * Find corporate client by domain.
    * @param {string} domain - Email domain.
-   * @param domain
    * @returns {object | null} - Operation result Client object or null.
    * @example
    * // Authentication service usage
@@ -1333,7 +1323,6 @@ class AmexingAuthService {
    * @param {object} user - User object.
    * @param {object} client - Corporate client.
    * @param {object} profile - OAuth profile.
-   * @param {*} profile - _profile parameter.
    * @param _profile
    * @example
    * // Authentication service usage

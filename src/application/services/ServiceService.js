@@ -13,7 +13,7 @@
  * - Error handling with detailed logging.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * const service = new ServiceService();
  * const result = await service.toggleServiceStatus(currentUser, serviceId, false, 'Deactivating route');
@@ -200,6 +200,7 @@ class ServiceService {
    * @returns {Promise<object>} Result with success status.
    * @throws {Error} If validation fails or Service cannot be deleted.
    * @example
+   * // Usage example documented above
    */
   async softDeleteService(currentUser, serviceId, reason = '', userRole = null) {
     try {
@@ -281,6 +282,7 @@ class ServiceService {
    * @param {object} service - Parse Service object.
    * @returns {object} Safe Service data for API response.
    * @example
+   * // Usage example documented above
    */
   transformServiceToSafeFormat(service) {
     if (!service) {

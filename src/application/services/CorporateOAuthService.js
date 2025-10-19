@@ -214,7 +214,6 @@ class CorporateOAuthService {
   /**
    * Extracts email domain from email address.
    * @param {string} email - Email address.
-   * @param email
    * @returns {string} - Operation result Domain part of email.
    * @example
    * // OAuth service usage
@@ -605,7 +604,6 @@ class CorporateOAuthService {
   /**
    * Generates username from email address.
    * @param {string} email - Email address.
-   * @param email
    * @returns {string} - Operation result Generated username.
    * @example
    * // OAuth service usage
@@ -657,7 +655,6 @@ class CorporateOAuthService {
   /**
    * Masks email for logging.
    * @param {string} email - Email address.
-   * @param email
    * @returns {string} - Operation result Masked email.
    * @example
    * // OAuth service usage

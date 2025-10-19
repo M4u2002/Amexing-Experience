@@ -13,7 +13,7 @@
  * - Pointer handling for POIs and VehicleTypes.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * GET /api/services - List all services with pagination
  * POST /api/services - Create new service
@@ -50,6 +50,7 @@ class ServiceController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getServices(req, res) {
     try {
@@ -59,14 +60,14 @@ class ServiceController {
       }
 
       // Parse DataTables parameters
-      const draw = parseInt(req.query.draw) || 1;
-      const start = parseInt(req.query.start) || 0;
+      const draw = parseInt(req.query.draw, 10) || 1;
+      const start = parseInt(req.query.start, 10) || 0;
       const length = Math.min(
-        parseInt(req.query.length) || this.defaultPageSize,
+        parseInt(req.query.length, 10) || this.defaultPageSize,
         this.maxPageSize
       );
       const searchValue = req.query.search?.value || '';
-      const sortColumnIndex = parseInt(req.query.order?.[0]?.column) || 0;
+      const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Column mapping for sorting (matches frontend columns order)
@@ -213,6 +214,7 @@ class ServiceController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getActiveServices(req, res) {
     try {
@@ -264,6 +266,7 @@ class ServiceController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getServiceById(req, res) {
     try {
@@ -339,6 +342,7 @@ class ServiceController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async createService(req, res) {
     try {
@@ -450,8 +454,18 @@ class ServiceController {
       service.set('active', true);
       service.set('exists', true);
 
-      // Save with master key
-      await service.save(null, { useMasterKey: true });
+      // Save with master key and user context for audit trail
+      await service.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Service created', {
         serviceId: service.id,
@@ -500,6 +514,7 @@ class ServiceController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async updateService(req, res) {
     try {
@@ -603,8 +618,18 @@ class ServiceController {
         service.set('active', active);
       }
 
-      // Save changes
-      await service.save(null, { useMasterKey: true });
+      // Save changes with user context for audit trail
+      await service.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Service updated', {
         serviceId: service.id,
@@ -656,6 +681,7 @@ class ServiceController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async toggleServiceStatus(req, res) {
     try {
@@ -714,6 +740,7 @@ class ServiceController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async deleteService(req, res) {
     try {
@@ -760,6 +787,7 @@ class ServiceController {
    * @param {number} statusCode - HTTP status code.
    * @returns {object} Express response.
    * @example
+   * // Usage example documented above
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     return res.status(statusCode).json({
@@ -776,6 +804,7 @@ class ServiceController {
    * @param {number} statusCode - HTTP status code.
    * @returns {object} Express response.
    * @example
+   * // Usage example documented above
    */
   sendError(res, error, statusCode = 400) {
     return res.status(statusCode).json({

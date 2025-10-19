@@ -11,7 +11,7 @@
  * @augments BaseModel
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * // Create new vehicle image
  * const vehicleImage = new VehicleImage();
@@ -345,6 +345,73 @@ class VehicleImage extends BaseModel {
         error: error.message,
       });
       return null;
+    }
+  }
+
+  /**
+   * Find all primary images for a vehicle (for race condition detection).
+   * @param {string} vehicleId - Vehicle ID.
+   * @returns {Promise<Array<Parse.Object>>} Array of primary images ordered by creation time.
+   * @example
+   * const primaryImages = await VehicleImage.findPrimaryImages('vehicleId123');
+   */
+  static async findPrimaryImages(vehicleId) {
+    try {
+      const LocalVehicleImage = Parse.Object.extend('VehicleImage');
+      const query = new Parse.Query(LocalVehicleImage);
+
+      const vehicle = await new Parse.Query('Vehicle').get(vehicleId, {
+        useMasterKey: true,
+      });
+      query.equalTo('vehicleId', vehicle);
+      query.equalTo('exists', true);
+      query.equalTo('isPrimary', true);
+      query.ascending('createdAt');
+
+      return await query.find({ useMasterKey: true });
+    } catch (error) {
+      logger.error('Error finding primary images', {
+        vehicleId,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Recalculate display order based on creation time.
+   * @param {string} vehicleId - Vehicle ID.
+   * @returns {Promise<void>}
+   * @example
+   * await VehicleImage.recalculateDisplayOrder('vehicleId123');
+   */
+  static async recalculateDisplayOrder(vehicleId) {
+    try {
+      const images = await this.findByVehicle(vehicleId);
+
+      // Sort by creation time
+      images.sort(
+        (a, b) => a.get('createdAt').getTime() - b.get('createdAt').getTime()
+      );
+
+      // Update display order based on sorted position
+      const updatePromises = images.map((img, index) => {
+        img.set('displayOrder', index);
+        return img.save(null, { useMasterKey: true });
+      });
+
+      await Promise.all(updatePromises);
+
+      logger.info('Display order recalculated', {
+        vehicleId,
+        imageCount: images.length,
+      });
+    } catch (error) {
+      logger.error('Error recalculating display order', {
+        vehicleId,
+        error: error.message,
+      });
+      throw error;
     }
   }
 }

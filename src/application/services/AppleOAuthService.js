@@ -27,7 +27,7 @@ const logger = require('../../infrastructure/logger');
  * @class AppleOAuthService
  * @augments AppleOAuthServiceCore
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -115,10 +115,10 @@ class AppleOAuthService extends AppleOAuthServiceCore {
   /**
    * Validates callback data from Apple.
    * @param {object} data - Callback data to validate.
-   * @param {string} data.code - Authorization code.
-   * @param {string} data.idToken - ID token.
-   * @param {string} data.error - Error code if present.
-   * @param {string} data.errorDescription - Error description if present.
+   * @param data.code
+   * @param data.idToken
+   * @param data.error
+   * @param data.errorDescription
    * @example Validate callback data
    * service.validateCallbackData({ code: 'abc', idToken: 'token' });
    * @returns {*} - Operation result.

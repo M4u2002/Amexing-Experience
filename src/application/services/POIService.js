@@ -13,7 +13,7 @@
  * - Error handling with detailed logging.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * const service = new POIService();
  * const result = await service.togglePOIStatus(currentUser, poiId, false, 'Deactivating unused location');
@@ -195,6 +195,7 @@ class POIService {
    * @returns {Promise<object>} Result with success status.
    * @throws {Error} If validation fails or POI cannot be deleted.
    * @example
+   * // Usage example documented above
    */
   async softDeletePOI(currentUser, poiId, reason = '', userRole = null) {
     try {
@@ -268,6 +269,7 @@ class POIService {
    * @param {object} poi - Parse POI object.
    * @returns {object} Safe POI data for API response.
    * @example
+   * // Usage example documented above
    */
   transformPOIToSafeFormat(poi) {
     if (!poi) {

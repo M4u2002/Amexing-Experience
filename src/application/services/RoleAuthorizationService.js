@@ -130,9 +130,6 @@ class RoleAuthorizationService {
    * @param {object} user - User object.
    * @param {string|Array<string>} requiredRoles - Required role(s).
    * @param {object} options - Additional options.
-   * @param {boolean} options.throwError - Throw error if validation fails (default: false).
-   * @param {string} options.context - Context for logging.
-   * @param {string} options.explicitRole - Explicit role to use (e.g., from req.userRole).
    * @returns {boolean} - True if user has required role.
    * @throws {Error} - If throwError is true and validation fails.
    * @example
@@ -353,9 +350,6 @@ class RoleAuthorizationService {
    * Useful for complex authorization scenarios.
    * @param {object} user - User object.
    * @param {object} rules - Authorization rules.
-   * @param {Array<string>} rules.roles - Required roles.
-   * @param {number} rules.minimumLevel - Minimum role level.
-   * @param {string} rules.organization - Required organization.
    * @param {object} options - Additional options.
    * @returns {boolean} - True if all rules pass.
    * @example

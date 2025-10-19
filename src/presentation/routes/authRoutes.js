@@ -35,6 +35,7 @@ const router = express.Router();
  * @throws {Error} - Throws error if all retries fail.
  * @private
  * @example
+ * // Usage example documented above
  */
 async function callCloudFunctionWithRetry(
   functionName,

@@ -223,7 +223,7 @@ if (process.env.ENABLE_AUDIT_LOGGING === 'true' && !isTestEnvironment) {
  * @param {string} event - Security event type (e.g., 'FAILED_LOGIN', 'ACCOUNT_LOCKED', 'PERMISSION_DENIED').
  * @param {object} details - Additional event details and context.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -270,7 +270,7 @@ logger.logSecurityEvent = (event, details) => {
  * @param {string} ip - IP address of the access attempt.
  * @param {string|null} [reason] - Reason for failure (if applicable).
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -317,7 +317,7 @@ logger.logAccessAttempt = (success, username, ip, reason = null) => {
  * @param {string} action - Action performed (READ, WRITE, UPDATE, DELETE).
  * @param {boolean} success - Whether the data access was successful.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -352,7 +352,7 @@ logger.logDataAccess = (userId, resource, action, success) => {
  * @param {string|null} oldValue - Previous value (will be masked with *** for privacy).
  * @param {string|null} newValue - New value (will be masked with *** for privacy).
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);

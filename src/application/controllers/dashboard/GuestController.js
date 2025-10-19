@@ -13,7 +13,6 @@ class GuestController extends RoleBasedController {
    * @function index
    * @async
    * @param {object} req - Express request object.
-   * @param {object} req.user - Authenticated user object with guest role.
    * @param {object} res - Express response object.
    * @returns {Promise<void>} Renders the guest dashboard index view.
    * @throws {Error} If rendering fails or user authentication is invalid.
@@ -52,7 +51,6 @@ class GuestController extends RoleBasedController {
    * @function event
    * @async
    * @param {object} req - Express request object.
-   * @param {object} req.user - Authenticated user object with guest role.
    * @param {object} res - Express response object.
    * @returns {Promise<void>} Renders the guest event information view.
    * @throws {Error} If rendering fails or user authentication is invalid.
@@ -91,7 +89,6 @@ class GuestController extends RoleBasedController {
    * @function transport
    * @async
    * @param {object} req - Express request object.
-   * @param {object} req.user - Authenticated user object with guest role.
    * @param {object} res - Express response object.
    * @returns {Promise<void>} Renders the guest transport details view.
    * @throws {Error} If rendering fails or user authentication is invalid.

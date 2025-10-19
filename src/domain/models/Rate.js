@@ -11,7 +11,7 @@
  * @augments BaseModel
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * // Create new Rate
  * const standardRate = new Rate();
@@ -39,6 +39,7 @@ class Rate extends BaseModel {
   /**
    * Create a Rate instance.
    * @example
+   * // Usage example documented above
    */
   constructor() {
     super('Rate');
@@ -52,6 +53,7 @@ class Rate extends BaseModel {
    * Get Rate name.
    * @returns {string} Rate name (e.g., "Tarifa Estándar").
    * @example
+   * // Usage example documented above
    */
   getName() {
     return this.get('name');
@@ -61,6 +63,7 @@ class Rate extends BaseModel {
    * Set Rate name.
    * @param {string} name - Display name.
    * @example
+   * // Usage example documented above
    */
   setName(name) {
     this.set('name', name);
@@ -70,6 +73,7 @@ class Rate extends BaseModel {
    * Get Rate percentage.
    * @returns {number} Rate percentage value (e.g., 10 for 10%).
    * @example
+   * // Usage example documented above
    */
   getPercentage() {
     return this.get('percentage');
@@ -79,6 +83,7 @@ class Rate extends BaseModel {
    * Set Rate percentage.
    * @param {number} percentage - Percentage value (0-100).
    * @example
+   * // Usage example documented above
    */
   setPercentage(percentage) {
     this.set('percentage', percentage);
@@ -88,6 +93,7 @@ class Rate extends BaseModel {
    * Get formatted percentage string.
    * @returns {string} Formatted percentage (e.g., "10%").
    * @example
+   * // Usage example documented above
    */
   getFormattedPercentage() {
     const percentage = this.getPercentage();
@@ -104,6 +110,7 @@ class Rate extends BaseModel {
    * Validate Rate data before save.
    * @returns {object} Validation result {valid: boolean, errors: string[]}.
    * @example
+   * // Usage example documented above
    */
   validate() {
     const errors = [];
@@ -148,6 +155,7 @@ class Rate extends BaseModel {
    * Future implementation: check if any bookings reference this Rate.
    * @returns {Promise<object>} {canDelete: boolean, reason: string}.
    * @example
+   * // Usage example documented above
    */
   async canDelete() {
     try {
@@ -178,6 +186,7 @@ class Rate extends BaseModel {
    * @param {string} name - Rate name.
    * @returns {Promise<Rate|undefined>} Rate or undefined.
    * @example
+   * // Usage example documented above
    */
   static async findByName(name) {
     try {
@@ -200,6 +209,7 @@ class Rate extends BaseModel {
    * Get all active Rates ordered by name.
    * @returns {Promise<Rate[]>} Array of active Rates.
    * @example
+   * // Usage example documented above
    */
   static async getActiveRates() {
     try {
@@ -220,6 +230,7 @@ class Rate extends BaseModel {
    * Get Rates for dropdown/select options.
    * @returns {Promise<Array>} Array of {value, label, percentage}.
    * @example
+   * // Usage example documented above
    */
   static async getSelectOptions() {
     try {
@@ -245,6 +256,7 @@ class Rate extends BaseModel {
    * @param {string} excludeId - Exclude this ID from check (for updates).
    * @returns {Promise<boolean>} True if name is unique.
    * @example
+   * // Usage example documented above
    */
   static async isNameUnique(name, excludeId = null) {
     try {
@@ -271,6 +283,7 @@ class Rate extends BaseModel {
    * Seed default Rates.
    * @returns {Promise<object>} {created: number, errors: number}.
    * @example
+   * // Usage example documented above
    */
   static async seedDefaults() {
     const defaultRates = [

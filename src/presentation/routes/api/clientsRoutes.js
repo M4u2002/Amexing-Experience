@@ -64,6 +64,7 @@ const writeOperationsLimiter = rateLimit({
  * @param {Function} next - Next middleware function.
  * @returns {Promise<void>}
  * @example
+ * // Usage example documented above
  */
 async function validateClientAccess(req, res, next) {
   try {

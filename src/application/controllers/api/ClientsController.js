@@ -19,6 +19,7 @@
 
 const UserManagementService = require('../../services/UserManagementService');
 const logger = require('../../../infrastructure/logger');
+const { logReadAccess, logBulkReadAccess } = require('../../utils/auditHelper');
 
 /**
  * ClientsController class implementing RESTful API for client management.
@@ -65,6 +66,11 @@ class ClientsController {
       // Get client users from service (filters by organization 'client' and role 'department_manager')
       // Permission validation is done in middleware
       const result = await this.userService.getUsers(currentUser, options);
+
+      // PCI DSS Audit: Log bulk READ access to client data
+      if (result.users && result.users.length > 0) {
+        await logBulkReadAccess(req, result.users, 'Client', options);
+      }
 
       // Add metadata for frontend consumption
       const response = {
@@ -138,6 +144,9 @@ class ClientsController {
           403
         );
       }
+
+      // PCI DSS Audit: Log individual READ access to client data
+      await logReadAccess(req, user, 'Client');
 
       this.sendSuccess(res, { client: user }, 'Client retrieved successfully');
     } catch (error) {

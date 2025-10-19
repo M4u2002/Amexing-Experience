@@ -13,7 +13,7 @@
  * - Error handling with detailed logging.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * const service = new VehicleTypeService();
  * const result = await service.toggleVehicleTypeStatus(currentUser, typeId, false, 'Deactivating outdated type');
@@ -216,6 +216,7 @@ class VehicleTypeService {
    * @returns {object} Safe vehicle type data for API response.
    * @private
    * @example
+   * // Usage example documented above
    */
   transformVehicleTypeToSafeFormat(vehicleType) {
     return {

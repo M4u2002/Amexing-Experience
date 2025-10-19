@@ -113,6 +113,11 @@ const vehicleImagesRoutes = require('./api/vehicleImagesRoutes');
 const poisRoutes = require('./api/poisRoutes');
 const servicesRoutes = require('./api/servicesRoutes');
 const ratesRoutes = require('./api/ratesRoutes');
+// Experience Management API routes
+const experiencesRoutes = require('./api/experiencesRoutes');
+const experienceImagesRoutes = require('./api/experienceImagesRoutes');
+// Audit Log API routes
+const auditRoutes = require('./api/auditRoutes');
 // Notifications API controller
 const NotificationsController = require('../../application/controllers/api/NotificationsController');
 
@@ -127,6 +132,9 @@ router.use('/vehicles', vehicleImagesRoutes); // Vehicle images endpoints
 router.use('/pois', poisRoutes);
 router.use('/services', servicesRoutes);
 router.use('/rates', ratesRoutes);
+router.use('/experiences', experiencesRoutes);
+router.use('/experiences', experienceImagesRoutes); // Experience images endpoints
+router.use('/audit', auditRoutes); // Audit log endpoints
 
 /**
  * @swagger

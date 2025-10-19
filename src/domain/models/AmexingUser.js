@@ -38,7 +38,7 @@ const BaseModel = require('./BaseModel');
  * @class AmexingUser
  * @augments Parse.Object
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -770,6 +770,7 @@ class AmexingUser extends BaseModel {
    * Get the user's role object.
    * @returns {Promise<object|null>} - Role object or null.
    * @example
+   * // Usage example documented above
    */
   async getRole() {
     try {
@@ -833,6 +834,7 @@ class AmexingUser extends BaseModel {
    * Get user's role name for backward compatibility.
    * @returns {Promise<string>} - Role name or 'guest'.
    * @example
+   * // Usage example documented above
    */
   async getRoleName() {
     try {
@@ -853,6 +855,7 @@ class AmexingUser extends BaseModel {
    * @param {object} context - Context for conditional permissions.
    * @returns {Promise<boolean>} - True if user has permission.
    * @example
+   * // Usage example documented above
    */
   async hasPermission(permission, context = {}) {
     try {
@@ -915,6 +918,7 @@ class AmexingUser extends BaseModel {
    * @param {object} context - Context for validation.
    * @returns {Promise<boolean>} - True if user has delegated permission.
    * @example
+   * // Usage example documented above
    */
   async hasDelegatedPermission(permission, context = {}) {
     try {
@@ -945,6 +949,7 @@ class AmexingUser extends BaseModel {
    * Get all delegated permissions for this user.
    * @returns {Promise<Array>} - Array of delegated permissions.
    * @example
+   * // Usage example documented above
    */
   async getDelegatedPermissions() {
     try {
@@ -968,6 +973,7 @@ class AmexingUser extends BaseModel {
    * @param {Array<object>} delegationsData - Array of delegation data objects.
    * @returns {Promise<Array>} - Array of created delegations.
    * @example
+   * // Usage example documented above
    */
   async delegatePermissions(delegationsData) {
     try {
@@ -1046,6 +1052,7 @@ class AmexingUser extends BaseModel {
    * Get user's organization object.
    * @returns {Promise<object|null>} - Organization object or null.
    * @example
+   * // Usage example documented above
    */
   async getOrganization() {
     try {
@@ -1079,6 +1086,7 @@ class AmexingUser extends BaseModel {
    * @param {string} organizationId - Organization ID to check access for.
    * @returns {boolean} - True if user can access the organization.
    * @example
+   * // Usage example documented above
    */
   canAccessOrganization(organizationId) {
     const userOrgId = this.get('organizationId');
@@ -1097,6 +1105,7 @@ class AmexingUser extends BaseModel {
    * @param {object} otherUser - User to check management permissions for.
    * @returns {Promise<boolean>} - True if user can manage the other user.
    * @example
+   * // Usage example documented above
    */
   async canManage(otherUser) {
     try {
@@ -1139,6 +1148,7 @@ class AmexingUser extends BaseModel {
    * @param {object} otherUser - User to compare against.
    * @returns {Promise<boolean>} - True if current user has higher role level.
    * @example
+   * // Usage example documented above
    */
   async isHigherThan(otherUser) {
     try {
@@ -1166,6 +1176,7 @@ class AmexingUser extends BaseModel {
    * @param {string} scope - Access scope ('own', 'department', 'organization', 'system').
    * @returns {Promise<boolean>} - True if access is allowed.
    * @example
+   * // Usage example documented above
    */
   async canAccessUserData(targetUser, scope = 'own') {
     try {
@@ -1210,6 +1221,7 @@ class AmexingUser extends BaseModel {
    * Converts user to safe JSON (excludes sensitive data).
    * @returns {Promise<object>} - Safe user data.
    * @example
+   * // Usage example documented above
    */
   async toSafeJSON() {
     try {

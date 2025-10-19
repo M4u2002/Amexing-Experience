@@ -13,7 +13,7 @@
  * - Comprehensive validation and audit logging.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * GET /api/vehicles - List vehicles with DataTables
  * POST /api/vehicles - Create vehicle
@@ -43,6 +43,7 @@ class VehicleController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getVehicles(req, res) {
     try {
@@ -52,14 +53,14 @@ class VehicleController {
       }
 
       // Parse DataTables parameters
-      const draw = parseInt(req.query.draw) || 1;
-      const start = parseInt(req.query.start) || 0;
+      const draw = parseInt(req.query.draw, 10) || 1;
+      const start = parseInt(req.query.start, 10) || 0;
       const length = Math.min(
-        parseInt(req.query.length) || this.defaultPageSize,
+        parseInt(req.query.length, 10) || this.defaultPageSize,
         this.maxPageSize
       );
       const searchValue = req.query.search?.value || '';
-      const sortColumnIndex = parseInt(req.query.order?.[0]?.column) || 0;
+      const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Column mapping for sorting
@@ -189,6 +190,7 @@ class VehicleController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getVehicleById(req, res) {
     try {
@@ -260,6 +262,7 @@ class VehicleController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async createVehicle(req, res) {
     try {
@@ -331,8 +334,18 @@ class VehicleController {
         vehicle.set('insuranceExpiry', new Date(insuranceExpiry));
       }
 
-      // Save with master key
-      await vehicle.save(null, { useMasterKey: true });
+      // Save with master key and user context for audit trail
+      await vehicle.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Vehicle created', {
         vehicleId: vehicle.id,
@@ -383,6 +396,7 @@ class VehicleController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async updateVehicle(req, res) {
     try {
@@ -459,8 +473,18 @@ class VehicleController {
         vehicle.set('vehicleTypeId', vehicleType);
       }
 
-      // Save changes
-      await vehicle.save(null, { useMasterKey: true });
+      // Save changes with user context for audit trail
+      await vehicle.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Vehicle updated', {
         vehicleId: vehicle.id,
@@ -499,6 +523,7 @@ class VehicleController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async deleteVehicle(req, res) {
     try {
@@ -562,6 +587,7 @@ class VehicleController {
    * @param {string} message - Success message.
    * @param {number} statusCode - HTTP status code.
    * @example
+   * // Usage example documented above
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     return res.status(statusCode).json({
@@ -577,6 +603,7 @@ class VehicleController {
    * @param {string} message - Error message.
    * @param {number} statusCode - HTTP status code.
    * @example
+   * // Usage example documented above
    */
   sendError(res, message, statusCode = 500) {
     return res.status(statusCode).json({

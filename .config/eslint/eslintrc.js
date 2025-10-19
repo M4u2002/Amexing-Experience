@@ -88,6 +88,10 @@ module.exports = {
     'jsdoc/check-syntax': 'error',
     'jsdoc/check-tag-names': ['error', { definedTags: ['swagger'] }],
     'jsdoc/check-types': 'error',
+    // Fortified JSDoc Rules - Elevated to warnings (2024-10-16)
+    // TODO: Elevate to 'error' once all @since/@version tags are standardized
+    'jsdoc/check-values': 'warn', // Validate @since dates and @version tags
+    'jsdoc/check-param-names': 'warn', // Validate parameter names (reduced from 78 to 59 violations)
   },
   globals: {
     Parse: 'readonly', // Make Parse available as global

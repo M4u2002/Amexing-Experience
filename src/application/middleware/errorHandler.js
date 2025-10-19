@@ -8,7 +8,7 @@ const logger = require('../../infrastructure/logger');
  * @param {Error} err - The error object containing message and stack trace.
  * @param {object} req - Express request object with user context and request details.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Error handling middleware usage
@@ -49,7 +49,7 @@ function logError(err, req) {
  * @param {Error} err - The Parse Server error object containing error code and message.
  * @returns {object|null} - Operation result Status and message object with HTTP status code and user message, or null if not a Parse error.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Error handling middleware usage
@@ -96,7 +96,7 @@ function handleParseError(err) {
  * @param {Error} err - The MongoDB error object containing name, code, and message properties.
  * @returns {object|null} - Operation result Status and message object with HTTP status code and user message, or null if not a MongoDB error.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Error handling middleware usage
@@ -140,7 +140,7 @@ function handleMongoError(err) {
  * @param {Error} err - The validation error object containing name and details array.
  * @returns {object|null} - Operation result Status and message object with HTTP status code and aggregated validation messages, or null if not a validation error.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Error handling middleware usage
@@ -190,7 +190,7 @@ function handleValidationError(err) {
  * @param {Error} err - The error object containing various error properties (code, name, status, message).
  * @returns {object} - Operation result Status and message object with HTTP status code and user-friendly error message.
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Error handling middleware usage
@@ -294,7 +294,7 @@ function getErrorDetails(err) {
  * @param {Function} _next - Express next function (unused in error handler, required by Express signature).
  * @returns {void} - No return value Sends error response to client via res.json() or res.render().
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Middleware usage

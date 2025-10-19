@@ -21,6 +21,7 @@
 
 const UserManagementService = require('../../services/UserManagementService');
 const logger = require('../../../infrastructure/logger');
+const { logReadAccess, logBulkReadAccess } = require('../../utils/auditHelper');
 
 /**
  * UserManagementController class implementing RESTful API for user management.
@@ -75,6 +76,11 @@ class UserManagementController {
 
       // Get users from service
       const result = await this.userService.getUsers(currentUser, options);
+
+      // PCI DSS Audit: Log bulk READ access to user data
+      if (result.users && result.users.length > 0) {
+        await logBulkReadAccess(req, result.users, 'AmexingUser', options);
+      }
 
       // Add metadata for frontend consumption
       const response = {
@@ -140,6 +146,9 @@ class UserManagementController {
       if (!user) {
         return this.sendError(res, 'User not found or access denied', 404);
       }
+
+      // PCI DSS Audit: Log individual READ access to user data
+      await logReadAccess(req, user, 'AmexingUser');
 
       this.sendSuccess(res, { user }, 'User retrieved successfully');
     } catch (error) {

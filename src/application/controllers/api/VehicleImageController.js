@@ -5,7 +5,7 @@
  * Uses multer for file uploads to /public/uploads/vehicles/{vehicleId}/.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  */
 
 const multer = require('multer');
@@ -134,12 +134,40 @@ class VehicleImageController {
       vehicleImage.set('active', true);
       vehicleImage.set('exists', true);
 
-      // Auto-assign as primary if it's the first image
+      // Get existing count and tentatively set as primary if first
       const existingCount = await VehicleImage.getImageCount(vehicleId);
       vehicleImage.set('isPrimary', existingCount === 0);
       vehicleImage.set('displayOrder', existingCount);
 
+      // Save image first
       await vehicleImage.save(null, { useMasterKey: true });
+
+      // Post-upload verification and correction for race conditions
+      const primaryImages = await VehicleImage.findPrimaryImages(vehicleId);
+
+      // If multiple primary images exist, keep only the oldest
+      if (primaryImages.length > 1) {
+        logger.warn('Multiple primary images detected, correcting...', {
+          vehicleId,
+          count: primaryImages.length,
+          imageIds: primaryImages.map((img) => img.id),
+        });
+
+        // Keep first (oldest by createdAt) as primary, unset others
+        for (let i = 1; i < primaryImages.length; i++) {
+          primaryImages[i].set('isPrimary', false);
+          await primaryImages[i].save(null, { useMasterKey: true });
+        }
+
+        logger.info('Primary images corrected', {
+          vehicleId,
+          keptPrimary: primaryImages[0].id,
+          correctedCount: primaryImages.length - 1,
+        });
+      }
+
+      // Recalculate display order based on creation time
+      await VehicleImage.recalculateDisplayOrder(vehicleId);
 
       logger.info('Vehicle image uploaded', {
         vehicleId,

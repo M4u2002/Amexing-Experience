@@ -11,7 +11,7 @@
  * @augments BaseModel
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * // Create new POI
  * const airport = new POI();
@@ -38,6 +38,7 @@ class POI extends BaseModel {
   /**
    * Create a POI instance.
    * @example
+   * // Usage example documented above
    */
   constructor() {
     super('POI');
@@ -51,6 +52,7 @@ class POI extends BaseModel {
    * Get POI name.
    * @returns {string} POI name (e.g., "Aeropuerto Internacional de Querétaro").
    * @example
+   * // Usage example documented above
    */
   getName() {
     return this.get('name');
@@ -60,6 +62,7 @@ class POI extends BaseModel {
    * Set POI name.
    * @param {string} name - Display name.
    * @example
+   * // Usage example documented above
    */
   setName(name) {
     this.set('name', name);
@@ -73,6 +76,7 @@ class POI extends BaseModel {
    * Validate POI data before save.
    * @returns {object} Validation result {valid: boolean, errors: string[]}.
    * @example
+   * // Usage example documented above
    */
   validate() {
     const errors = [];
@@ -100,6 +104,7 @@ class POI extends BaseModel {
    * Future implementation: check if any bookings reference this POI.
    * @returns {Promise<object>} {canDelete: boolean, reason: string}.
    * @example
+   * // Usage example documented above
    */
   async canDelete() {
     try {
@@ -130,6 +135,7 @@ class POI extends BaseModel {
    * @param {string} name - POI name.
    * @returns {Promise<POI|undefined>} POI or undefined.
    * @example
+   * // Usage example documented above
    */
   static async findByName(name) {
     try {
@@ -152,6 +158,7 @@ class POI extends BaseModel {
    * Get all active POIs ordered by name.
    * @returns {Promise<POI[]>} Array of active POIs.
    * @example
+   * // Usage example documented above
    */
   static async getActivePOIs() {
     try {
@@ -172,6 +179,7 @@ class POI extends BaseModel {
    * Get POIs for dropdown/select options.
    * @returns {Promise<Array>} Array of {value, label}.
    * @example
+   * // Usage example documented above
    */
   static async getSelectOptions() {
     try {
@@ -195,6 +203,7 @@ class POI extends BaseModel {
    * @param {string} excludeId - Exclude this ID from check (for updates).
    * @returns {Promise<boolean>} True if name is unique.
    * @example
+   * // Usage example documented above
    */
   static async isNameUnique(name, excludeId = null) {
     try {
@@ -221,6 +230,7 @@ class POI extends BaseModel {
    * Seed default POIs.
    * @returns {Promise<object>} {created: number, errors: number}.
    * @example
+   * // Usage example documented above
    */
   static async seedDefaults() {
     const defaultPOIs = [

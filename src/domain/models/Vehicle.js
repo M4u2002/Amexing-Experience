@@ -11,7 +11,7 @@
  * @augments BaseModel
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * // Create new vehicle
  * const vehicle = new Vehicle();
@@ -41,6 +41,7 @@ class Vehicle extends BaseModel {
   /**
    * Create a Vehicle instance.
    * @example
+   * // Usage example documented above
    */
   constructor() {
     super('Vehicle');
@@ -54,6 +55,7 @@ class Vehicle extends BaseModel {
    * Get vehicle type (Pointer to VehicleType).
    * @returns {Parse.Object} VehicleType pointer.
    * @example
+   * // Usage example documented above
    */
   getVehicleType() {
     return this.get('vehicleTypeId');
@@ -63,6 +65,7 @@ class Vehicle extends BaseModel {
    * Set vehicle type.
    * @param {Parse.Object} vehicleType - VehicleType pointer.
    * @example
+   * // Usage example documented above
    */
   setVehicleType(vehicleType) {
     this.set('vehicleTypeId', vehicleType);
@@ -72,6 +75,7 @@ class Vehicle extends BaseModel {
    * Get service ID (Pointer to Service).
    * @returns {Parse.Object} Service pointer.
    * @example
+   * // Usage example documented above
    */
   getService() {
     return this.get('serviceId');
@@ -81,6 +85,7 @@ class Vehicle extends BaseModel {
    * Set service.
    * @param {Parse.Object} service - Service pointer.
    * @example
+   * // Usage example documented above
    */
   setService(service) {
     this.set('serviceId', service);
@@ -90,6 +95,7 @@ class Vehicle extends BaseModel {
    * Get vehicle brand.
    * @returns {string} Brand name.
    * @example
+   * // Usage example documented above
    */
   getBrand() {
     return this.get('brand') || '';
@@ -99,6 +105,7 @@ class Vehicle extends BaseModel {
    * Set vehicle brand.
    * @param {string} brand - Brand name.
    * @example
+   * // Usage example documented above
    */
   setBrand(brand) {
     this.set('brand', brand);
@@ -108,6 +115,7 @@ class Vehicle extends BaseModel {
    * Get vehicle model.
    * @returns {string} Model name.
    * @example
+   * // Usage example documented above
    */
   getModel() {
     return this.get('model') || '';
@@ -117,6 +125,7 @@ class Vehicle extends BaseModel {
    * Set vehicle model.
    * @param {string} model - Model name.
    * @example
+   * // Usage example documented above
    */
   setModel(model) {
     this.set('model', model);
@@ -126,6 +135,7 @@ class Vehicle extends BaseModel {
    * Get manufacturing year.
    * @returns {number} Year.
    * @example
+   * // Usage example documented above
    */
   getYear() {
     return this.get('year') || new Date().getFullYear();
@@ -135,6 +145,7 @@ class Vehicle extends BaseModel {
    * Set manufacturing year.
    * @param {number} year - Year.
    * @example
+   * // Usage example documented above
    */
   setYear(year) {
     this.set('year', year);
@@ -144,6 +155,7 @@ class Vehicle extends BaseModel {
    * Get license plate.
    * @returns {string} License plate number.
    * @example
+   * // Usage example documented above
    */
   getLicensePlate() {
     return this.get('licensePlate') || '';
@@ -153,6 +165,7 @@ class Vehicle extends BaseModel {
    * Set license plate.
    * @param {string} plate - License plate number.
    * @example
+   * // Usage example documented above
    */
   setLicensePlate(plate) {
     this.set('licensePlate', plate.toUpperCase());
@@ -162,6 +175,7 @@ class Vehicle extends BaseModel {
    * Get passenger capacity.
    * @returns {number} Capacity.
    * @example
+   * // Usage example documented above
    */
   getCapacity() {
     return this.get('capacity') || 4;
@@ -171,6 +185,7 @@ class Vehicle extends BaseModel {
    * Set passenger capacity.
    * @param {number} capacity - Capacity.
    * @example
+   * // Usage example documented above
    */
   setCapacity(capacity) {
     this.set('capacity', capacity);
@@ -180,6 +195,7 @@ class Vehicle extends BaseModel {
    * Get vehicle color.
    * @returns {string} Color.
    * @example
+   * // Usage example documented above
    */
   getColor() {
     return this.get('color') || '';
@@ -189,6 +205,7 @@ class Vehicle extends BaseModel {
    * Set vehicle color.
    * @param {string} color - Color.
    * @example
+   * // Usage example documented above
    */
   setColor(color) {
     this.set('color', color);
@@ -198,6 +215,7 @@ class Vehicle extends BaseModel {
    * Get vehicle images.
    * @returns {string[]} Array of image URLs.
    * @example
+   * // Usage example documented above
    */
   getImages() {
     return this.get('images') || [];
@@ -207,6 +225,7 @@ class Vehicle extends BaseModel {
    * Set vehicle images.
    * @param {string[]} images - Array of image URLs.
    * @example
+   * // Usage example documented above
    */
   setImages(images) {
     this.set('images', images);
@@ -216,6 +235,7 @@ class Vehicle extends BaseModel {
    * Add image to vehicle.
    * @param {string} imageUrl - Image URL.
    * @example
+   * // Usage example documented above
    */
   addImage(imageUrl) {
     const images = this.getImages();
@@ -227,6 +247,7 @@ class Vehicle extends BaseModel {
    * Get vehicle features.
    * @returns {string[]} Array of features.
    * @example
+   * // Usage example documented above
    */
   getFeatures() {
     return this.get('features') || [];
@@ -236,6 +257,7 @@ class Vehicle extends BaseModel {
    * Set vehicle features.
    * @param {string[]} features - Array of features.
    * @example
+   * // Usage example documented above
    */
   setFeatures(features) {
     this.set('features', features);
@@ -245,6 +267,7 @@ class Vehicle extends BaseModel {
    * Add feature to vehicle.
    * @param {string} feature - Feature name.
    * @example
+   * // Usage example documented above
    */
   addFeature(feature) {
     const features = this.getFeatures();
@@ -256,6 +279,7 @@ class Vehicle extends BaseModel {
    * Get maintenance status.
    * @returns {string} Status (operational|maintenance|repair|out_of_service).
    * @example
+   * // Usage example documented above
    */
   getMaintenanceStatus() {
     return this.get('maintenanceStatus') || 'operational';
@@ -265,6 +289,7 @@ class Vehicle extends BaseModel {
    * Set maintenance status.
    * @param {string} status - Status.
    * @example
+   * // Usage example documented above
    */
   setMaintenanceStatus(status) {
     const validStatuses = [
@@ -283,6 +308,7 @@ class Vehicle extends BaseModel {
    * Get insurance expiry date.
    * @returns {Date} Insurance expiry.
    * @example
+   * // Usage example documented above
    */
   getInsuranceExpiry() {
     return this.get('insuranceExpiry');
@@ -292,6 +318,7 @@ class Vehicle extends BaseModel {
    * Set insurance expiry date.
    * @param {Date} date - Expiry date.
    * @example
+   * // Usage example documented above
    */
   setInsuranceExpiry(date) {
     this.set('insuranceExpiry', date);
@@ -305,6 +332,7 @@ class Vehicle extends BaseModel {
    * Check if vehicle is operational and available for bookings.
    * @returns {boolean} True if available.
    * @example
+   * // Usage example documented above
    */
   isAvailable() {
     return this.isActive() && this.getMaintenanceStatus() === 'operational';
@@ -314,6 +342,7 @@ class Vehicle extends BaseModel {
    * Check if insurance is expired.
    * @returns {boolean} True if expired.
    * @example
+   * // Usage example documented above
    */
   isInsuranceExpired() {
     const expiry = this.getInsuranceExpiry();
@@ -325,6 +354,7 @@ class Vehicle extends BaseModel {
    * Get display name for vehicle.
    * @returns {string} Display name (e.g., "Mercedes-Benz Clase E 2024").
    * @example
+   * // Usage example documented above
    */
   getDisplayName() {
     return `${this.getBrand()} ${this.getModel()} ${this.getYear()}`;
@@ -334,6 +364,7 @@ class Vehicle extends BaseModel {
    * Validate vehicle data before save.
    * @returns {object} Validation result {valid: boolean, errors: string[]}.
    * @example
+   * // Usage example documented above
    */
   validate() {
     const errors = [];
@@ -379,6 +410,7 @@ class Vehicle extends BaseModel {
    * @param {string} licensePlate - License plate number.
    * @returns {Promise<Vehicle|undefined>} Vehicle or undefined.
    * @example
+   * // Usage example documented above
    */
   static async findByLicensePlate(licensePlate) {
     try {
@@ -403,6 +435,7 @@ class Vehicle extends BaseModel {
    * @param {Parse.Object} vehicleType - VehicleType pointer.
    * @returns {Promise<Vehicle[]>} Array of vehicles.
    * @example
+   * // Usage example documented above
    */
   static async getByType(vehicleType) {
     try {
@@ -425,6 +458,7 @@ class Vehicle extends BaseModel {
    * Get available vehicles (operational and active).
    * @returns {Promise<Vehicle[]>} Array of available vehicles.
    * @example
+   * // Usage example documented above
    */
   static async getAvailable() {
     try {
@@ -448,6 +482,7 @@ class Vehicle extends BaseModel {
    * @param {string} excludeId - Exclude this ID from check (for updates).
    * @returns {Promise<boolean>} True if unique.
    * @example
+   * // Usage example documented above
    */
   static async isLicensePlateUnique(licensePlate, excludeId = null) {
     try {

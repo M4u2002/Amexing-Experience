@@ -587,7 +587,6 @@ class OAuthPermissionService {
   /**
    * Masks email for logging.
    * @param {string} email - Email address.
-   * @param email
    * @returns {string} - Operation result Masked email.
    * @example
    * // OAuth service usage

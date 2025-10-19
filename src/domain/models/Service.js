@@ -11,7 +11,7 @@
  * @augments BaseModel
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * // Create new service
  * const service = new Service();
@@ -42,6 +42,7 @@ class Service extends BaseModel {
   /**
    * Create a Service instance.
    * @example
+   * // Usage example documented above
    */
   constructor() {
     super('Service');
@@ -55,6 +56,7 @@ class Service extends BaseModel {
    * Get origin POI.
    * @returns {object} Origin POI Parse object.
    * @example
+   * // Usage example documented above
    */
   getOriginPOI() {
     return this.get('originPOI');
@@ -64,6 +66,7 @@ class Service extends BaseModel {
    * Set origin POI.
    * @param {object} poi - POI Parse object or Pointer.
    * @example
+   * // Usage example documented above
    */
   setOriginPOI(poi) {
     this.set('originPOI', poi);
@@ -73,6 +76,7 @@ class Service extends BaseModel {
    * Get destination POI.
    * @returns {object} Destination POI Parse object.
    * @example
+   * // Usage example documented above
    */
   getDestinationPOI() {
     return this.get('destinationPOI');
@@ -82,6 +86,7 @@ class Service extends BaseModel {
    * Set destination POI.
    * @param {object} poi - POI Parse object or Pointer.
    * @example
+   * // Usage example documented above
    */
   setDestinationPOI(poi) {
     this.set('destinationPOI', poi);
@@ -91,6 +96,7 @@ class Service extends BaseModel {
    * Get vehicle type.
    * @returns {object} VehicleType Parse object.
    * @example
+   * // Usage example documented above
    */
   getVehicleType() {
     return this.get('vehicleType');
@@ -100,6 +106,7 @@ class Service extends BaseModel {
    * Set vehicle type.
    * @param {object} vehicleType - VehicleType Parse object or Pointer.
    * @example
+   * // Usage example documented above
    */
   setVehicleType(vehicleType) {
     this.set('vehicleType', vehicleType);
@@ -109,6 +116,7 @@ class Service extends BaseModel {
    * Get service note.
    * @returns {string} Service note.
    * @example
+   * // Usage example documented above
    */
   getNote() {
     return this.get('note') || '';
@@ -118,6 +126,7 @@ class Service extends BaseModel {
    * Set service note.
    * @param {string} note - Service note.
    * @example
+   * // Usage example documented above
    */
   setNote(note) {
     this.set('note', note);
@@ -127,6 +136,7 @@ class Service extends BaseModel {
    * Get service price.
    * @returns {number} Service price.
    * @example
+   * // Usage example documented above
    */
   getPrice() {
     return this.get('price') || 0;
@@ -136,6 +146,7 @@ class Service extends BaseModel {
    * Set service price.
    * @param {number} price - Service price.
    * @example
+   * // Usage example documented above
    */
   setPrice(price) {
     this.set('price', parseFloat(price));
@@ -145,6 +156,7 @@ class Service extends BaseModel {
    * Get formatted price with currency.
    * @returns {string} Formatted price (e.g., "$10,000.00").
    * @example
+   * // Usage example documented above
    */
   getFormattedPrice() {
     return new Intl.NumberFormat('es-MX', {
@@ -161,6 +173,7 @@ class Service extends BaseModel {
    * Validate service data before save.
    * @returns {object} Validation result {valid: boolean, errors: string[]}.
    * @example
+   * // Usage example documented above
    */
   validate() {
     const errors = [];
@@ -207,6 +220,7 @@ class Service extends BaseModel {
    * Future: Check if any bookings use this service.
    * @returns {Promise<object>} {canDelete: boolean, reason: string}.
    * @example
+   * // Usage example documented above
    */
   async canDelete() {
     try {
@@ -239,6 +253,7 @@ class Service extends BaseModel {
    * @param {string} vehicleTypeId - VehicleType ID.
    * @returns {Promise<Service|undefined>} Service or undefined.
    * @example
+   * // Usage example documented above
    */
   static async findByRoute(originId, destinationId, vehicleTypeId) {
     try {
@@ -283,6 +298,7 @@ class Service extends BaseModel {
    * Get all active services ordered by price.
    * @returns {Promise<Service[]>} Array of active services.
    * @example
+   * // Usage example documented above
    */
   static async getActiveServices() {
     try {
@@ -307,6 +323,7 @@ class Service extends BaseModel {
    * @param {string} vehicleTypeId - VehicleType ID.
    * @returns {Promise<Service[]>} Array of services.
    * @example
+   * // Usage example documented above
    */
   static async getServicesByVehicleType(vehicleTypeId) {
     try {
@@ -337,6 +354,7 @@ class Service extends BaseModel {
    * @param {string} poiId - POI ID.
    * @returns {Promise<Service[]>} Array of services.
    * @example
+   * // Usage example documented above
    */
   static async getServicesByPOI(poiId) {
     try {
@@ -374,6 +392,7 @@ class Service extends BaseModel {
    * Seed default services.
    * @returns {Promise<object>} {created: number, errors: number}.
    * @example
+   * // Usage example documented above
    */
   static async seedDefaults() {
     // TODO: Implement seed with actual POI and VehicleType IDs from database

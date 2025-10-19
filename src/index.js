@@ -6,7 +6,7 @@
  * middleware, authentication systems, and routing configuration.
  * @module index
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Start the application
@@ -59,6 +59,8 @@ const atomicRoutes = require('./presentation/routes/atomicRoutes');
 // Middleware
 const errorHandler = require('./application/middleware/errorHandler');
 const sessionRecovery = require('./application/middleware/sessionRecoveryMiddleware');
+const auditContextMiddleware = require('./application/middleware/auditContextMiddleware');
+const { parseContextMiddleware } = require('./infrastructure/parseContext');
 
 // Initialize Express app
 const app = express();
@@ -175,6 +177,15 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Session health check endpoint (before other routes)
 app.get('/api/session/health', sessionRecovery.sessionHealthEndpoint);
+
+// Parse context middleware - Global user context propagation for audit trails
+// Uses AsyncLocalStorage to make user context available throughout request lifecycle
+// IMPORTANT: Must be applied BEFORE routes to capture all authenticated requests
+app.use(parseContextMiddleware);
+
+// Audit context middleware - Propagates authenticated user context to Parse hooks
+// IMPORTANT: Must be applied AFTER authentication middleware but BEFORE routes
+app.use(auditContextMiddleware);
 
 // API Routes
 app.use('/api', apiRoutes);

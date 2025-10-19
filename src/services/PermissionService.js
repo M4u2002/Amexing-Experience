@@ -9,8 +9,8 @@
  * - Permission dependency resolution
  * - Audit logging for all permission changes.
  * @author Claude Code + Technical Team
- * @version 2.0
- * @since 2025-09-11
+ * @version 1.0
+ * @since 2024-09-11
  * @example
  * // Service method usage
  * const result = await permissionservice.require({ '../infrastructure/logger': 'example' });
@@ -39,8 +39,8 @@ const logger = require('../infrastructure/logger');
  * - Integration with OAuth and corporate systems.
  * @class PermissionService
  * @author Claude Code + Technical Team
- * @version 2.0
- * @since 2025-09-11
+ * @version 1.0
+ * @since 2024-09-11
  * @example
  * // const result = await authService.login(credentials);
  * // Returns: { success: true, user: {...}, tokens: {...} }

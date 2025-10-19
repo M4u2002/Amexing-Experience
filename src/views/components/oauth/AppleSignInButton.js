@@ -21,7 +21,7 @@
  * - Graceful degradation for unsupported browsers.
  * @class AppleSignInButton
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // const result = await authService.login(credentials);
@@ -63,17 +63,6 @@ class AppleSignInButton {
    * and event handlers for authentication flow management.
    * @class
    * @param {object} options - Configuration options for Apple Sign In.
-   * @param {string} options.clientId - Apple OAuth client ID (defaults to window.APPLE_CLIENT_ID).
-   * @param {string} options.scope - OAuth scopes to request.
-   * @param {string} options.responseType - OAuth response type.
-   * @param {string} options.responseMode - OAuth response mode.
-   * @param {boolean} options.usePopup - Whether to use popup for authentication.
-   * @param {string} options.locale - Localization setting.
-   * @param {string} options.department - Department identifier for corporate flows.
-   * @param {string} options.corporateConfigId - Corporate configuration ID.
-   * @param {Function} options.onSuccess - Success callback handler.
-   * @param {Function} options.onError - Error callback handler.
-   * @param {Function} options.onCancel - Cancel callback handler.
    * @example
    * const appleButton = new AppleSignInButton({
    *   clientId: 'com.amexing.service',

@@ -757,7 +757,6 @@ class CorporateOAuthInterface {
   /**
    * Highlight corporate login options.
    * @param {string} email - User email address.
-   * @param email
    * @param _email
    * @example
    * // Usage example

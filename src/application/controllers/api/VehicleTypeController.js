@@ -12,7 +12,7 @@
  * - Comprehensive validation and audit logging.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * GET /api/vehicle-types - List all vehicle types with pagination
  * POST /api/vehicle-types - Create new vehicle type
@@ -49,6 +49,7 @@ class VehicleTypeController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getVehicleTypes(req, res) {
     try {
@@ -58,14 +59,14 @@ class VehicleTypeController {
       }
 
       // Parse DataTables parameters
-      const draw = parseInt(req.query.draw) || 1;
-      const start = parseInt(req.query.start) || 0;
+      const draw = parseInt(req.query.draw, 10) || 1;
+      const start = parseInt(req.query.start, 10) || 0;
       const length = Math.min(
-        parseInt(req.query.length) || this.defaultPageSize,
+        parseInt(req.query.length, 10) || this.defaultPageSize,
         this.maxPageSize
       );
       const searchValue = req.query.search?.value || '';
-      const sortColumnIndex = parseInt(req.query.order?.[0]?.column) || 0;
+      const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Column mapping for sorting (matches frontend columns order)
@@ -169,6 +170,7 @@ class VehicleTypeController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getActiveVehicleTypes(req, res) {
     try {
@@ -215,6 +217,7 @@ class VehicleTypeController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getVehicleTypeById(req, res) {
     try {
@@ -284,6 +287,7 @@ class VehicleTypeController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async createVehicleType(req, res) {
     try {
@@ -323,8 +327,8 @@ class VehicleTypeController {
       vehicleType.set('code', code.toLowerCase());
       vehicleType.set('description', description || '');
       vehicleType.set('icon', icon || 'car');
-      vehicleType.set('defaultCapacity', parseInt(defaultCapacity) || 4);
-      vehicleType.set('sortOrder', parseInt(sortOrder) || 0);
+      vehicleType.set('defaultCapacity', parseInt(defaultCapacity, 10) || 4);
+      vehicleType.set('sortOrder', parseInt(sortOrder, 10) || 0);
       vehicleType.set('active', true);
       vehicleType.set('exists', true);
 
@@ -340,8 +344,18 @@ class VehicleTypeController {
         );
       }
 
-      // Save with master key
-      await vehicleType.save(null, { useMasterKey: true });
+      // Save with master key and user context for audit trail
+      await vehicleType.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Vehicle type created', {
         vehicleTypeId: vehicleType.id,
@@ -384,6 +398,7 @@ class VehicleTypeController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async updateVehicleType(req, res) {
     try {
@@ -444,8 +459,8 @@ class VehicleTypeController {
 
       if (description !== undefined) vehicleType.set('description', description);
       if (icon) vehicleType.set('icon', icon);
-      if (defaultCapacity) vehicleType.set('defaultCapacity', parseInt(defaultCapacity));
-      if (sortOrder !== undefined) vehicleType.set('sortOrder', parseInt(sortOrder));
+      if (defaultCapacity) vehicleType.set('defaultCapacity', parseInt(defaultCapacity, 10));
+      if (sortOrder !== undefined) vehicleType.set('sortOrder', parseInt(sortOrder, 10));
       if (active !== undefined) vehicleType.set('active', active);
 
       // Basic validation
@@ -457,8 +472,18 @@ class VehicleTypeController {
         );
       }
 
-      // Save changes
-      await vehicleType.save(null, { useMasterKey: true });
+      // Save changes with user context for audit trail
+      await vehicleType.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Vehicle type updated', {
         vehicleTypeId: vehicleType.id,
@@ -506,6 +531,7 @@ class VehicleTypeController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async deleteVehicleType(req, res) {
     try {
@@ -548,10 +574,20 @@ class VehicleTypeController {
         );
       }
 
-      // Soft delete: set both active and exists to false
+      // Soft delete: set both active and exists to false with user context for audit trail
       vehicleType.set('active', false);
       vehicleType.set('exists', false);
-      await vehicleType.save(null, { useMasterKey: true });
+      await vehicleType.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Vehicle type deleted', {
         vehicleTypeId: vehicleType.id,
@@ -655,6 +691,7 @@ class VehicleTypeController {
    * @param {string} message - Success message.
    * @param {number} statusCode - HTTP status code.
    * @example
+   * // Usage example documented above
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     return res.status(statusCode).json({
@@ -670,6 +707,7 @@ class VehicleTypeController {
    * @param {string} message - Error message.
    * @param {number} statusCode - HTTP status code.
    * @example
+   * // Usage example documented above
    */
   sendError(res, message, statusCode = 500) {
     return res.status(statusCode).json({

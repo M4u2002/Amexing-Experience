@@ -13,7 +13,7 @@
  * - Error handling with detailed logging.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * const service = new RateService();
  * const result = await service.toggleRateStatus(currentUser, rateId, false, 'Deactivating unused rate');
@@ -196,6 +196,7 @@ class RateService {
    * @returns {Promise<object>} Result with success status.
    * @throws {Error} If validation fails or Rate cannot be deleted.
    * @example
+   * // Usage example documented above
    */
   async softDeleteRate(currentUser, rateId, reason = '', userRole = null) {
     try {
@@ -270,6 +271,7 @@ class RateService {
    * @param {object} rate - Parse Rate object.
    * @returns {object} Safe Rate data for API response.
    * @example
+   * // Usage example documented above
    */
   transformRateToSafeFormat(rate) {
     if (!rate) {

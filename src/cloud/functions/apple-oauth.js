@@ -31,10 +31,6 @@ const auditService = new PermissionAuditService();
 /**
  * Initiate Apple Sign In flow.
  * @param {object} request - Parse Cloud Code request object.
- * @param {object} request.params - Request parameters.
- * @param {string} request.params.department - Department identifier.
- * @param {string} request.params.corporateConfigId - Corporate config ID.
- * @param {string} request.params.redirectUri - OAuth redirect URI.
  * @returns {Promise<object>} - Apple OAuth authorization URL and state.
  * @example
  * // Cloud function usage
@@ -119,10 +115,6 @@ const initiateAppleOAuth = async (request) => {
 /**
  * Handle Apple OAuth callback (form_post response mode).
  * @param {object} request - Parse Cloud Code request object.
- * @param {object} request.params - Request parameters.
- * @param {string} request.params.code - Authorization code from Apple.
- * @param {string} request.params.state - OAuth state parameter.
- * @param {string} request.params.idtoken - Apple ID token.
  * @returns {Promise<object>} - Authentication result with user data.
  * @example
  * // Cloud function usage
@@ -242,8 +234,6 @@ const handleAppleOAuthCallback = async (request) => {
 /**
  * Get Apple OAuth configuration.
  * @param {object} request - Parse Cloud Code request object.
- * @param {object} request.params - Request parameters.
- * @param {string} request.params.department - Department identifier.
  * @returns {Promise<object>} - Apple OAuth configuration.
  * @example
  * // Cloud function usage
@@ -307,7 +297,6 @@ const getAppleOAuthConfig = async (request) => {
 /**
  * Revoke Apple OAuth tokens.
  * @param {object} request - Parse Cloud Code request object.
- * @param {object} request.user - Current authenticated user.
  * @returns {Promise<object>} - Revocation result.
  * @example
  * // Cloud function usage
@@ -416,8 +405,6 @@ const handleAppleWebhook = async (request) => {
 /**
  * Get Apple OAuth user data (privacy-compliant).
  * @param {object} request - Parse Cloud Code request object.
- * @param {object} request.params - Request parameters.
- * @param {string} request.params.userId - User ID to get data for.
  * @returns {Promise<object>} - User data from Apple (privacy-compliant).
  * @example
  * // Cloud function usage

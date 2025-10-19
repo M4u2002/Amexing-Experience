@@ -265,11 +265,6 @@ class DepartmentOAuthFlowService {
   /**
    * Initiate department-specific OAuth flow.
    * @param {object} request - OAuth request parameters.
-   * @param {string} request.department - Department identifier.
-   * @param {string} request.provider - OAuth _provider.
-   * @param {string} request.corporateConfigId - Corporate configuration ID.
-   * @param {string} request.redirectUri - Redirect URI.
-   * @param {string} request.state - OAuth state parameter.
    * @returns {Promise<object>} - OAuth initiation result with authorization URL.
    * @example
    * // OAuth service usage
@@ -356,10 +351,6 @@ class DepartmentOAuthFlowService {
   /**
    * Handle department OAuth callback.
    * @param {object} request - OAuth callback parameters.
-   * @param {string} request.code - Authorization code.
-   * @param {string} request.state - OAuth state parameter.
-   * @param {string} request.provider - OAuth _provider.
-   * @param {string} request.department - Department identifier.
    * @param {string} [request.error] - OAuth error if any.
    * @returns {Promise<object>} - Authentication result with user session.
    * @example
@@ -464,10 +455,6 @@ class DepartmentOAuthFlowService {
   /**
    * Process department-specific OAuth authentication.
    * @param {object} options - Processing options.
-   * @param {object} options.userInfo - User information from OAuth _provider.
-   * @param {object} options.tokenData - OAuth token data.
-   * @param {object} options.department - Department configuration.
-   * @param {string} options.provider - OAuth provider name.
    * @returns {Promise<object>} - Authentication result with session data.
    * @example
    * // OAuth service usage
@@ -850,10 +837,6 @@ class DepartmentOAuthFlowService {
   /**
    * Build department-specific OAuth URL.
    * @param {object} options - OAuth URL build options.
-   * @param {object} options.department - Department configuration.
-   * @param {string} options.provider - OAuth provider name.
-   * @param {string} options.redirectUri - Redirect URI.
-   * @param {string} options.state - OAuth state parameter.
    * @returns {Promise<string>} - Generated OAuth authorization URL.
    * @example
    * // OAuth service usage
@@ -1194,9 +1177,7 @@ class DepartmentOAuthFlowService {
    * Generate department-specific username from OAuth user information.
    * @function generateDepartmentUsername
    * @param {object} userInfo - User information from OAuth provider.
-   * @param {string} userInfo.email - User's email address.
    * @param {object} department - Department configuration.
-   * @param {string} department.code - Department code identifier.
    * @returns {string} Generated username in format: emailprefix_departmentcode.
    * @example
    * const username = service.generateDepartmentUsername(
@@ -1231,7 +1212,6 @@ class DepartmentOAuthFlowService {
    * @param {string} [userInfo.job_title] - User's job title.
    * @param {string} [userInfo.department_role] - Department-specific role.
    * @param {object} department - Department configuration.
-   * @param {string} department.code - Department code identifier.
    * @returns {string} Determined role: 'admin', 'manager', or 'employee'.
    * @example
    * const role = service.determineDepartmentRole(
@@ -1270,7 +1250,6 @@ class DepartmentOAuthFlowService {
    * @function determineDepartmentRedirect
    * @param {object} user - AmexingUser object.
    * @param {object} department - Department configuration.
-   * @param {string} department.code - Department code identifier.
    * @returns {string} Department-specific dashboard URL or default '/dashboard'.
    * @example
    * const redirectUrl = service.determineDepartmentRedirect(user, { code: 'rrhh' });
@@ -1358,10 +1337,6 @@ class DepartmentOAuthFlowService {
    * Exchange OAuth authorization code for access and refresh tokens.
    * @function exchangeCodeForTokens
    * @param {object} _options - Token exchange options.
-   * @param {string} _options.code - Authorization code from OAuth callback.
-   * @param {string} _options.provider - OAuth provider name.
-   * @param {object} _options.department - Department configuration.
-   * @param {string} _options.state - OAuth state parameter for validation.
    * @returns {Promise<object>} Token data object containing accessToken, refreshToken, expiresIn, and tokenType.
    * @example
    * const tokens = await service.exchangeCodeForTokens({
@@ -1397,7 +1372,6 @@ class DepartmentOAuthFlowService {
    * @function validateDepartmentClaims
    * @param {object} _userInfo - User information from OAuth provider.
    * @param {object} _deptConfig - Department configuration with requiredClaims.
-   * @param {string[]} _deptConfig.requiredClaims - Array of required claim fields.
    * @returns {Promise<boolean>} True if all required claims are present and valid, throws error otherwise.
    * @throws {Parse.Error} If required claims are missing or invalid.
    * @example
@@ -1417,7 +1391,6 @@ class DepartmentOAuthFlowService {
    * @function handleApprovalRequired
    * @param {object} _userInfo - User information from OAuth provider.
    * @param {object} _deptConfig - Department configuration with approval settings.
-   * @param {object} _deptConfig.approvalWorkflow - Approval workflow configuration.
    * @param {object} _tokenData - OAuth token data for later authentication.
    * @returns {Promise<object>} Approval pending response with status and next steps.
    * @example
@@ -1438,8 +1411,6 @@ class DepartmentOAuthFlowService {
    * @function linkOAuthAccountToUser
    * @param {object} _user - AmexingUser object to link OAuth account to.
    * @param {object} _userInfo - User information from OAuth provider.
-   * @param {string} _userInfo.id - User ID from OAuth provider.
-   * @param {string} _userInfo.email - User email from OAuth provider.
    * @param {string} _provider - OAuth provider name.
    * @returns {Promise<void>} Completes when OAuth account is linked to user.
    * @example
@@ -1458,8 +1429,6 @@ class DepartmentOAuthFlowService {
    * @function updateUserDepartmentInfo
    * @param {object} _user - AmexingUser object to update.
    * @param {object} _department - Department configuration.
-   * @param {string} _department.code - Department code.
-   * @param {string} _department.name - Department name.
    * @returns {Promise<void>} Completes when user department information is updated.
    * @example
    * await service.updateUserDepartmentInfo(user, { code: 'rrhh', name: 'Recursos Humanos' });
@@ -1474,7 +1443,6 @@ class DepartmentOAuthFlowService {
    * @param {object} _user - AmexingUser object to provision roles for.
    * @param {object} _userInfo - User information from OAuth provider.
    * @param {object} _department - Department configuration.
-   * @param {string[]} _department.autoProvisionRoles - Array of roles to auto-provision.
    * @returns {Promise<void>} Completes when roles are provisioned to user.
    * @example
    * await service.applyAutoProvisionRoles(
@@ -1492,7 +1460,6 @@ class DepartmentOAuthFlowService {
    * @function executePostAuthActions
    * @param {object} _user - AmexingUser object.
    * @param {object} _department - Department configuration.
-   * @param {string[]} _department.postAuthActions - Array of action names to execute.
    * @param {object} _contextResult - Context initialization result with permissions.
    * @returns {Promise<void>} Completes when all post-auth actions are executed.
    * @example

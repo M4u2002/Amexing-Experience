@@ -797,7 +797,6 @@ class IntelligentProviderSelector {
   /**
    * Analyze email and suggest provider.
    * @param {string} email - User email address.
-   * @param email
    * @example
    * // Usage example
    * const result = await analyzeEmailAndSuggest({ email: 'example' });
@@ -826,7 +825,6 @@ class IntelligentProviderSelector {
    * Generate intelligent suggestion.
    * @param {string} email - User email address.
    * @param {*} domain - Domain parameter.
-   * @param email
    * @param _domain
    * @example
    * // Usage example
@@ -907,7 +905,6 @@ class IntelligentProviderSelector {
    * Analyze learning data.
    * @param {string} email - User email address.
    * @param {*} domain - Domain parameter.
-   * @param email
    * @param _domain
    * @example
    * // Usage example
@@ -1703,8 +1700,6 @@ class IntelligentProviderSelector {
    * @function generateDomainReason
    * @param {string} _domain - Email domain (e.g., 'company.com').
    * @param {object} domainInfo - Domain information object containing type and provider.
-   * @param {string} domainInfo.type - Type of domain: 'corporate_verified', 'corporate', 'consumer', 'educational'.
-   * @param {string} domainInfo.provider - OAuth provider name (google, microsoft, apple).
    * @example
    * // Usage example
    * const reason = generateDomainReason('company.com', { type: 'corporate_verified', provider: 'microsoft' });

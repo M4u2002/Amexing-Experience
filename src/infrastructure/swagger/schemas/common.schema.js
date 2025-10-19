@@ -22,7 +22,7 @@
  *         timestamp:
  *           type: string
  *           format: date-time
- *           example: "2025-10-01T12:00:00.000Z"
+ *           example: "2024-10-01T12:00:00.000Z"
  *
  *     ErrorResponse:
  *       type: object
@@ -36,7 +36,7 @@
  *         timestamp:
  *           type: string
  *           format: date-time
- *           example: "2025-10-01T12:00:00.000Z"
+ *           example: "2024-10-01T12:00:00.000Z"
  *
  *     PaginationInfo:
  *       type: object
@@ -76,7 +76,7 @@
  *         timestamp:
  *           type: string
  *           format: date-time
- *           example: "2025-10-01T12:00:00.000Z"
+ *           example: "2024-10-01T12:00:00.000Z"
  *         services:
  *           type: object
  *           properties:
@@ -95,14 +95,14 @@
  *         version:
  *           type: string
  *           description: API version
- *           example: "0.1.0"
+ *           example: 0.1.0
  *         environment:
  *           type: string
  *           enum: [development, staging, production]
  *           example: "development"
  *         nodeVersion:
  *           type: string
- *           example: "20.0.0"
+ *           example: 20.0.0
  *
  *     ProfileUpdateRequest:
  *       type: object
@@ -143,7 +143,7 @@
  *         timestamp:
  *           type: string
  *           format: date-time
- *           example: "2025-10-01T12:00:00.000Z"
+ *           example: "2024-10-01T12:00:00.000Z"
  */
 
 module.exports = {};

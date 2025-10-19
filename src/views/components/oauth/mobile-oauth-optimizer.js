@@ -11,12 +11,6 @@ class MobileOAuthOptimizer {
    * Initializes mobile optimization settings and device detection.
    * @class
    * @param {object} options - Configuration options for the optimizer.
-   * @param {number} options.touchDelay - Delay for touch events in milliseconds.
-   * @param {number} options.fastTapThreshold - Threshold for fast tap detection in milliseconds.
-   * @param {boolean} options.vibrationEnabled - Enable haptic vibration feedback.
-   * @param {boolean} options.adaptiveLoading - Enable adaptive loading experience.
-   * @param {boolean} options.biometricSupport - Enable biometric authentication support.
-   * @param {boolean} options.orientationAware - Enable orientation change handling.
    * @example
    * // Create optimizer with default settings
    * const optimizer = new MobileOAuthOptimizer();

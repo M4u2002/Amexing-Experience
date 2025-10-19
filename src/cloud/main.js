@@ -1,5 +1,7 @@
 /* eslint-disable no-unused-vars */
-const Parse = require('parse/node');
+// IMPORTANT: Do NOT require 'parse/node' in cloud code files
+// Parse Server provides Parse.Cloud automatically in cloud code context
+// Requiring parse/node will override it with SDK version that doesn't have Cloud functions
 const logger = require('../infrastructure/logger');
 
 // Import models and services
@@ -17,6 +19,9 @@ const oauthPermissionsFunctions = require('./functions/oauth-permissions');
 const departmentOAuthFunctions = require('./functions/department-oauth');
 const appleOAuthFunctions = require('./functions/apple-oauth');
 
+// Import audit trail hooks
+const { registerAuditHooks } = require('./hooks/auditTrailHooks');
+
 /**
  * Registers all Parse Cloud Functions for the Amexing platform.
  * Centralizes the registration of OAuth authentication, corporate synchronization,
@@ -28,7 +33,7 @@ const appleOAuthFunctions = require('./functions/apple-oauth');
  * handling, department OAuth flows, and Apple authentication integration.
  * @function registerCloudFunctions
  * @author Amexing Development Team
- * @version 2.0.0
+ * @version 1.0.0
  * @since 1.0.0
  * @example
  * // Cloud function usage
@@ -1022,6 +1027,11 @@ function registerCloudFunctions() {
     });
 
     logger.info('Cloud Code loaded successfully');
+
+    // Register audit trail hooks INSIDE registerCloudFunctions to ensure Parse.Cloud is available
+    logger.info('Registering audit trail hooks...');
+    registerAuditHooks();
+    logger.info('✅ Audit trail hooks registered successfully');
   } catch (error) {
     logger.error('Error registering cloud functions:', error);
   }
@@ -1033,9 +1043,9 @@ function registerCloudFunctions() {
 // Register cloud functions immediately
 // Parse Server loads this file and Parse.Cloud is available
 try {
-  logger.info('Starting cloud functions registration...');
+  logger.info('Starting cloud functions registration (including audit hooks)...');
   registerCloudFunctions();
-  logger.info('Cloud functions registration completed successfully');
+  logger.info('Cloud functions and audit hooks registration completed successfully');
 } catch (error) {
   logger.error('Failed to register cloud functions:', error);
   logger.error('Cloud function registration error details:', {

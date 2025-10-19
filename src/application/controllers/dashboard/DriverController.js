@@ -18,8 +18,6 @@ class DriverController extends RoleBasedController {
    * @function index
    * @async
    * @param {object} req - Express request object.
-   * @param {object} req.session - Session object containing user information.
-   * @param {object} req.session.user - Authenticated driver user.
    * @param {object} res - Express response object.
    * @returns {Promise<void>} Renders the driver dashboard view.
    * @throws {Error} When unable to load driver statistics or render view.
@@ -49,9 +47,6 @@ class DriverController extends RoleBasedController {
    * @function trips
    * @async
    * @param {object} req - Express request object.
-   * @param {object} req.session - Session object containing user information.
-   * @param {object} req.session.user - Authenticated driver user.
-   * @param {object} req.query - Query parameters for filtering trips.
    * @param {string} [req.query.status] - Filter trips by status (active, completed, cancelled).
    * @param {string} [req.query.date] - Filter trips by date range.
    * @param {object} res - Express response object.
@@ -93,9 +88,6 @@ class DriverController extends RoleBasedController {
    * @function earnings
    * @async
    * @param {object} req - Express request object.
-   * @param {object} req.session - Session object containing user information.
-   * @param {object} req.session.user - Authenticated driver user.
-   * @param {object} req.query - Query parameters for filtering earnings.
    * @param {string} [req.query.period] - Time period (daily, weekly, monthly, yearly).
    * @param {string} [req.query.startDate] - Start date for custom range.
    * @param {string} [req.query.endDate] - End date for custom range.
@@ -142,9 +134,6 @@ class DriverController extends RoleBasedController {
    * @function profile
    * @async
    * @param {object} req - Express request object.
-   * @param {object} req.session - Session object containing user information.
-   * @param {object} req.session.user - Authenticated driver user.
-   * @param {string} req.session.user.objectId - Driver's unique identifier.
    * @param {object} res - Express response object.
    * @returns {Promise<void>} Renders the driver profile view.
    * @throws {Error} When unable to load profile data or render view.

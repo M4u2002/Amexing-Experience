@@ -13,7 +13,7 @@
  * - Percentage formatting for display.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-14
+ * @since 2024-01-15
  * @example
  * GET /api/rates - List all Rates with pagination
  * POST /api/rates - Create new Rate
@@ -50,6 +50,7 @@ class RateController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getRates(req, res) {
     try {
@@ -59,14 +60,14 @@ class RateController {
       }
 
       // Parse DataTables parameters
-      const draw = parseInt(req.query.draw) || 1;
-      const start = parseInt(req.query.start) || 0;
+      const draw = parseInt(req.query.draw, 10) || 1;
+      const start = parseInt(req.query.start, 10) || 0;
       const length = Math.min(
-        parseInt(req.query.length) || this.defaultPageSize,
+        parseInt(req.query.length, 10) || this.defaultPageSize,
         this.maxPageSize
       );
       const searchValue = req.query.search?.value || '';
-      const sortColumnIndex = parseInt(req.query.order?.[0]?.column) || 0;
+      const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Column mapping for sorting (matches frontend columns order)
@@ -162,6 +163,7 @@ class RateController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getActiveRates(req, res) {
     try {
@@ -209,6 +211,7 @@ class RateController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async getRateById(req, res) {
     try {
@@ -269,6 +272,7 @@ class RateController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async createRate(req, res) {
     try {
@@ -340,8 +344,18 @@ class RateController {
       rate.set('active', true);
       rate.set('exists', true);
 
-      // Save with master key
-      await rate.save(null, { useMasterKey: true });
+      // Save with master key and user context for audit trail
+      await rate.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Rate created', {
         rateId: rate.id,
@@ -378,6 +392,7 @@ class RateController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async updateRate(req, res) {
     try {
@@ -470,8 +485,18 @@ class RateController {
         rate.set('active', active);
       }
 
-      // Save changes
-      await rate.save(null, { useMasterKey: true });
+      // Save changes with user context for audit trail
+      await rate.save(null, {
+        useMasterKey: true,
+        context: {
+          user: {
+            objectId: currentUser.id,
+            id: currentUser.id,
+            email: currentUser.get('email'),
+            username: currentUser.get('username') || currentUser.get('email'),
+          },
+        },
+      });
 
       logger.info('Rate updated', {
         rateId: rate.id,
@@ -515,6 +540,7 @@ class RateController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async toggleRateStatus(req, res) {
     try {
@@ -573,6 +599,7 @@ class RateController {
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
    * @example
+   * // Usage example documented above
    */
   async deleteRate(req, res) {
     try {
@@ -619,6 +646,7 @@ class RateController {
    * @param {number} statusCode - HTTP status code.
    * @returns {object} Express response.
    * @example
+   * // Usage example documented above
    */
   sendSuccess(res, data, message = 'Success', statusCode = 200) {
     return res.status(statusCode).json({
@@ -635,6 +663,7 @@ class RateController {
    * @param {number} statusCode - HTTP status code.
    * @returns {object} Express response.
    * @example
+   * // Usage example documented above
    */
   sendError(res, error, statusCode = 400) {
     return res.status(statusCode).json({

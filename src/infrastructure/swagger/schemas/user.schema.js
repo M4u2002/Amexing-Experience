@@ -81,12 +81,12 @@
  *           type: string
  *           format: date-time
  *           description: User creation timestamp
- *           example: "2025-10-01T10:00:00.000Z"
+ *           example: "2024-10-01T10:00:00.000Z"
  *         updatedAt:
  *           type: string
  *           format: date-time
  *           description: Last update timestamp
- *           example: "2025-10-01T12:00:00.000Z"
+ *           example: "2024-10-01T12:00:00.000Z"
  *
  *     UserCreateRequest:
  *       type: object
@@ -230,11 +230,11 @@
  *                 timestamp:
  *                   type: string
  *                   format: date-time
- *                   example: "2025-10-01T12:00:00.000Z"
+ *                   example: "2024-10-01T12:00:00.000Z"
  *         timestamp:
  *           type: string
  *           format: date-time
- *           example: "2025-10-01T12:00:00.000Z"
+ *           example: "2024-10-01T12:00:00.000Z"
  *
  *     UserStatistics:
  *       type: object
@@ -276,7 +276,7 @@
  *             properties:
  *               month:
  *                 type: string
- *                 example: "2025-09"
+ *                 example: "2024-09"
  *               count:
  *                 type: integer
  *                 example: 35
