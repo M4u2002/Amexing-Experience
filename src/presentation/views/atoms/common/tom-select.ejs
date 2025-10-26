@@ -56,7 +56,7 @@ const defaultConfig = {
     maxOptions: 1000,
     hideSelected: selectMultiple,
     placeholder: selectPlaceholder,
-    maxItems: selectMaxItems,
+    maxItems: selectMaxItems !== null ? selectMaxItems : (selectMultiple ? null : 1),
     highlight: true,
     searchField: ['text'],
     valueField: 'value',

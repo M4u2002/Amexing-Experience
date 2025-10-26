@@ -27,14 +27,14 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         <div class="row align-items-center">
             <div class="col">
                 <h5 class="card-title mb-0 text-white">
-                    <i class="ti ti-briefcase me-2"></i>Servicios de Transporte
+                    <i class="ti ti-briefcase me-2"></i>Traslados
                 </h5>
-                <small class="text-white" style="opacity: 0.9;">Gestión de rutas y tarifas</small>
+                <small class="text-white" style="opacity: 0.9;">Gestión de traslados y tarifas</small>
             </div>
             <div class="col-auto">
                 <% if (canCreate) { %>
                     <button type="button" class="btn btn-light btn-sm" id="createServiceBtn">
-                        <i class="ti ti-plus me-1"></i>Nuevo Servicio
+                        <i class="ti ti-plus me-1"></i>Nuevo Traslado
                     </button>
                 <% } %>
             </div>
@@ -46,10 +46,13 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             <table id="<%= dtTableId %>" class="table table-hover" style="width:100%">
                 <thead class="table-light">
                     <tr>
+                        <th>Tarifa</th>
+                        <th>Tipo de Destino</th>
                         <th>Origen</th>
                         <th>Destino</th>
                         <th>Tipo de Vehículo</th>
-                        <th>Precio</th>
+                        <th>Costo</th>
+                        <th>Notas</th>
                         <th>Estado</th>
                         <% if (dtShowActions) { %>
                             <th class="text-center">Acciones</th>
@@ -68,7 +71,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title text-white" id="serviceModalLabel">
-                    <i class="ti ti-briefcase me-2"></i><span id="modalTitle">Crear Nuevo Servicio</span>
+                    <i class="ti ti-briefcase me-2"></i><span id="modalTitle">Crear Nuevo Traslado</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -86,36 +89,58 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="originPOI" class="form-label">Origen <span class="text-danger">*</span></label>
-                                <select class="form-select" id="originPOI" name="originPOI" required>
-                                    <option value="">Seleccionar origen</option>
-                                </select>
-                                <div class="form-text">Punto de inicio del servicio</div>
+                                <%- include('../../atoms/common/tom-select', {
+                                    id: 'originPOI',
+                                    name: 'originPOI',
+                                    multiple: false,
+                                    placeholder: 'Sin origen (traslado local)',
+                                    label: 'Origen',
+                                    required: false,
+                                    helpText: 'Punto de inicio (opcional para traslados locales)',
+                                    options: [],
+                                    selected: []
+                                }) %>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="destinationPOI" class="form-label">Destino <span class="text-danger">*</span></label>
-                                <select class="form-select" id="destinationPOI" name="destinationPOI" required>
-                                    <option value="">Seleccionar destino</option>
-                                </select>
-                                <div class="form-text">Punto final del servicio</div>
+                                <%- include('../../atoms/common/tom-select', {
+                                    id: 'destinationPOI',
+                                    name: 'destinationPOI',
+                                    multiple: false,
+                                    placeholder: 'Seleccionar destino',
+                                    label: 'Destino',
+                                    required: true,
+                                    helpText: 'Punto final del traslado',
+                                    options: [],
+                                    selected: []
+                                }) %>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Sección: Información del Vehículo -->
+                    <!-- Sección: Información del Vehículo y Tarifa -->
                     <div class="mb-4">
                         <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
                             <i class="ti ti-car me-1"></i>
-                            Información del Vehículo
+                            Información del Vehículo y Tarifa
                         </h6>
 
-                        <div class="mb-3">
-                            <label for="vehicleType" class="form-label">Tipo de Vehículo <span class="text-danger">*</span></label>
-                            <select class="form-select" id="vehicleType" name="vehicleType" required>
-                                <option value="">Seleccionar tipo de vehículo</option>
-                            </select>
-                            <div class="form-text">Tipo de vehículo asignado para esta ruta</div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="vehicleType" class="form-label">Tipo de Vehículo <span class="text-danger">*</span></label>
+                                <select class="form-select" id="vehicleType" name="vehicleType" required>
+                                    <option value="">Seleccionar tipo de vehículo</option>
+                                </select>
+                                <div class="form-text">Tipo de vehículo asignado para esta ruta</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="rate" class="form-label">Tarifa <span class="text-danger">*</span></label>
+                                <select class="form-select" id="rate" name="rate" required>
+                                    <option value="">Seleccionar tarifa</option>
+                                </select>
+                                <div class="form-text">Tarifa aplicable a este traslado</div>
+                            </div>
                         </div>
                     </div>
 
@@ -133,7 +158,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                 <input type="number" class="form-control" id="price" name="price" required min="0" step="0.01" placeholder="0.00">
                                 <span class="input-group-text">MXN</span>
                             </div>
-                            <div class="form-text">Precio del servicio en pesos mexicanos</div>
+                            <div class="form-text">Precio del traslado en pesos mexicanos</div>
                         </div>
                     </div>
 
@@ -146,7 +171,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
                         <div class="mb-3">
                             <label for="note" class="form-label">Nota</label>
-                            <textarea class="form-control" id="note" name="note" rows="3" maxlength="500" placeholder="Notas adicionales sobre el servicio..."></textarea>
+                            <textarea class="form-control" id="note" name="note" rows="3" maxlength="500" placeholder="Notas adicionales sobre el traslado..."></textarea>
                             <div class="form-text">Máximo 500 caracteres (opcional)</div>
                         </div>
                     </div>
@@ -155,8 +180,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     <div class="alert alert-info d-flex align-items-start" role="alert">
                         <i class="ti ti-info-circle me-2 fs-5 mt-1"></i>
                         <div>
-                            <strong>Servicio de transporte:</strong>
-                            <p class="mb-0 mt-1">Define una ruta específica con origen, destino, tipo de vehículo y precio. Este servicio estará disponible para reservaciones una vez activado.</p>
+                            <strong>Traslado:</strong>
+                            <p class="mb-0 mt-1">Define una ruta específica con origen, destino, tipo de vehículo y precio. Este traslado estará disponible para reservaciones una vez activado.</p>
                         </div>
                     </div>
                 </form>
@@ -167,7 +192,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     <i class="ti ti-x me-1"></i>Cancelar
                 </button>
                 <button type="button" class="btn btn-primary" id="saveServiceBtn">
-                    <i class="ti ti-check me-1"></i><span id="saveButtonText">Crear Servicio</span>
+                    <i class="ti ti-check me-1"></i><span id="saveButtonText">Crear Traslado</span>
                 </button>
             </div>
         </div>
@@ -226,6 +251,27 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         // Load dropdown data
         let poisData = [];
         let vehicleTypesData = [];
+        let ratesData = [];
+
+        // Color contrast functions for rate badges (from rates-table.ejs)
+        function getLuminance(hex) {
+            // WCAG 2.0 luminance calculation
+            const rgb = parseInt(hex.slice(1), 16);
+            const r = (rgb >> 16) & 0xff;
+            const g = (rgb >> 8) & 0xff;
+            const b = (rgb >> 0) & 0xff;
+
+            const [rsRGB, gsRGB, bsRGB] = [r/255, g/255, b/255].map(val => {
+                return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
+            });
+
+            return 0.2126 * rsRGB + 0.7152 * gsRGB + 0.0722 * bsRGB;
+        }
+
+        function getContrastTextColor(backgroundColor) {
+            const luminance = getLuminance(backgroundColor);
+            return luminance > 0.5 ? '#1F2937' : '#FFFFFF';
+        }
 
         // DataTable Configuration
         const dataTable = $(`#${tableId}`).DataTable({
@@ -239,28 +285,55 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 },
                 error: function(xhr, error, thrown) {
                     console.error('Error loading services:', error);
-                    showErrorAlert('Error al cargar los servicios');
+                    showErrorAlert('Error al cargar los traslados');
                 }
             },
             columns: [
+                // 1. Tarifa (movida al inicio)
+                {
+                    data: 'rate.name',
+                    render: function(data, type, row) {
+                        const color = row.rate?.color || '#6366F1';
+                        const textColor = getContrastTextColor(color);
+                        return `<span class="badge px-3 py-2" style="background-color: ${color}; color: ${textColor}; font-size: 0.875rem;">${data || '-'}</span>`;
+                    }
+                },
+                // 2. Tipo de Destino (NUEVA)
+                {
+                    data: 'destinationPOI.serviceType.name',
+                    render: function(data) {
+                        // Badge colors for service types
+                        const badgeColors = {
+                            'Aeropuerto': 'bg-primary',
+                            'Punto a Punto': 'bg-info',
+                            'Local': 'bg-success'
+                        };
+                        const badgeClass = badgeColors[data] || 'bg-secondary';
+                        return `<span class="badge ${badgeClass}">${data || '-'}</span>`;
+                    }
+                },
+                // 3. Origen
                 {
                     data: 'originPOI.name',
                     render: function(data) {
                         return `<div class="fw-semibold">${data || '-'}</div>`;
                     }
                 },
+                // 4. Destino
                 {
                     data: 'destinationPOI.name',
                     render: function(data) {
                         return `<div class="fw-semibold">${data || '-'}</div>`;
                     }
                 },
+                // 5. Tipo de Vehículo
                 {
                     data: 'vehicleType.name',
                     render: function(data) {
-                        return `<div>${data || '-'}</div>`;
+                        return `<span class="badge bg-dark">${data || '-'}</span>`;
                     }
                 },
+                // 6. Costo (antes Precio)
                 {
                     data: 'price',
                     render: function(data) {
@@ -271,6 +344,17 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         return `<div class="fw-bold text-success">${formatted}</div>`;
                     }
                 },
+                // 7. Notas (NUEVA)
+                {
+                    data: 'note',
+                    render: function(data) {
+                        if (!data) return '<span class="text-muted">-</span>';
+                        // Truncar si es muy largo
+                        const truncated = data.length > 50 ? data.substring(0, 50) + '...' : data;
+                        return `<div class="small" title="${data}">${truncated}</div>`;
+                    }
+                },
+                // 8. Estado
                 {
                     data: 'active',
                     render: function(data) {
@@ -294,13 +378,13 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                             data-id="${data.objectId || data.id}"
                                             data-bs-toggle="tooltip"
                                             data-bs-placement="top"
-                                            title="Editar Servicio">
+                                            title="Editar Traslado">
                                             <i class="ti ti-edit"></i>
                                         </button>`;
 
                             // Toggle status button - usar iconos más descriptivos
                             const statusIcon = data.active ? 'ti-archive' : 'ti-archive-off';
-                            const statusTitle = data.active ? 'Archivar Servicio' : 'Activar Servicio';
+                            const statusTitle = data.active ? 'Desactivar Traslado' : 'Activar Traslado';
                             const statusClass = data.active ? 'btn-warning' : 'btn-success';
 
                             actions += `<button type="button"
@@ -325,7 +409,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                             data-destination="${data.destinationPOI?.name}"
                                             data-bs-toggle="tooltip"
                                             data-bs-placement="top"
-                                            title="Eliminar Servicio">
+                                            title="Eliminar Traslado">
                                             <i class="ti ti-trash"></i>
                                         </button>`;
                         }
@@ -337,9 +421,15 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             ],
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json',
-                processing: '<i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando servicios...'
+                processing: '<i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando traslados...'
             },
-            order: [[3, 'asc']], // Sort by price by default
+            order: [
+                [0, 'asc'],  // 1. Tarifa
+                [1, 'asc'],  // 2. Tipo de Destino
+                [2, 'asc'],  // 3. Origen
+                [3, 'asc'],  // 4. Destino
+                [5, 'asc']   // 5. Costo
+            ],
             pageLength: 10,
             searchDelay: 300,
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
@@ -390,30 +480,59 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             saveService();
         });
 
-        // Validation: Origin !== Destination
-        $('#originPOI, #destinationPOI').on('change', function() {
-            const origin = $('#originPOI').val();
-            const destination = $('#destinationPOI').val();
-
-            if (origin && destination && origin === destination) {
-                showErrorAlert('El origen y el destino deben ser diferentes');
-                $(this).val('');
-            }
-        });
-
         // Functions
+
+        // Helper function to wait for Tom Select to be initialized
+        function waitForTomSelect(elementId, maxAttempts = 50) {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const checkInterval = setInterval(() => {
+                    const element = document.getElementById(elementId);
+                    if (element && element.tomselect) {
+                        clearInterval(checkInterval);
+                        resolve(element.tomselect);
+                    } else {
+                        attempts++;
+                        if (attempts >= maxAttempts) {
+                            clearInterval(checkInterval);
+                            reject(new Error(`Tom Select not initialized on #${elementId}`));
+                        }
+                    }
+                }, 100);
+            });
+        }
+
         function loadDropdownData() {
             // Load POIs
             $.ajax({
                 url: '/api/pois/active',
                 type: 'GET',
-                success: function(response) {
+                success: async function(response) {
                     if (response.success && response.data) {
                         poisData = response.data;
-                        const options = response.data.map(poi =>
-                            `<option value="${poi.value}">${poi.label}</option>`
-                        ).join('');
-                        $('#originPOI, #destinationPOI').append(options);
+
+                        try {
+                            // Wait for Tom Select instances to be initialized
+                            const originTS = await waitForTomSelect('originPOI');
+                            const destTS = await waitForTomSelect('destinationPOI');
+
+                            // Clear existing options
+                            originTS.clearOptions();
+                            destTS.clearOptions();
+
+                            // Add options to both Tom Select instances
+                            response.data.forEach(poi => {
+                                const option = { value: poi.value, text: poi.label };
+                                originTS.addOption(option);
+                                destTS.addOption(option);
+                            });
+
+                            // Refresh to apply changes
+                            originTS.refreshOptions(false);
+                            destTS.refreshOptions(false);
+                        } catch (error) {
+                            console.error('Error initializing Tom Select:', error);
+                        }
                     }
                 },
                 error: function(xhr) {
@@ -438,47 +557,92 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     console.error('Error loading vehicle types:', xhr);
                 }
             });
+
+            // Load Rates
+            $.ajax({
+                url: '/api/rates/active',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        ratesData = response.data;
+                        const options = response.data.map(rate =>
+                            `<option value="${rate.value}">${rate.label}</option>`
+                        ).join('');
+                        $('#rate').append(options);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error loading rates:', xhr);
+                }
+            });
         }
 
-        function openServiceModal(isEdit = false) {
+        async function openServiceModal(isEdit = false) {
             $('#serviceModal').modal('show');
             $('#serviceForm')[0].reset();
             $('#serviceId').val('');
-            $('#modalTitle').text(isEdit ? 'Editar Servicio' : 'Crear Nuevo Servicio');
-            $('#saveButtonText').text(isEdit ? 'Guardar Cambios' : 'Crear Servicio');
+            $('#modalTitle').text(isEdit ? 'Editar Traslado' : 'Crear Nuevo Traslado');
+            $('#saveButtonText').text(isEdit ? 'Guardar Cambios' : 'Crear Traslado');
+
+            try {
+                // Wait for and clear Tom Select instances
+                const originTS = await waitForTomSelect('originPOI');
+                const destTS = await waitForTomSelect('destinationPOI');
+
+                originTS.clear();
+                destTS.clear();
+            } catch (error) {
+                console.error('Error clearing Tom Select:', error);
+            }
         }
 
-        function loadServiceData(serviceId) {
+        async function loadServiceData(serviceId) {
             // Open modal first in edit mode (this will reset the form)
-            openServiceModal(true);
+            await openServiceModal(true);
 
             $.ajax({
                 url: `${apiEndpoint}/${serviceId}`,
                 type: 'GET',
-                success: function(response) {
+                success: async function(response) {
                     if (response.success && response.data) {
                         const service = response.data;
 
-                        // Populate the form with the data
-                        $('#serviceId').val(service.id);
-                        $('#originPOI').val(service.originPOI?.id);
-                        $('#destinationPOI').val(service.destinationPOI?.id);
-                        $('#vehicleType').val(service.vehicleType?.id);
-                        $('#note').val(service.note || '');
-                        $('#price').val(service.price);
+                        try {
+                            // Wait for Tom Select instances
+                            const originTS = await waitForTomSelect('originPOI');
+                            const destTS = await waitForTomSelect('destinationPOI');
+
+                            // Populate the form with the data
+                            $('#serviceId').val(service.id);
+
+                            // Set Tom Select values
+                            if (service.originPOI?.id) {
+                                originTS.setValue(service.originPOI.id);
+                            }
+                            if (service.destinationPOI?.id) {
+                                destTS.setValue(service.destinationPOI.id);
+                            }
+
+                            $('#vehicleType').val(service.vehicleType?.id);
+                            $('#rate').val(service.rate?.id);
+                            $('#note').val(service.note || '');
+                            $('#price').val(service.price);
+                        } catch (error) {
+                            console.error('Error setting Tom Select values:', error);
+                        }
                     } else {
                         showErrorAlert('Formato de respuesta inválido');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', { xhr, status, error });
-                    const errorMessage = xhr.responseJSON?.error || 'Error al cargar el servicio';
+                    const errorMessage = xhr.responseJSON?.error || 'Error al cargar el traslado';
                     showErrorAlert(errorMessage);
                 }
             });
         }
 
-        function saveService() {
+        async function saveService() {
             const form = $('#serviceForm');
             if (!form[0].checkValidity()) {
                 form[0].reportValidity();
@@ -488,57 +652,68 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             const serviceId = $('#serviceId').val();
             const isEdit = !!serviceId;
 
-            const originPOI = $('#originPOI').val();
-            const destinationPOI = $('#destinationPOI').val();
+            try {
+                // Wait for Tom Select instances
+                const originTS = await waitForTomSelect('originPOI');
+                const destTS = await waitForTomSelect('destinationPOI');
 
-            // Validate origin !== destination
-            if (originPOI === destinationPOI) {
-                showErrorAlert('El origen y el destino deben ser diferentes');
-                return;
-            }
+                // Get values from Tom Select
+                const originPOI = originTS.getValue();
+                const destinationPOI = destTS.getValue();
 
-            const serviceData = {
-                originPOI: originPOI,
-                destinationPOI: destinationPOI,
-                vehicleType: $('#vehicleType').val(),
-                note: $('#note').val().trim(),
-                price: parseFloat($('#price').val())
-            };
-
-            const url = isEdit ? `${apiEndpoint}/${serviceId}` : apiEndpoint;
-            const method = isEdit ? 'PUT' : 'POST';
-
-            $.ajax({
-                url,
-                type: method,
-                contentType: 'application/json',
-                data: JSON.stringify(serviceData),
-                success: function(response) {
-                    if (response.success) {
-                        $('#serviceModal').modal('hide');
-                        dataTable.ajax.reload();
-                        showSuccessAlert(isEdit ? 'Servicio actualizado exitosamente' : 'Servicio creado exitosamente');
-                    }
-                },
-                error: function(xhr) {
-                    let errorMessage = 'Error al guardar el servicio';
-
-                    if (xhr.responseJSON?.error) {
-                        const error = xhr.responseJSON.error;
-                        if (error.includes('already exists') || error.includes('ya existe')) {
-                            errorMessage = 'Ya existe un servicio con esta ruta y tipo de vehículo.';
-                        } else if (error.includes('required')) {
-                            errorMessage = 'Todos los campos requeridos deben ser completados.';
-                        } else if (error.includes('different') || error.includes('diferentes')) {
-                            errorMessage = 'El origen y destino deben ser diferentes.';
-                        } else {
-                            errorMessage = error;
-                        }
-                    }
-
-                    showErrorAlert(errorMessage);
+                // Validate origin !== destination (only if both exist)
+                if (originPOI && destinationPOI && originPOI === destinationPOI) {
+                    showErrorAlert('El origen y el destino deben ser diferentes');
+                    return;
                 }
-            });
+
+                const serviceData = {
+                    originPOI: originPOI || null,
+                    destinationPOI: destinationPOI,
+                    vehicleType: $('#vehicleType').val(),
+                    rate: $('#rate').val(),
+                    note: $('#note').val().trim(),
+                    price: parseFloat($('#price').val())
+                };
+
+                const url = isEdit ? `${apiEndpoint}/${serviceId}` : apiEndpoint;
+                const method = isEdit ? 'PUT' : 'POST';
+
+                $.ajax({
+                    url,
+                    type: method,
+                    contentType: 'application/json',
+                    data: JSON.stringify(serviceData),
+                    success: function(response) {
+                        if (response.success) {
+                            $('#serviceModal').modal('hide');
+                            dataTable.ajax.reload();
+                            showSuccessAlert(isEdit ? 'Traslado actualizado exitosamente' : 'Traslado creado exitosamente');
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Error al guardar el traslado';
+
+                        if (xhr.responseJSON?.error) {
+                            const error = xhr.responseJSON.error;
+                            if (error.includes('already exists') || error.includes('ya existe')) {
+                                errorMessage = 'Ya existe un traslado con esta ruta, tipo de vehículo y tarifa.';
+                            } else if (error.includes('required')) {
+                                errorMessage = 'Todos los campos requeridos deben ser completados.';
+                            } else if (error.includes('different') || error.includes('diferentes')) {
+                                errorMessage = 'El origen y destino deben ser diferentes.';
+                            } else {
+                                errorMessage = error;
+                            }
+                        }
+
+                        showErrorAlert(errorMessage);
+                    }
+                });
+            } catch (error) {
+                console.error('Error getting Tom Select values:', error);
+                showErrorAlert('Error al obtener los valores del formulario');
+            }
         }
 
         function toggleServiceStatus(serviceId, currentStatus, origin, destination) {
@@ -553,11 +728,11 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">${actionTitle} Servicio</h5>
+                                <h5 class="modal-title">${actionTitle} Traslado</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <p>¿Estás seguro de que deseas ${action} el servicio <strong>"${origin} → ${destination}"</strong>?</p>
+                                <p>¿Estás seguro de que deseas ${action} el traslado <strong>"${origin} → ${destination}"</strong>?</p>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -589,7 +764,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         if (response.success) {
                             modal.hide();
                             dataTable.ajax.reload(function() {}, false);
-                            showAlert('success', `Servicio ${newStatus ? 'activado' : 'desactivado'} exitosamente`);
+                            showAlert('success', `Traslado ${newStatus ? 'activado' : 'desactivado'} exitosamente`);
                         } else {
                             modal.hide();
                             showAlert('danger', response.error || 'Error desconocido');
@@ -598,7 +773,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     error: function(xhr) {
                         console.error('Toggle error:', xhr);
                         modal.hide();
-                        const error = xhr.responseJSON?.error || 'Error al cambiar el estado del servicio';
+                        const error = xhr.responseJSON?.error || 'Error al cambiar el estado del traslado';
                         showAlert('danger', error);
                     }
                 });
@@ -612,11 +787,11 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title text-white">Eliminar Servicio</h5>
+                                <h5 class="modal-title text-white">Eliminar Traslado</h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <p>¿Estás seguro de que deseas eliminar el servicio <strong>"${origin} → ${destination}"</strong>?</p>
+                                <p>¿Estás seguro de que deseas eliminar el traslado <strong>"${origin} → ${destination}"</strong>?</p>
                                 <p class="text-muted mb-0">Esta acción no se puede deshacer.</p>
                             </div>
                             <div class="modal-footer">
@@ -647,12 +822,12 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         if (response.success) {
                             modal.hide();
                             dataTable.ajax.reload(null, false);
-                            showAlert('success', 'Servicio eliminado exitosamente');
+                            showAlert('success', 'Traslado eliminado exitosamente');
                         }
                     },
                     error: function(xhr) {
                         modal.hide();
-                        const error = xhr.responseJSON?.error || 'Error al eliminar el servicio';
+                        const error = xhr.responseJSON?.error || 'Error al eliminar el traslado';
                         showAlert('danger', error);
                     }
                 });

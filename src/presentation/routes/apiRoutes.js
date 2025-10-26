@@ -111,6 +111,7 @@ const vehicleTypesRoutes = require('./api/vehicleTypesRoutes');
 const vehiclesRoutes = require('./api/vehiclesRoutes');
 const vehicleImagesRoutes = require('./api/vehicleImagesRoutes');
 const poisRoutes = require('./api/poisRoutes');
+const serviceTypesRoutes = require('./api/serviceTypesRoutes');
 const servicesRoutes = require('./api/servicesRoutes');
 const ratesRoutes = require('./api/ratesRoutes');
 // Experience Management API routes
@@ -130,6 +131,7 @@ router.use('/vehicle-types', vehicleTypesRoutes);
 router.use('/vehicles', vehiclesRoutes);
 router.use('/vehicles', vehicleImagesRoutes); // Vehicle images endpoints
 router.use('/pois', poisRoutes);
+router.use('/service-types', serviceTypesRoutes);
 router.use('/services', servicesRoutes);
 router.use('/rates', ratesRoutes);
 router.use('/experiences', experiencesRoutes);

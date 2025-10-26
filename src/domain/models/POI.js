@@ -68,6 +68,26 @@ class POI extends BaseModel {
     this.set('name', name);
   }
 
+  /**
+   * Get service type pointer.
+   * @returns {object} Service type pointer.
+   * @example
+   * // Usage example documented above
+   */
+  getServiceType() {
+    return this.get('serviceType');
+  }
+
+  /**
+   * Set service type pointer.
+   * @param {object} serviceType - Service type Parse object or pointer.
+   * @example
+   * // Usage example documented above
+   */
+  setServiceType(serviceType) {
+    this.set('serviceType', serviceType);
+  }
+
   // =================
   // BUSINESS LOGIC
   // =================
@@ -91,6 +111,10 @@ class POI extends BaseModel {
 
     if (this.getName() && this.getName().length > 200) {
       errors.push('Name must be 200 characters or less');
+    }
+
+    if (!this.getServiceType()) {
+      errors.push('Service type is required');
     }
 
     return {

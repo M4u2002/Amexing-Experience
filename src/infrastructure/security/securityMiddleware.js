@@ -60,6 +60,15 @@ class SecurityMiddleware {
   constructor() {
     this.isDevelopment = process.env.NODE_ENV === 'development';
     this.isProduction = process.env.NODE_ENV === 'production';
+    this.isProductionLocal = process.env.NODE_ENV === 'production-local';
+
+    // Log environment detection for debugging
+    winston.info('SecurityMiddleware initialized', {
+      environment: process.env.NODE_ENV,
+      isDevelopment: this.isDevelopment,
+      isProduction: this.isProduction,
+      isProductionLocal: this.isProductionLocal,
+    });
 
     // Initialize CSRF protection
     // eslint-disable-next-line new-cap
@@ -339,8 +348,8 @@ class SecurityMiddleware {
       saveUninitialized: true, // Changed to true for CSRF initialization
     };
 
-    // Only use MongoStore in production
-    if (process.env.NODE_ENV === 'production') {
+    // Use MongoStore in production and production-local
+    if (this.isProduction || this.isProductionLocal) {
       sessionConfig.store = MongoStore.create({
         mongoUrl:
           process.env.DATABASE_URI || 'mongodb://localhost:27017/amexingdb',
@@ -354,10 +363,33 @@ class SecurityMiddleware {
       });
     }
 
+    // Determine cookie security settings based on environment
+    // production: Requires HTTPS, strict sameSite, domain restriction
+    // production-local: HTTP compatible for localhost testing with production database
+    // development: Relaxed settings for development
+    const cookieSecure = this.isProduction
+      ? true
+      : process.env.COOKIE_SECURE === 'true' || false;
+
+    const cookieSameSite = this.isProduction
+      ? 'strict'
+      : process.env.COOKIE_SAMESITE || 'lax';
+
+    const cookieDomain = this.isProduction ? process.env.COOKIE_DOMAIN : undefined;
+
+    // Log cookie configuration for debugging
+    winston.info('Session cookie configuration', {
+      environment: process.env.NODE_ENV,
+      secure: cookieSecure,
+      sameSite: cookieSameSite,
+      domain: cookieDomain || 'undefined',
+      httpOnly: true,
+    });
+
     return session({
       ...sessionConfig,
       cookie: {
-        secure: process.env.NODE_ENV === 'production', // Explicit secure flag for HTTPS
+        secure: cookieSecure, // HTTPS required in true production only
         httpOnly: true,
         maxAge:
           parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) * 60 * 1000
@@ -368,8 +400,8 @@ class SecurityMiddleware {
               || 900000)
         ), // Explicit expires
         path: '/', // Explicit path configuration
-        sameSite: this.isProduction ? 'strict' : 'lax',
-        domain: this.isProduction ? process.env.COOKIE_DOMAIN : undefined,
+        sameSite: cookieSameSite,
+        domain: cookieDomain,
       },
       rolling: true,
       unset: 'destroy',

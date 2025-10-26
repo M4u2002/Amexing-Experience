@@ -47,6 +47,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 <thead class="table-light">
                     <tr>
                         <th>Nombre</th>
+                        <th>Tipo de Traslado</th>
                         <th>Estado</th>
                         <% if (dtShowActions) { %>
                             <th class="text-center">Acciones</th>
@@ -85,6 +86,14 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                             <label for="name" class="form-label">Nombre <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="name" name="name" required maxlength="200" placeholder="Ej: Aeropuerto Internacional de Querétaro">
                             <div class="form-text">Nombre del destino</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="serviceType" class="form-label">Tipo de Traslado <span class="text-danger">*</span></label>
+                            <select class="form-select" id="serviceType" name="serviceType" required>
+                                <option value="">Seleccionar tipo...</option>
+                            </select>
+                            <div class="form-text">Clasifica el destino según el tipo de servicio</div>
                         </div>
                     </div>
 
@@ -150,6 +159,30 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             return null;
         }
 
+        // Load service types for dropdown
+        function loadServiceTypes() {
+            $.ajax({
+                url: '/api/service-types/active',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const select = $('#serviceType');
+                        select.find('option:not(:first)').remove(); // Clear all except first option
+
+                        response.data.forEach(function(type) {
+                            select.append(new Option(type.label, type.value));
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading service types:', error);
+                }
+            });
+        }
+
+        // Load service types on init
+        loadServiceTypes();
+
         // Setup global AJAX configuration to include JWT token
         $.ajaxSetup({
             beforeSend: function(xhr) {
@@ -196,6 +229,15 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     }
                 },
                 {
+                    data: 'serviceType',
+                    render: function(data) {
+                        if (data && data.name) {
+                            return `<span class="badge bg-info">${data.name}</span>`;
+                        }
+                        return '<span class="text-muted">Sin tipo</span>';
+                    }
+                },
+                {
                     data: 'active',
                     render: function(data) {
                         return data
@@ -224,7 +266,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
                             // Toggle status button - usar iconos más descriptivos
                             const statusIcon = data.active ? 'ti-archive' : 'ti-archive-off';
-                            const statusTitle = data.active ? 'Archivar Destino' : 'Activar Destino';
+                            const statusTitle = data.active ? 'Desactivar Destino' : 'Activar Destino';
                             const statusClass = data.active ? 'btn-warning' : 'btn-success';
 
                             actions += `<button type="button"
@@ -330,6 +372,9 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         // Populate the form with the data
                         $('#poiId').val(poi.id);
                         $('#name').val(poi.name);
+                        if (poi.serviceType && poi.serviceType.id) {
+                            $('#serviceType').val(poi.serviceType.id);
+                        }
                     } else {
                         showErrorAlert('Formato de respuesta inválido');
                     }
@@ -353,7 +398,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             const isEdit = !!poiId;
 
             const poiData = {
-                name: $('#name').val().trim()
+                name: $('#name').val().trim(),
+                serviceTypeId: $('#serviceType').val()
             };
 
             const url = isEdit ? `${apiEndpoint}/${poiId}` : apiEndpoint;

@@ -421,7 +421,7 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.27.1"
 
-"@babel/runtime-corejs3@7.23.2", "@babel/runtime-corejs3@7.26.9", "@babel/runtime-corejs3@7.27.0", "@babel/runtime-corejs3@>=7.26.10":
+"@babel/runtime-corejs3@7.28.4", "@babel/runtime-corejs3@>=7.26.10":
   version "7.28.4"
   resolved "https://registry.yarnpkg.com/@babel/runtime-corejs3/-/runtime-corejs3-7.28.4.tgz#c25be39c7997ce2f130d70b9baecb8ed94df93fa"
   integrity sha512-h7iEYiW4HebClDEhtvFObtPmIvrd1SSfpI9EhOeKk4CtIK/ngBWFpuhCzhdmRKtg71ylcue+9I6dv54XYO1epQ==
@@ -5638,10 +5638,10 @@ iconv-lite@^0.6.3:
   dependencies:
     safer-buffer ">= 2.1.2 < 3.0.0"
 
-idb-keyval@6.2.1:
-  version "6.2.1"
-  resolved "https://registry.yarnpkg.com/idb-keyval/-/idb-keyval-6.2.1.tgz#94516d625346d16f56f3b33855da11bfded2db33"
-  integrity sha512-8Sb3veuYCyrZL+VBt9LJfZjLUPWVvqn8tG28VqYNFCo43KHcKuq+b4EiXGeuaLAQWL2YmyDgMp2aSpH9JHsEQg==
+idb-keyval@6.2.2:
+  version "6.2.2"
+  resolved "https://registry.yarnpkg.com/idb-keyval/-/idb-keyval-6.2.2.tgz#b0171b5f73944854a3291a5cdba8e12768c4854a"
+  integrity sha512-yjD9nARJ/jb1g+CvD0tlhUHOrJ9Sy0P8T9MF3YaLlHnSRpwPfpTX0XIvpmw3gAJUmEu3FiICLBDPXVwyEvrleg==
 
 ieee754@^1.1.13:
   version "1.2.1"
@@ -8146,45 +8146,16 @@ parse-statements@1.0.11:
   resolved "https://registry.yarnpkg.com/parse-statements/-/parse-statements-1.0.11.tgz#8787c5d383ae5746568571614be72b0689584344"
   integrity sha512-HlsyYdMBnbPQ9Jr/VgJ1YF4scnldvJpJxCVx6KgqPL4dxppsWrJHCIIxQXMJrqGnsRkNPATbeMJ8Yxu7JMsYcA==
 
-parse@6.0.0:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/parse/-/parse-6.0.0.tgz#3c286ce8f0e90e11a528ee94c661ccd6d9a5a4a7"
-  integrity sha512-uBfgO5refS/KhrKGQWEgTEjz5+m9F+Q9d6N4gbKWElGUWwoOUCBlGVgfErZOouunTwbKmpBy5f1i8KeYk46qkw==
+parse@6.0.0, parse@6.1.1, parse@^7.0.0:
+  version "7.0.2"
+  resolved "https://registry.yarnpkg.com/parse/-/parse-7.0.2.tgz#0bc7363ad08dd263b2c0b2f52b5ae5383a679741"
+  integrity sha512-HWwXFO3LBa7QdKf5hhJ32d2cT0G1ZXAIShr9r96Jn0XkQZt0X80gvyR3GNpt1PR2V2BEJjIdmkIeBs9ThJMvWw==
   dependencies:
-    "@babel/runtime-corejs3" "7.26.9"
-    idb-keyval "6.2.1"
+    "@babel/runtime-corejs3" "7.28.4"
+    idb-keyval "6.2.2"
     react-native-crypto-js "1.0.0"
     uuid "10.0.0"
-    ws "8.18.1"
-    xmlhttprequest "1.8.0"
-  optionalDependencies:
-    crypto-js "4.2.0"
-
-parse@6.1.1:
-  version "6.1.1"
-  resolved "https://registry.yarnpkg.com/parse/-/parse-6.1.1.tgz#7fee20c120db8256c65d79308dc42b54339de04b"
-  integrity sha512-zf70XcHKesDcqpO2RVKyIc1l7pngxBsYQVl0Yl/A38pftOSP8BQeampqqLEqMknzUetNZy8B+wrR3k5uTQDXOw==
-  dependencies:
-    "@babel/runtime-corejs3" "7.27.0"
-    idb-keyval "6.2.1"
-    react-native-crypto-js "1.0.0"
-    uuid "10.0.0"
-    ws "8.18.1"
-    xmlhttprequest "1.8.0"
-  optionalDependencies:
-    crypto-js "4.2.0"
-
-parse@^4.0.0:
-  version "4.3.1"
-  resolved "https://registry.yarnpkg.com/parse/-/parse-4.3.1.tgz#fbe34046f9f3a8d3ad3c6a5a75e2188ecda23d4d"
-  integrity sha512-ypLPhMPFsJY+C2MXg6HdrVu6ielsL+kUjcSqh7J01lPC5oBuLh70F9YMQSw51QBocEeMSVgB7eUorFOH+MkVpA==
-  dependencies:
-    "@babel/runtime-corejs3" "7.23.2"
-    idb-keyval "6.2.1"
-    react-native-crypto-js "1.0.0"
-    uuid "9.0.1"
-    ws "8.13.0"
-    xmlhttprequest "1.8.0"
+    ws "8.18.3"
   optionalDependencies:
     crypto-js "4.2.0"
 
@@ -10288,11 +10259,6 @@ uuid@11.1.0, uuid@^11.0.2:
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.1.0.tgz#9549028be1753bb934fc96e2bca09bb4105ae912"
   integrity sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==
 
-uuid@9.0.1, uuid@^9.0.0, uuid@^9.0.1:
-  version "9.0.1"
-  resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.1.tgz#e188d4c8853cc722220392c424cd637f32293f30"
-  integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
-
 uuid@^3.3.2:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
@@ -10302,6 +10268,11 @@ uuid@^8.0.0, uuid@^8.3.0:
   version "8.3.2"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
   integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
+
+uuid@^9.0.0, uuid@^9.0.1:
+  version "9.0.1"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.1.tgz#e188d4c8853cc722220392c424cd637f32293f30"
+  integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
 
 v8-to-istanbul@^9.0.1:
   version "9.3.0"
@@ -10607,7 +10578,7 @@ write-file-atomic@^4.0.2:
     imurmurhash "^0.1.4"
     signal-exit "^3.0.7"
 
-ws@8.13.0, ws@8.18.1, ws@8.18.2, ws@>=7.5.10, "ws@^5.2.0 || ^6.0.0 || ^7.0.0":
+ws@8.18.2, ws@8.18.3, ws@>=7.5.10, "ws@^5.2.0 || ^6.0.0 || ^7.0.0":
   version "8.18.3"
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.3.tgz#b56b88abffde62791c639170400c93dcb0c95472"
   integrity sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==
@@ -10621,11 +10592,6 @@ xmlcreate@^2.0.4:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/xmlcreate/-/xmlcreate-2.0.4.tgz#0c5ab0f99cdd02a81065fa9cd8f8ae87624889be"
   integrity sha512-nquOebG4sngPmGPICTS5EnxqhKbCmz5Ox5hsszI2T6U5qdrJizBc+0ilYSEjTSzU0yZcmvppztXe/5Al5fUwdg==
-
-xmlhttprequest@1.8.0:
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/xmlhttprequest/-/xmlhttprequest-1.8.0.tgz#67fe075c5c24fef39f9d65f5f7b7fe75171968fc"
-  integrity sha512-58Im/U0mlVBLM38NdZjHyhuMtCqa61469k2YP/AaPbvCoV9aQGUpbJBj1QRm2ytRiVQBD/fsw7L2bJGDVQswBA==
 
 xss-clean@^0.1.4:
   version "0.1.4"

@@ -72,13 +72,16 @@ class ServiceController {
 
       // Column mapping for sorting (matches frontend columns order)
       const columns = [
-        'originPOI.name',
-        'destinationPOI.name',
-        'vehicleType.name',
-        'price',
-        'active',
+        'rate.name', // 0. Tarifa
+        'destinationPOI.serviceType.name', // 1. Tipo de Destino
+        'originPOI.name', // 2. Origen
+        'destinationPOI.name', // 3. Destino
+        'vehicleType.name', // 4. Tipo de Vehículo
+        'price', // 5. Costo
+        'note', // 6. Notas
+        'active', // 7. Estado
       ];
-      const sortField = columns[sortColumnIndex] || 'price';
+      const sortField = columns[sortColumnIndex] || 'rate.name';
 
       // Get total records count (without search filter)
       const totalRecordsQuery = new Parse.Query('Service');
@@ -92,70 +95,260 @@ class ServiceController {
       baseQuery.equalTo('exists', true);
       baseQuery.include('originPOI');
       baseQuery.include('destinationPOI');
+      baseQuery.include('destinationPOI.serviceType');
       baseQuery.include('vehicleType');
+      baseQuery.include('rate');
 
       // Build filtered query with search
       let filteredQuery = baseQuery;
       if (searchValue) {
-        // Search in POI names and vehicle type
+        // Search in origin POI names
+        const originPOIQuery = new Parse.Query('POI');
+        originPOIQuery.matches('name', searchValue, 'i');
+
         const originQuery = new Parse.Query('Service');
         originQuery.equalTo('exists', true);
+        originQuery.matchesQuery('originPOI', originPOIQuery);
         originQuery.include('originPOI');
         originQuery.include('destinationPOI');
+        originQuery.include('destinationPOI.serviceType');
         originQuery.include('vehicleType');
-        originQuery.matches('originPOI.name', searchValue, 'i');
+        originQuery.include('rate');
+
+        // Search in destination POI names
+        const destPOIQuery = new Parse.Query('POI');
+        destPOIQuery.matches('name', searchValue, 'i');
 
         const destQuery = new Parse.Query('Service');
         destQuery.equalTo('exists', true);
+        destQuery.matchesQuery('destinationPOI', destPOIQuery);
         destQuery.include('originPOI');
         destQuery.include('destinationPOI');
+        destQuery.include('destinationPOI.serviceType');
         destQuery.include('vehicleType');
-        destQuery.matches('destinationPOI.name', searchValue, 'i');
+        destQuery.include('rate');
+
+        // Search in vehicle type names
+        const vehicleTypeQuery = new Parse.Query('VehicleType');
+        vehicleTypeQuery.matches('name', searchValue, 'i');
 
         const vehicleQuery = new Parse.Query('Service');
         vehicleQuery.equalTo('exists', true);
+        vehicleQuery.matchesQuery('vehicleType', vehicleTypeQuery);
         vehicleQuery.include('originPOI');
         vehicleQuery.include('destinationPOI');
+        vehicleQuery.include('destinationPOI.serviceType');
         vehicleQuery.include('vehicleType');
-        vehicleQuery.matches('vehicleType.name', searchValue, 'i');
+        vehicleQuery.include('rate');
 
-        filteredQuery = Parse.Query.or(originQuery, destQuery, vehicleQuery);
+        // Search in rate names
+        const rateTypeQuery = new Parse.Query('Rate');
+        rateTypeQuery.matches('name', searchValue, 'i');
+
+        const rateQuery = new Parse.Query('Service');
+        rateQuery.equalTo('exists', true);
+        rateQuery.matchesQuery('rate', rateTypeQuery);
+        rateQuery.include('originPOI');
+        rateQuery.include('destinationPOI');
+        rateQuery.include('destinationPOI.serviceType');
+        rateQuery.include('vehicleType');
+        rateQuery.include('rate');
+
+        filteredQuery = Parse.Query.or(originQuery, destQuery, vehicleQuery, rateQuery);
       }
 
       // Get count of filtered results
       const recordsFiltered = await filteredQuery.count({ useMasterKey: true });
 
-      // Apply sorting (Parse doesn't support nested field sorting directly)
-      // We'll sort by simple fields and handle complex sorting client-side if needed
-      if (sortField === 'price') {
-        if (sortDirection === 'asc') {
-          filteredQuery.ascending('price');
-        } else {
-          filteredQuery.descending('price');
+      // Parse Server doesn't support sorting by nested Pointer fields
+      // So we fetch all filtered results and sort in memory
+      // Then apply pagination after sorting
+
+      // Execute query without pagination first (to sort all results)
+      const allServices = await filteredQuery.find({ useMasterKey: true });
+
+      // Fetch incomplete Pointers to ensure all nested Pointers are loaded
+      // This is especially important after OR queries which may not fully hydrate nested includes
+      // Parse.Object.fetchAll requires all objects to be of the same class,
+      // so we group them by className first
+      if (allServices.length > 0) {
+        // Step 1: Fetch first-level Pointers
+        const pointersByClass = {
+          POI: [],
+          VehicleType: [],
+          Rate: [],
+        };
+
+        allServices.forEach((service) => {
+          const originPOI = service.get('originPOI');
+          const destinationPOI = service.get('destinationPOI');
+          const vehicleType = service.get('vehicleType');
+          const rate = service.get('rate');
+
+          // Check if Pointer is incomplete (doesn't have expected data)
+          // A Pointer without a 'name' property needs to be fetched
+          if (originPOI && typeof originPOI.get === 'function') {
+            try {
+              if (!originPOI.get('name')) {
+                pointersByClass.POI.push(originPOI);
+              }
+            } catch (e) {
+              pointersByClass.POI.push(originPOI);
+            }
+          }
+
+          if (destinationPOI && typeof destinationPOI.get === 'function') {
+            try {
+              if (!destinationPOI.get('name')) {
+                pointersByClass.POI.push(destinationPOI);
+              }
+            } catch (e) {
+              pointersByClass.POI.push(destinationPOI);
+            }
+          }
+
+          if (vehicleType && typeof vehicleType.get === 'function') {
+            try {
+              if (!vehicleType.get('name')) {
+                pointersByClass.VehicleType.push(vehicleType);
+              }
+            } catch (e) {
+              pointersByClass.VehicleType.push(vehicleType);
+            }
+          }
+
+          if (rate && typeof rate.get === 'function') {
+            try {
+              if (!rate.get('name')) {
+                pointersByClass.Rate.push(rate);
+              }
+            } catch (e) {
+              pointersByClass.Rate.push(rate);
+            }
+          }
+        });
+
+        // Batch fetch all incomplete first-level Pointers by class
+        const fetchPromises = [];
+        if (pointersByClass.POI.length > 0) {
+          fetchPromises.push(
+            Parse.Object.fetchAll(pointersByClass.POI, { useMasterKey: true })
+          );
         }
-      } else if (sortField === 'active') {
-        if (sortDirection === 'asc') {
-          filteredQuery.ascending('active');
-        } else {
-          filteredQuery.descending('active');
+        if (pointersByClass.VehicleType.length > 0) {
+          fetchPromises.push(
+            Parse.Object.fetchAll(pointersByClass.VehicleType, {
+              useMasterKey: true,
+            })
+          );
         }
-      } else {
-        // Default sort by price
-        filteredQuery.ascending('price');
+        if (pointersByClass.Rate.length > 0) {
+          fetchPromises.push(
+            Parse.Object.fetchAll(pointersByClass.Rate, { useMasterKey: true })
+          );
+        }
+
+        // Wait for first-level fetch operations to complete
+        if (fetchPromises.length > 0) {
+          await Promise.all(fetchPromises);
+        }
+
+        // Step 2: Now fetch nested serviceType Pointers from destinationPOI
+        const serviceTypePointers = [];
+        allServices.forEach((service) => {
+          const destinationPOI = service.get('destinationPOI');
+          if (destinationPOI && typeof destinationPOI.get === 'function') {
+            try {
+              const serviceType = destinationPOI.get('serviceType');
+              if (serviceType && typeof serviceType.get === 'function') {
+                try {
+                  if (!serviceType.get('name')) {
+                    serviceTypePointers.push(serviceType);
+                  }
+                } catch (e) {
+                  serviceTypePointers.push(serviceType);
+                }
+              }
+            } catch (e) {
+              // serviceType may not be set, continue
+            }
+          }
+        });
+
+        // Fetch ServiceType Pointers
+        if (serviceTypePointers.length > 0) {
+          await Parse.Object.fetchAll(serviceTypePointers, {
+            useMasterKey: true,
+          });
+        }
       }
 
-      // Apply pagination
-      filteredQuery.skip(start);
-      filteredQuery.limit(length);
+      // Sort services in memory (Parse doesn't support nested field sorting)
+      allServices.sort((a, b) => {
+        let valueA; let
+          valueB;
 
-      // Execute query
-      const services = await filteredQuery.find({ useMasterKey: true });
+        switch (sortField) {
+          case 'rate.name':
+            valueA = a.get('rate')?.get('name') || '';
+            valueB = b.get('rate')?.get('name') || '';
+            break;
+          case 'destinationPOI.serviceType.name':
+            valueA = a.get('destinationPOI')?.get('serviceType')?.get('name') || '';
+            valueB = b.get('destinationPOI')?.get('serviceType')?.get('name') || '';
+            break;
+          case 'originPOI.name':
+            valueA = a.get('originPOI')?.get('name') || '';
+            valueB = b.get('originPOI')?.get('name') || '';
+            break;
+          case 'destinationPOI.name':
+            valueA = a.get('destinationPOI')?.get('name') || '';
+            valueB = b.get('destinationPOI')?.get('name') || '';
+            break;
+          case 'vehicleType.name':
+            valueA = a.get('vehicleType')?.get('name') || '';
+            valueB = b.get('vehicleType')?.get('name') || '';
+            break;
+          case 'price':
+            valueA = a.get('price') || 0;
+            valueB = b.get('price') || 0;
+            break;
+          case 'note':
+            valueA = a.get('note') || '';
+            valueB = b.get('note') || '';
+            break;
+          case 'active':
+            valueA = a.get('active') ? 1 : 0;
+            valueB = b.get('active') ? 1 : 0;
+            break;
+          default:
+            valueA = a.get('rate')?.get('name') || '';
+            valueB = b.get('rate')?.get('name') || '';
+        }
+
+        // Compare values
+        let comparison = 0;
+        if (typeof valueA === 'string' && typeof valueB === 'string') {
+          comparison = valueA.localeCompare(valueB, 'es-MX');
+        } else if (typeof valueA === 'number' && typeof valueB === 'number') {
+          comparison = valueA - valueB;
+        } else {
+          comparison = String(valueA).localeCompare(String(valueB), 'es-MX');
+        }
+
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+
+      // Apply pagination after sorting
+      const services = allServices.slice(start, start + length);
 
       // Format data for DataTables
       const data = services.map((service) => {
         const originPOI = service.get('originPOI');
         const destinationPOI = service.get('destinationPOI');
+        const serviceType = destinationPOI?.get('serviceType');
         const vehicleType = service.get('vehicleType');
+        const rate = service.get('rate');
 
         return {
           id: service.id,
@@ -167,10 +360,19 @@ class ServiceController {
           destinationPOI: {
             id: destinationPOI?.id,
             name: destinationPOI?.get('name') || '-',
+            serviceType: {
+              id: serviceType?.id,
+              name: serviceType?.get('name') || '-',
+            },
           },
           vehicleType: {
             id: vehicleType?.id,
             name: vehicleType?.get('name') || '-',
+          },
+          rate: {
+            id: rate?.id,
+            name: rate?.get('name') || '-',
+            color: rate?.get('color') || '#6366F1',
           },
           note: service.get('note') || '',
           price: service.get('price') || 0,
@@ -223,7 +425,9 @@ class ServiceController {
       query.equalTo('exists', true);
       query.include('originPOI');
       query.include('destinationPOI');
+      query.include('destinationPOI.serviceType');
       query.include('vehicleType');
+      query.include('rate');
       query.ascending('price');
       query.limit(1000);
 
@@ -234,6 +438,7 @@ class ServiceController {
         const originPOI = service.get('originPOI');
         const destinationPOI = service.get('destinationPOI');
         const vehicleType = service.get('vehicleType');
+        const rate = service.get('rate');
 
         return {
           value: service.id,
@@ -241,6 +446,11 @@ class ServiceController {
           origin: originPOI?.get('name'),
           destination: destinationPOI?.get('name'),
           vehicleType: vehicleType?.get('name'),
+          rate: {
+            id: rate?.id,
+            name: rate?.get('name'),
+            color: rate?.get('color'),
+          },
           price: service.get('price'),
         };
       });
@@ -285,7 +495,9 @@ class ServiceController {
       query.equalTo('exists', true);
       query.include('originPOI');
       query.include('destinationPOI');
+      query.include('destinationPOI.serviceType');
       query.include('vehicleType');
+      query.include('rate');
       const service = await query.get(serviceId, { useMasterKey: true });
 
       if (!service) {
@@ -294,21 +506,34 @@ class ServiceController {
 
       const originPOI = service.get('originPOI');
       const destinationPOI = service.get('destinationPOI');
+      const serviceType = destinationPOI?.get('serviceType');
       const vehicleType = service.get('vehicleType');
+      const rate = service.get('rate');
 
       const data = {
         id: service.id,
-        originPOI: {
-          id: originPOI?.id,
-          name: originPOI?.get('name'),
-        },
+        originPOI: originPOI
+          ? {
+            id: originPOI.id,
+            name: originPOI.get('name'),
+          }
+          : null,
         destinationPOI: {
           id: destinationPOI?.id,
           name: destinationPOI?.get('name'),
+          serviceType: {
+            id: serviceType?.id,
+            name: serviceType?.get('name') || '-',
+          },
         },
         vehicleType: {
           id: vehicleType?.id,
           name: vehicleType?.get('name'),
+        },
+        rate: {
+          id: rate?.id,
+          name: rate?.get('name'),
+          color: rate?.get('color'),
         },
         note: service.get('note') || '',
         price: service.get('price'),
@@ -352,19 +577,16 @@ class ServiceController {
       }
 
       const {
-        originPOI, destinationPOI, vehicleType, note, price,
+        originPOI, destinationPOI, vehicleType, rate, note, price,
       } = req.body;
 
-      // Validate required fields
-      if (!originPOI) {
-        return this.sendError(res, 'El origen es requerido', 400);
-      }
-
+      // Validate required fields (origin is optional for local transfers)
       if (!destinationPOI) {
         return this.sendError(res, 'El destino es requerido', 400);
       }
 
-      if (originPOI === destinationPOI) {
+      // Validate origin !== destination (only if both exist)
+      if (originPOI && destinationPOI && originPOI === destinationPOI) {
         return this.sendError(
           res,
           'El origen y destino deben ser diferentes',
@@ -374,6 +596,10 @@ class ServiceController {
 
       if (!vehicleType) {
         return this.sendError(res, 'El tipo de vehículo es requerido', 400);
+      }
+
+      if (!rate) {
+        return this.sendError(res, 'La tarifa es requerida', 400);
       }
 
       if (!price || parseFloat(price) <= 0) {
@@ -390,11 +616,18 @@ class ServiceController {
 
       // Check if route already exists
       const existingQuery = new Parse.Query('Service');
-      existingQuery.equalTo('originPOI', {
-        __type: 'Pointer',
-        className: 'POI',
-        objectId: originPOI,
-      });
+
+      // Handle origin: if provided, filter by it; if not, filter by null/undefined
+      if (originPOI) {
+        existingQuery.equalTo('originPOI', {
+          __type: 'Pointer',
+          className: 'POI',
+          objectId: originPOI,
+        });
+      } else {
+        existingQuery.doesNotExist('originPOI');
+      }
+
       existingQuery.equalTo('destinationPOI', {
         __type: 'Pointer',
         className: 'POI',
@@ -405,24 +638,32 @@ class ServiceController {
         className: 'VehicleType',
         objectId: vehicleType,
       });
+      existingQuery.equalTo('rate', {
+        __type: 'Pointer',
+        className: 'Rate',
+        objectId: rate,
+      });
       existingQuery.equalTo('exists', true);
       const existingCount = await existingQuery.count({ useMasterKey: true });
 
       if (existingCount > 0) {
         return this.sendError(
           res,
-          'Ya existe un servicio con esta ruta y tipo de vehículo',
+          'Ya existe un servicio con esta ruta, tipo de vehículo y tarifa',
           409
         );
       }
 
       // Verify POIs exist
-      const originQuery = new Parse.Query('POI');
-      const originPOIObj = await originQuery.get(originPOI, {
-        useMasterKey: true,
-      });
-      if (!originPOIObj) {
-        return this.sendError(res, 'El origen no existe', 404);
+      let originPOIObj = null;
+      if (originPOI) {
+        const originQuery = new Parse.Query('POI');
+        originPOIObj = await originQuery.get(originPOI, {
+          useMasterKey: true,
+        });
+        if (!originPOIObj) {
+          return this.sendError(res, 'El origen no existe', 404);
+        }
       }
 
       const destQuery = new Parse.Query('POI');
@@ -442,13 +683,27 @@ class ServiceController {
         return this.sendError(res, 'El tipo de vehículo no existe', 404);
       }
 
+      // Verify Rate exists
+      const rateQuery = new Parse.Query('Rate');
+      const rateObj = await rateQuery.get(rate, {
+        useMasterKey: true,
+      });
+      if (!rateObj) {
+        return this.sendError(res, 'La tarifa no existe', 404);
+      }
+
       // Create new service using Parse.Object.extend
       const ServiceClass = Parse.Object.extend('Service');
       const service = new ServiceClass();
 
-      service.set('originPOI', originPOIObj);
+      // Set originPOI only if provided (optional for local transfers)
+      if (originPOIObj) {
+        service.set('originPOI', originPOIObj);
+      }
+
       service.set('destinationPOI', destPOIObj);
       service.set('vehicleType', vehicleTypeObj);
+      service.set('rate', rateObj);
       service.set('note', note || '');
       service.set('price', parseFloat(price));
       service.set('active', true);
@@ -469,19 +724,22 @@ class ServiceController {
 
       logger.info('Service created', {
         serviceId: service.id,
-        origin: originPOIObj.get('name'),
+        origin: originPOIObj ? originPOIObj.get('name') : 'Sin origen (local)',
         destination: destPOIObj.get('name'),
         vehicleType: vehicleTypeObj.get('name'),
+        rate: rateObj.get('name'),
         price: parseFloat(price),
         createdBy: currentUser.id,
       });
 
       const data = {
         id: service.id,
-        originPOI: {
-          id: originPOIObj.id,
-          name: originPOIObj.get('name'),
-        },
+        originPOI: originPOIObj
+          ? {
+            id: originPOIObj.id,
+            name: originPOIObj.get('name'),
+          }
+          : null,
         destinationPOI: {
           id: destPOIObj.id,
           name: destPOIObj.get('name'),
@@ -489,6 +747,11 @@ class ServiceController {
         vehicleType: {
           id: vehicleTypeObj.id,
           name: vehicleTypeObj.get('name'),
+        },
+        rate: {
+          id: rateObj.id,
+          name: rateObj.get('name'),
+          color: rateObj.get('color'),
         },
         note: service.get('note'),
         price: service.get('price'),
@@ -535,6 +798,7 @@ class ServiceController {
       query.include('originPOI');
       query.include('destinationPOI');
       query.include('vehicleType');
+      query.include('rate');
       const service = await query.get(serviceId, { useMasterKey: true });
 
       if (!service) {
@@ -542,7 +806,7 @@ class ServiceController {
       }
 
       const {
-        originPOI, destinationPOI, vehicleType, note, price, active,
+        originPOI, destinationPOI, vehicleType, rate, note, price, active,
       } = req.body;
 
       // Update originPOI if provided
@@ -592,6 +856,18 @@ class ServiceController {
         service.set('vehicleType', vehicleTypeObj);
       }
 
+      // Update rate if provided
+      if (rate) {
+        const rateQuery = new Parse.Query('Rate');
+        const rateObj = await rateQuery.get(rate, {
+          useMasterKey: true,
+        });
+        if (!rateObj) {
+          return this.sendError(res, 'La tarifa no existe', 404);
+        }
+        service.set('rate', rateObj);
+      }
+
       // Update note if provided
       if (note !== undefined) {
         if (note.length > 500) {
@@ -633,20 +909,24 @@ class ServiceController {
 
       logger.info('Service updated', {
         serviceId: service.id,
-        origin: service.get('originPOI')?.get('name'),
+        origin: service.get('originPOI')?.get('name') || 'Sin origen (local)',
         destination: service.get('destinationPOI')?.get('name'),
         vehicleType: service.get('vehicleType')?.get('name'),
+        rate: service.get('rate')?.get('name'),
         price: service.get('price'),
         active: service.get('active'),
         updatedBy: currentUser.id,
       });
 
+      const savedOriginPOI = service.get('originPOI');
       const data = {
         id: service.id,
-        originPOI: {
-          id: service.get('originPOI')?.id,
-          name: service.get('originPOI')?.get('name'),
-        },
+        originPOI: savedOriginPOI
+          ? {
+            id: savedOriginPOI.id,
+            name: savedOriginPOI.get('name'),
+          }
+          : null,
         destinationPOI: {
           id: service.get('destinationPOI')?.id,
           name: service.get('destinationPOI')?.get('name'),
@@ -654,6 +934,11 @@ class ServiceController {
         vehicleType: {
           id: service.get('vehicleType')?.id,
           name: service.get('vehicleType')?.get('name'),
+        },
+        rate: {
+          id: service.get('rate')?.id,
+          name: service.get('rate')?.get('name'),
+          color: service.get('rate')?.get('color'),
         },
         note: service.get('note'),
         price: service.get('price'),

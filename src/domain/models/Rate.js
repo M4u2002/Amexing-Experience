@@ -102,6 +102,26 @@ class Rate extends BaseModel {
       : '-';
   }
 
+  /**
+   * Get Rate color.
+   * @returns {string} Hex color code (e.g., "#6366F1").
+   * @example
+   * // Usage example documented above
+   */
+  getColor() {
+    return this.get('color') || '#6366F1';
+  }
+
+  /**
+   * Set Rate color.
+   * @param {string} color - Hex color code (#RRGGBB).
+   * @example
+   * // Usage example documented above
+   */
+  setColor(color) {
+    this.set('color', color);
+  }
+
   // =================
   // BUSINESS LOGIC
   // =================
@@ -141,6 +161,15 @@ class Rate extends BaseModel {
     if (percentage !== undefined && percentage !== null) {
       if (percentage < 0 || percentage > 100) {
         errors.push('Percentage must be between 0 and 100');
+      }
+    }
+
+    // Validate color format (optional field)
+    const color = this.getColor();
+    if (color) {
+      const hexColorRegex = /^#[0-9A-F]{6}$/i;
+      if (!hexColorRegex.test(color)) {
+        errors.push('Color must be in hexadecimal format (#RRGGBB)');
       }
     }
 

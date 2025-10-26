@@ -113,6 +113,26 @@ class Service extends BaseModel {
   }
 
   /**
+   * Get rate.
+   * @returns {object} Rate Parse object.
+   * @example
+   * // Usage example documented above
+   */
+  getRate() {
+    return this.get('rate');
+  }
+
+  /**
+   * Set rate.
+   * @param {object} rate - Rate Parse object or Pointer.
+   * @example
+   * // Usage example documented above
+   */
+  setRate(rate) {
+    this.set('rate', rate);
+  }
+
+  /**
    * Get service note.
    * @returns {string} Service note.
    * @example
@@ -178,15 +198,12 @@ class Service extends BaseModel {
   validate() {
     const errors = [];
 
-    if (!this.getOriginPOI()) {
-      errors.push('Origin POI is required');
-    }
-
+    // Origin is optional (for local transfers), destination is required
     if (!this.getDestinationPOI()) {
       errors.push('Destination POI is required');
     }
 
-    // Validate origin !== destination
+    // Validate origin !== destination (only if both exist)
     if (this.getOriginPOI() && this.getDestinationPOI()) {
       const originId = this.getOriginPOI().id;
       const destId = this.getDestinationPOI().id;
@@ -197,6 +214,10 @@ class Service extends BaseModel {
 
     if (!this.getVehicleType()) {
       errors.push('Vehicle type is required');
+    }
+
+    if (!this.getRate()) {
+      errors.push('Rate is required');
     }
 
     const price = this.getPrice();
@@ -247,15 +268,16 @@ class Service extends BaseModel {
   // =================
 
   /**
-   * Find service by route (origin, destination, vehicle type).
+   * Find service by route (origin, destination, vehicle type, rate).
    * @param {string} originId - Origin POI ID.
    * @param {string} destinationId - Destination POI ID.
    * @param {string} vehicleTypeId - VehicleType ID.
+   * @param {string} rateId - Rate ID.
    * @returns {Promise<Service|undefined>} Service or undefined.
    * @example
    * // Usage example documented above
    */
-  static async findByRoute(originId, destinationId, vehicleTypeId) {
+  static async findByRoute(originId, destinationId, vehicleTypeId, rateId) {
     try {
       const query = new Parse.Query('Service');
 
@@ -275,10 +297,16 @@ class Service extends BaseModel {
         className: 'VehicleType',
         objectId: vehicleTypeId,
       };
+      const ratePointer = {
+        __type: 'Pointer',
+        className: 'Rate',
+        objectId: rateId,
+      };
 
       query.equalTo('originPOI', originPointer);
       query.equalTo('destinationPOI', destPointer);
       query.equalTo('vehicleType', vehiclePointer);
+      query.equalTo('rate', ratePointer);
       query.equalTo('exists', true);
 
       const result = await query.first({ useMasterKey: true });
@@ -288,6 +316,7 @@ class Service extends BaseModel {
         originId,
         destinationId,
         vehicleTypeId,
+        rateId,
         error: error.message,
       });
       return undefined;
@@ -306,6 +335,7 @@ class Service extends BaseModel {
       query.include('originPOI');
       query.include('destinationPOI');
       query.include('vehicleType');
+      query.include('rate');
       query.ascending('price');
       query.limit(1000);
 
@@ -337,12 +367,46 @@ class Service extends BaseModel {
       query.equalTo('exists', true);
       query.include('originPOI');
       query.include('destinationPOI');
+      query.include('rate');
       query.limit(100);
 
       return await query.find({ useMasterKey: true });
     } catch (error) {
       logger.error('Error getting services by vehicle type', {
         vehicleTypeId,
+        error: error.message,
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Get services by rate.
+   * @param {string} rateId - Rate ID.
+   * @returns {Promise<Service[]>} Array of services.
+   * @example
+   * // Usage example documented above
+   */
+  static async getServicesByRate(rateId) {
+    try {
+      const query = new Parse.Query('Service');
+      const ratePointer = {
+        __type: 'Pointer',
+        className: 'Rate',
+        objectId: rateId,
+      };
+      query.equalTo('rate', ratePointer);
+      query.equalTo('exists', true);
+      query.include('originPOI');
+      query.include('destinationPOI');
+      query.include('vehicleType');
+      query.include('rate');
+      query.limit(100);
+
+      return await query.find({ useMasterKey: true });
+    } catch (error) {
+      logger.error('Error getting services by rate', {
+        rateId,
         error: error.message,
       });
       return [];
@@ -376,6 +440,7 @@ class Service extends BaseModel {
       query.include('originPOI');
       query.include('destinationPOI');
       query.include('vehicleType');
+      query.include('rate');
       query.limit(100);
 
       return await query.find({ useMasterKey: true });

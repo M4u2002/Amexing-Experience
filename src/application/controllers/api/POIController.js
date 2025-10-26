@@ -106,18 +106,30 @@ class POIController {
       filteredQuery.skip(start);
       filteredQuery.limit(length);
 
+      // Include serviceType pointer
+      filteredQuery.include('serviceType');
+
       // Execute query
       const pois = await filteredQuery.find({ useMasterKey: true });
 
       // Format data for DataTables
-      const data = pois.map((poi) => ({
-        id: poi.id,
-        objectId: poi.id,
-        name: poi.get('name'),
-        active: poi.get('active'),
-        createdAt: poi.createdAt,
-        updatedAt: poi.updatedAt,
-      }));
+      const data = pois.map((poi) => {
+        const serviceType = poi.get('serviceType');
+        return {
+          id: poi.id,
+          objectId: poi.id,
+          name: poi.get('name'),
+          active: poi.get('active'),
+          serviceType: serviceType
+            ? {
+              id: serviceType.id,
+              name: serviceType.get('name'),
+            }
+            : null,
+          createdAt: poi.createdAt,
+          updatedAt: poi.updatedAt,
+        };
+      });
 
       // DataTables response format
       const response = {
@@ -162,14 +174,24 @@ class POIController {
       query.equalTo('exists', true);
       query.ascending('name');
       query.limit(1000);
+      query.include('serviceType');
 
       const pois = await query.find({ useMasterKey: true });
 
       // Format for select options
-      const options = pois.map((poi) => ({
-        value: poi.id,
-        label: poi.get('name'),
-      }));
+      const options = pois.map((poi) => {
+        const serviceType = poi.get('serviceType');
+        return {
+          value: poi.id,
+          label: poi.get('name'),
+          serviceType: serviceType
+            ? {
+              id: serviceType.id,
+              name: serviceType.get('name'),
+            }
+            : null,
+        };
+      });
 
       return this.sendSuccess(
         res,
@@ -217,16 +239,24 @@ class POIController {
 
       const query = new Parse.Query('POI');
       query.equalTo('exists', true);
+      query.include('serviceType');
       const poi = await query.get(poiId, { useMasterKey: true });
 
       if (!poi) {
         return this.sendError(res, 'Punto de interés no encontrado', 404);
       }
 
+      const serviceType = poi.get('serviceType');
       const data = {
         id: poi.id,
         name: poi.get('name'),
         active: poi.get('active'),
+        serviceType: serviceType
+          ? {
+            id: serviceType.id,
+            name: serviceType.get('name'),
+          }
+          : null,
         createdAt: poi.createdAt,
         updatedAt: poi.updatedAt,
       };
@@ -265,7 +295,7 @@ class POIController {
         return this.sendError(res, 'Autenticación requerida', 401);
       }
 
-      const { name } = req.body;
+      const { name, serviceTypeId } = req.body;
 
       // Validate required fields
       if (!name || name.trim().length === 0) {
@@ -276,6 +306,27 @@ class POIController {
         return this.sendError(
           res,
           'El nombre debe tener 200 caracteres o menos',
+          400
+        );
+      }
+
+      if (!serviceTypeId) {
+        return this.sendError(res, 'El tipo de traslado es requerido', 400);
+      }
+
+      // Validate service type exists and is active
+      const serviceTypeQuery = new Parse.Query('ServiceType');
+      serviceTypeQuery.equalTo('exists', true);
+      serviceTypeQuery.equalTo('active', true);
+      let serviceType;
+      try {
+        serviceType = await serviceTypeQuery.get(serviceTypeId, {
+          useMasterKey: true,
+        });
+      } catch (error) {
+        return this.sendError(
+          res,
+          'El tipo de traslado seleccionado no existe o no está activo',
           400
         );
       }
@@ -301,6 +352,7 @@ class POIController {
       poi.set('name', name.trim());
       poi.set('active', true);
       poi.set('exists', true);
+      poi.set('serviceType', serviceType);
 
       // Save with master key and user context for audit trail
       await poi.save(null, {
@@ -318,6 +370,7 @@ class POIController {
       logger.info('POI created', {
         poiId: poi.id,
         name: poi.get('name'),
+        serviceTypeId: serviceType.id,
         createdBy: currentUser.id,
       });
 
@@ -325,6 +378,10 @@ class POIController {
         id: poi.id,
         name: poi.get('name'),
         active: poi.get('active'),
+        serviceType: {
+          id: serviceType.id,
+          name: serviceType.get('name'),
+        },
       };
 
       return this.sendSuccess(
@@ -379,7 +436,7 @@ class POIController {
         return this.sendError(res, 'Punto de interés no encontrado', 404);
       }
 
-      const { name, active } = req.body;
+      const { name, active, serviceTypeId } = req.body;
 
       // Update name if provided
       if (name && name.trim().length > 0) {
@@ -416,6 +473,25 @@ class POIController {
         poi.set('active', active);
       }
 
+      // Update service type if provided
+      if (serviceTypeId) {
+        const serviceTypeQuery = new Parse.Query('ServiceType');
+        serviceTypeQuery.equalTo('exists', true);
+        serviceTypeQuery.equalTo('active', true);
+        try {
+          const serviceType = await serviceTypeQuery.get(serviceTypeId, {
+            useMasterKey: true,
+          });
+          poi.set('serviceType', serviceType);
+        } catch (error) {
+          return this.sendError(
+            res,
+            'El tipo de traslado seleccionado no existe o no está activo',
+            400
+          );
+        }
+      }
+
       // Save changes with user context for audit trail
       await poi.save(null, {
         useMasterKey: true,
@@ -429,18 +505,31 @@ class POIController {
         },
       });
 
+      // Fetch updated POI with serviceType included
+      const updatedQuery = new Parse.Query('POI');
+      updatedQuery.include('serviceType');
+      const updatedPoi = await updatedQuery.get(poi.id, { useMasterKey: true });
+
       logger.info('POI updated', {
-        poiId: poi.id,
-        name: poi.get('name'),
-        active: poi.get('active'),
+        poiId: updatedPoi.id,
+        name: updatedPoi.get('name'),
+        active: updatedPoi.get('active'),
+        serviceTypeId: updatedPoi.get('serviceType')?.id,
         updatedBy: currentUser.id,
       });
 
+      const serviceType = updatedPoi.get('serviceType');
       const data = {
-        id: poi.id,
-        name: poi.get('name'),
-        active: poi.get('active'),
-        updatedAt: poi.updatedAt,
+        id: updatedPoi.id,
+        name: updatedPoi.get('name'),
+        active: updatedPoi.get('active'),
+        serviceType: serviceType
+          ? {
+            id: serviceType.id,
+            name: serviceType.get('name'),
+          }
+          : null,
+        updatedAt: updatedPoi.updatedAt,
       };
 
       return this.sendSuccess(
