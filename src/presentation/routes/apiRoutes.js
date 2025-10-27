@@ -7,6 +7,8 @@ const apiController = require('../../application/controllers/apiController');
 const jwtMiddleware = require('../../application/middleware/jwtMiddleware');
 const validationMiddleware = require('../../application/middleware/validationMiddleware');
 const securityMiddleware = require('../../infrastructure/security/securityMiddleware');
+const sessionRecovery = require('../../application/middleware/sessionRecoveryMiddleware');
+const sessionMetrics = require('../../infrastructure/monitoring/sessionMetrics');
 
 // Apply API rate limiter to all API routes
 router.use(securityMiddleware.getApiRateLimiter());
@@ -96,6 +98,123 @@ if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
     });
   });
 }
+
+/**
+ * @swagger
+ * /api/session/health:
+ *   get:
+ *     tags:
+ *       - Session
+ *     summary: Check session health status
+ *     description: |
+ *       Check the health status of the current session including CSRF protection,
+ *       expiration status, and session validity. This endpoint can be called by
+ *       the frontend to validate session before submitting forms or making critical requests.
+ *
+ *       **Public Endpoint** - No authentication required
+ *       **Rate Limited:** 100 requests per 15 minutes
+ *
+ *       **Health Indicators:**
+ *       - Session exists and is valid
+ *       - CSRF protection is initialized
+ *       - Session expiration time
+ *       - Warning if session is near expiration (within 5 minutes)
+ *     responses:
+ *       200:
+ *         description: Session health information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 healthy:
+ *                   type: boolean
+ *                   description: Overall session health status
+ *                 sessionExists:
+ *                   type: boolean
+ *                   description: Whether session exists
+ *                 csrfProtected:
+ *                   type: boolean
+ *                   description: Whether CSRF secret is initialized
+ *                 expiresAt:
+ *                   type: string
+ *                   format: date-time
+ *                   description: When the session will expire
+ *                 nearExpiration:
+ *                   type: boolean
+ *                   description: True if session expires within 5 minutes
+ *                 sessionId:
+ *                   type: string
+ *                   description: Truncated session ID for correlation
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Current server timestamp
+ *       500:
+ *         description: Error checking session health
+ */
+router.get('/session/health', sessionRecovery.sessionHealthEndpoint);
+
+/**
+ * @swagger
+ * /api/session/metrics:
+ *   get:
+ *     tags:
+ *       - Session
+ *     summary: Get session metrics (Admin only)
+ *     description: |
+ *       Retrieve comprehensive session and CSRF metrics for monitoring.
+ *       This endpoint provides detailed statistics about session operations,
+ *       CSRF validation, and session store health.
+ *
+ *       **Admin Only** - Requires authentication
+ *       **Rate Limited:** 100 requests per 15 minutes
+ *
+ *       **Metrics Include:**
+ *       - Session creation, touch, and destruction counts
+ *       - CSRF token generation and validation statistics
+ *       - Session health check counts
+ *       - Session store error rates
+ *       - Recent error details
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Session metrics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ */
+router.get('/session/metrics', (req, res) => {
+  try {
+    const metrics = sessionMetrics.getMetrics();
+    const healthSummary = sessionMetrics.getHealthSummary();
+    const recentErrors = sessionMetrics.getRecentErrors(20);
+
+    res.json({
+      success: true,
+      data: {
+        metrics,
+        health: healthSummary,
+        recentErrors,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Session metrics endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve session metrics',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
 // Protected API endpoints - use JWT authentication for API routes
 router.use(jwtMiddleware.authenticateToken);

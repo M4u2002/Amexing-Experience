@@ -24,6 +24,7 @@
 
 const uidSafe = require('uid-safe');
 const logger = require('../../infrastructure/logger');
+const sessionMetrics = require('../../infrastructure/monitoring/sessionMetrics');
 
 /**
  * Generates a secure CSRF secret for the session.
@@ -105,6 +106,9 @@ function autoRecoverSession() {
           ip: req.ip,
           timestamp: new Date().toISOString(),
         });
+
+        // Record recovery in metrics
+        sessionMetrics.recordSessionRecovered(req.session.id, 'csrf-secret-missing');
 
         // Set header to inform client about recovery
         res.setHeader('X-Session-Recovered', 'csrf-secret-regenerated');
@@ -230,6 +234,9 @@ function sessionHealthEndpoint(req, res) {
         : null,
       timestamp: new Date().toISOString(),
     };
+
+    // Record health check in metrics
+    sessionMetrics.recordHealthCheck(health.healthy, health.nearExpiration);
 
     // Log session health check (useful for monitoring)
     logger.debug('Session health check requested', {

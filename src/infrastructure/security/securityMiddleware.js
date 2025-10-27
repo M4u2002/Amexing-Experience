@@ -10,6 +10,7 @@ const MongoStore = require('connect-mongo');
 const winston = require('winston');
 const csrf = require('csrf');
 const uidSafe = require('uid-safe');
+const sessionMetrics = require('../monitoring/sessionMetrics');
 
 /**
  * Security Middleware - Comprehensive security protection suite for PCI DSS compliance.
@@ -353,17 +354,80 @@ class SecurityMiddleware {
 
     // Use MongoStore in production and production-local
     if (this.isProduction || this.isProductionLocal) {
-      sessionConfig.store = MongoStore.create({
-        mongoUrl:
-          process.env.DATABASE_URI || 'mongodb://localhost:27017/amexingdb',
-        collectionName: 'sessions',
-        ttl: parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) * 60 || 900,
-        autoRemove: 'native',
-        crypto: {
-          secret:
-            process.env.SESSION_SECRET || 'default-secret-change-in-production',
-        },
-      });
+      try {
+        const store = MongoStore.create({
+          mongoUrl:
+            process.env.DATABASE_URI || 'mongodb://localhost:27017/amexingdb',
+          collectionName: 'sessions',
+          ttl: parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) * 60 || 3600,
+          autoRemove: 'native',
+          crypto: {
+            secret:
+              process.env.SESSION_SECRET || 'default-secret-change-in-production',
+          },
+          // Connection options for better reliability
+          mongoOptions: {
+            maxPoolSize: 10,
+            minPoolSize: 2,
+            socketTimeoutMS: 45000,
+            serverSelectionTimeoutMS: 10000,
+            retryWrites: true,
+            retryReads: true,
+          },
+          // Touch sessions on access to extend TTL
+          touchAfter: 300, // Touch session every 5 minutes (in seconds)
+        });
+
+        // Session store error handling
+        store.on('error', (error) => {
+          winston.error('Session store error:', {
+            error: error.message,
+            stack: error.stack,
+            timestamp: new Date().toISOString(),
+          });
+          sessionMetrics.recordStoreError(error);
+        });
+
+        store.on('create', (sessionId) => {
+          winston.debug('Session created:', {
+            sessionId: `${sessionId.substring(0, 8)}***`,
+            timestamp: new Date().toISOString(),
+          });
+          sessionMetrics.recordSessionCreated(sessionId);
+        });
+
+        store.on('touch', (sessionId) => {
+          winston.debug('Session touched (extended):', {
+            sessionId: `${sessionId.substring(0, 8)}***`,
+            timestamp: new Date().toISOString(),
+          });
+          sessionMetrics.recordSessionTouched(sessionId);
+        });
+
+        store.on('destroy', (sessionId) => {
+          winston.debug('Session destroyed:', {
+            sessionId: `${sessionId.substring(0, 8)}***`,
+            timestamp: new Date().toISOString(),
+          });
+          sessionMetrics.recordSessionDestroyed(sessionId);
+        });
+
+        sessionConfig.store = store;
+
+        winston.info('MongoDB session store configured successfully', {
+          ttl: parseInt(process.env.SESSION_TIMEOUT_MINUTES, 10) * 60 || 3600,
+          touchAfter: 300,
+        });
+      } catch (error) {
+        winston.error('Failed to create MongoDB session store:', {
+          error: error.message,
+          stack: error.stack,
+        });
+
+        // Fallback to memory store if MongoDB fails
+        winston.warn('Falling back to memory session store');
+        // sessionConfig.store will remain undefined, using default MemoryStore
+      }
     }
 
     // Determine cookie security settings based on environment
@@ -600,6 +664,7 @@ class SecurityMiddleware {
             }
             const token = this.csrfProtection.create(req.session.csrfSecret);
             res.locals.csrfToken = token;
+            sessionMetrics.recordCsrfTokenGenerated();
           }
           return next();
         }
@@ -667,6 +732,12 @@ class SecurityMiddleware {
           || req.body?.csrfToken
           || req.query.csrfToken;
         if (!token) {
+          sessionMetrics.recordCsrfValidationFailure('TOKEN_MISSING', {
+            method: req.method,
+            url: req.originalUrl,
+            ip: req.ip,
+          });
+
           return res.status(403).json({
             error: 'CSRF Error',
             message: 'CSRF token missing',
@@ -675,13 +746,27 @@ class SecurityMiddleware {
         }
 
         if (!this.csrfProtection.verify(secret, token)) {
-          winston.warn('CSRF token verification failed', {
+          // Enhanced logging for CSRF failures with session context
+          const context = {
             ip: req.ip,
-            userAgent: req.get('User-Agent'),
+            userAgent: req.get('User-Agent')?.substring(0, 100),
             method: req.method,
             url: req.originalUrl,
             sessionID: req.session?.id,
-          });
+            hasSession: !!req.session,
+            hasSecret: !!secret,
+            hasToken: !!token,
+            tokenLength: token ? token.length : 0,
+            sessionAge: req.session?.cookie?.maxAge,
+            timestamp: new Date().toISOString(),
+            // Check if session is near expiration
+            sessionNearExpiration: req.session?.cookie?.expires
+              ? new Date(req.session.cookie.expires).getTime() - Date.now() < 300000
+              : false,
+          };
+
+          winston.warn('CSRF token verification failed', context);
+          sessionMetrics.recordCsrfValidationFailure('TOKEN_INVALID', context);
 
           return res.status(403).json({
             error: 'CSRF Error',
@@ -691,6 +776,8 @@ class SecurityMiddleware {
           });
         }
 
+        // CSRF validation successful
+        sessionMetrics.recordCsrfValidationSuccess();
         next();
       } catch (error) {
         winston.error('CSRF middleware error:', error);
