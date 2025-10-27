@@ -95,11 +95,7 @@ class AdminController extends RoleBasedController {
       const currentUser = req.user;
 
       if (!clientId) {
-        return this.handleError(
-          res,
-          new Error('ID de cliente no proporcionado'),
-          400
-        );
+        return this.handleError(res, new Error('ID de cliente no proporcionado'), 400);
       }
 
       if (!currentUser) {
@@ -139,10 +135,7 @@ class AdminController extends RoleBasedController {
         email: client.email || client.get?.('email'),
         username: client.username || client.get?.('username'),
         phone: client.phone || client.get?.('phone'),
-        active:
-          typeof client.active !== 'undefined'
-            ? client.active
-            : client.get?.('active'),
+        active: typeof client.active !== 'undefined' ? client.active : client.get?.('active'),
         companyName:
           client.companyName
           || client.get?.('companyName')
@@ -164,8 +157,7 @@ class AdminController extends RoleBasedController {
           || client.contextualData?.notes
           || client.get?.('contextualData')?.notes,
         address: client.address || client.get?.('address') || {},
-        contextualData:
-          client.contextualData || client.get?.('contextualData') || {},
+        contextualData: client.contextualData || client.get?.('contextualData') || {},
         createdAt: client.createdAt || client.get?.('createdAt'),
         updatedAt: client.updatedAt || client.get?.('updatedAt'),
       };

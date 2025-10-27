@@ -142,19 +142,13 @@ class RoleAuthorizationService {
    * });
    */
   validateRoleAccess(user, requiredRoles, options = {}) {
-    const {
-      throwError = false,
-      context = 'unknown',
-      explicitRole = null,
-    } = options;
+    const { throwError = false, context = 'unknown', explicitRole = null } = options;
 
     // Extract user role
     const userRole = this.extractUserRole(user, explicitRole);
 
     // Normalize requiredRoles to array
-    const roles = Array.isArray(requiredRoles)
-      ? requiredRoles
-      : [requiredRoles];
+    const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
 
     // Check if user has required role
     const hasAccess = roles.includes(userRole);
@@ -170,9 +164,7 @@ class RoleAuthorizationService {
 
     // Throw error if required
     if (!hasAccess && throwError) {
-      const error = new Error(
-        `Insufficient permissions. Required: ${roles.join(', ')}, Current: ${userRole}`
-      );
+      const error = new Error(`Insufficient permissions. Required: ${roles.join(', ')}, Current: ${userRole}`);
       error.code = 'INSUFFICIENT_PERMISSIONS';
       error.userRole = userRole;
       error.requiredRoles = roles;
@@ -267,9 +259,7 @@ class RoleAuthorizationService {
     });
 
     if (!hasAccess && throwError) {
-      const error = new Error(
-        `Organization access denied. Required: ${organization}, Current: ${userOrganization}`
-      );
+      const error = new Error(`Organization access denied. Required: ${organization}, Current: ${userOrganization}`);
       error.code = 'ORGANIZATION_ACCESS_DENIED';
       error.userOrganization = userOrganization;
       error.requiredOrganization = organization;
@@ -297,9 +287,7 @@ class RoleAuthorizationService {
    * // Returns: ['superadmin', 'admin', 'employee_amexing', 'driver']
    */
   getRolesByOrganization(organization) {
-    return Object.keys(this.roleOrganizations).filter(
-      (role) => this.roleOrganizations[role] === organization
-    );
+    return Object.keys(this.roleOrganizations).filter((role) => this.roleOrganizations[role] === organization);
   }
 
   /**
@@ -385,9 +373,7 @@ class RoleAuthorizationService {
     }
 
     if (!passed && throwError) {
-      const error = new Error(
-        `Multiple authorization rules failed: ${failures.join(', ')}`
-      );
+      const error = new Error(`Multiple authorization rules failed: ${failures.join(', ')}`);
       error.code = 'MULTIPLE_AUTHORIZATION_FAILED';
       error.failures = failures;
 

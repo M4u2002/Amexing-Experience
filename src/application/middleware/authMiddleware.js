@@ -41,9 +41,7 @@ class AuthMiddleware {
   async requireAuth(req, res, next) {
     try {
       // Check for session token in headers or session
-      const sessionToken = req.headers['x-parse-session-token']
-        || req.session?.sessionToken
-        || req.cookies?.sessionToken;
+      const sessionToken = req.headers['x-parse-session-token'] || req.session?.sessionToken || req.cookies?.sessionToken;
 
       if (!sessionToken) {
         return res.status(401).json({
@@ -105,9 +103,7 @@ class AuthMiddleware {
    */
   async optionalAuth(req, res, next) {
     try {
-      const sessionToken = req.headers['x-parse-session-token']
-        || req.session?.sessionToken
-        || req.cookies?.sessionToken;
+      const sessionToken = req.headers['x-parse-session-token'] || req.session?.sessionToken || req.cookies?.sessionToken;
 
       if (sessionToken) {
         const user = await Parse.User.become(sessionToken);

@@ -46,9 +46,7 @@ const authenticateToken = async (req, res, next) => {
       logger.debug('JWT Middleware - Auth header:', {
         headerPresent: !!authHeader,
       });
-      token = authHeader && authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : null;
+      token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
     }
 
     if (!token) {
@@ -157,9 +155,7 @@ const authenticateOptional = async (req, res, next) => {
 
     if (!token) {
       const authHeader = req.headers.authorization;
-      token = authHeader && authHeader.startsWith('Bearer ')
-        ? authHeader.slice(7)
-        : null;
+      token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
     }
 
     if (!token) {
@@ -251,9 +247,7 @@ const requirePermission = (permission, contextExtractor = () => ({})) => async (
     }
 
     // Extract context for permission check
-    const context = typeof contextExtractor === 'function'
-      ? contextExtractor(req)
-      : contextExtractor || {};
+    const context = typeof contextExtractor === 'function' ? contextExtractor(req) : contextExtractor || {};
 
     // Check if user has permission
     const hasPermission = await req.user.hasPermission(permission, context);
@@ -362,10 +356,7 @@ const requireOrganizationScope = (requiredScope = 'own') => async (req, res, nex
 
     switch (requiredScope) {
       case 'own':
-        if (
-          targetOrganizationId
-            && userOrganizationId !== targetOrganizationId
-        ) {
+        if (targetOrganizationId && userOrganizationId !== targetOrganizationId) {
           return res.status(403).json({
             success: false,
             error: 'Access limited to your own organization',
@@ -378,10 +369,7 @@ const requireOrganizationScope = (requiredScope = 'own') => async (req, res, nex
           // Amexing users can access any client organization
           break;
         }
-        if (
-          targetOrganizationId
-            && userOrganizationId !== targetOrganizationId
-        ) {
+        if (targetOrganizationId && userOrganizationId !== targetOrganizationId) {
           return res.status(403).json({
             success: false,
             error: 'Access limited to your own organization',

@@ -21,15 +21,7 @@ class DashboardAuthMiddleware {
 
     // Define role-based dashboard access permissions
     this.dashboardPermissions = {
-      superadmin: [
-        'superadmin',
-        'admin',
-        'client',
-        'department_manager',
-        'employee',
-        'driver',
-        'guest',
-      ],
+      superadmin: ['superadmin', 'admin', 'client', 'department_manager', 'employee', 'driver', 'guest'],
       admin: ['admin', 'client', 'department_manager', 'employee', 'driver'],
       client: ['client', 'department_manager', 'employee'],
       department_manager: ['department_manager', 'employee'],
@@ -57,11 +49,7 @@ class DashboardAuthMiddleware {
 
     // Guard condition: prevent circular redirects to login
     const currentPath = req.path;
-    if (
-      currentPath === '/login'
-      || currentPath.startsWith('/auth/')
-      || currentPath === '/logout'
-    ) {
+    if (currentPath === '/login' || currentPath.startsWith('/auth/') || currentPath === '/logout') {
       return next();
     }
 
@@ -69,9 +57,7 @@ class DashboardAuthMiddleware {
     const sessionToken = req.cookies?.sessionToken;
 
     if (!accessToken && !sessionToken) {
-      return res.redirect(
-        `/login?returnTo=${encodeURIComponent(req.originalUrl)}`
-      );
+      return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
     }
 
     // Extract user info from JWT token if available
@@ -126,18 +112,12 @@ class DashboardAuthMiddleware {
     const currentPath = req.path;
 
     // Guard condition: skip role checks for auth routes
-    if (
-      currentPath === '/login'
-      || currentPath.startsWith('/auth/')
-      || currentPath === '/logout'
-    ) {
+    if (currentPath === '/login' || currentPath.startsWith('/auth/') || currentPath === '/logout') {
       return next();
     }
 
     if (!req.user) {
-      return res.redirect(
-        `/login?returnTo=${encodeURIComponent(req.originalUrl)}`
-      );
+      return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
     }
 
     const userRole = req.user.role;
@@ -173,9 +153,7 @@ class DashboardAuthMiddleware {
    */
   requireDashboardAccess = (req, res, next) => {
     if (!req.user) {
-      return res.redirect(
-        `/login?returnTo=${encodeURIComponent(req.originalUrl)}`
-      );
+      return res.redirect(`/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
     }
 
     // Extract requested dashboard role from URL
@@ -192,28 +170,17 @@ class DashboardAuthMiddleware {
     const allowedDashboards = this.dashboardPermissions[userRole] || [];
 
     // Check if the requested dashboard is valid
-    if (
-      !Object.prototype.hasOwnProperty.call(
-        this.roleHierarchy,
-        requestedDashboard
-      )
-    ) {
-      logger.warn(
-        'Invalid dashboard requested - redirecting to user dashboard:',
-        {
-          userId: req.user.id,
-          userRole,
-          requestedDashboard,
-        }
-      );
+    if (!Object.prototype.hasOwnProperty.call(this.roleHierarchy, requestedDashboard)) {
+      logger.warn('Invalid dashboard requested - redirecting to user dashboard:', {
+        userId: req.user.id,
+        userRole,
+        requestedDashboard,
+      });
       return res.redirect(`/dashboard/${userRole}`);
     }
 
     // Allow access if user has permission OR if it's their own dashboard
-    if (
-      allowedDashboards.includes(requestedDashboard)
-      || requestedDashboard === userRole
-    ) {
+    if (allowedDashboards.includes(requestedDashboard) || requestedDashboard === userRole) {
       next();
     } else {
       logger.warn('Dashboard access denied - redirecting to user dashboard:', {
@@ -349,11 +316,7 @@ class DashboardAuthMiddleware {
 
     // Guard condition: only apply to login/register pages
     const currentPath = req.path;
-    if (
-      currentPath !== '/login'
-      && currentPath !== '/register'
-      && !currentPath.startsWith('/auth/')
-    ) {
+    if (currentPath !== '/login' && currentPath !== '/register' && !currentPath.startsWith('/auth/')) {
       return next();
     }
 

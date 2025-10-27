@@ -304,8 +304,7 @@ class SessionMetrics {
         storeErrorRate: this.getStoreErrorRate(),
         sessionSuccessRate:
           this.metrics.sessionsCreated > 0
-            ? (this.metrics.sessionsCreated - this.metrics.storeErrors)
-              / this.metrics.sessionsCreated
+            ? (this.metrics.sessionsCreated - this.metrics.storeErrors) / this.metrics.sessionsCreated
             : 1,
       },
       recentErrorCount: this.recentErrors.length,
@@ -330,10 +329,10 @@ class SessionMetrics {
     const storeErrorRate = this.getStoreErrorRate();
 
     return {
-      overall: csrfFailureRate < this.thresholds.csrfFailureRate
-        && storeErrorRate < this.thresholds.storeErrorRate
-        ? 'healthy'
-        : 'degraded',
+      overall:
+        csrfFailureRate < this.thresholds.csrfFailureRate && storeErrorRate < this.thresholds.storeErrorRate
+          ? 'healthy'
+          : 'degraded',
       csrf: {
         status: csrfFailureRate < this.thresholds.csrfFailureRate ? 'healthy' : 'warning',
         failureRate: csrfFailureRate,

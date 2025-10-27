@@ -228,9 +228,7 @@ class Experience extends BaseModel {
    * // Usage example documented above
    */
   getDisplayName() {
-    const packageInfo = this.isPackage()
-      ? ` (${this.getIncludedCount()} experiencias)`
-      : '';
+    const packageInfo = this.isPackage() ? ` (${this.getIncludedCount()} experiencias)` : '';
     return `${this.getName()}${packageInfo}`;
   }
 

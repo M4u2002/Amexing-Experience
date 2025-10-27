@@ -2,7 +2,8 @@
  * Vehicle - Domain model for fleet vehicle management.
  *
  * Manages the physical vehicle inventory used for transportation services.
- * Each vehicle has a type (Pointer to VehicleType), capacity, and maintenance information.
+ * Each vehicle has a type (Pointer to VehicleType), optional rate (Pointer to Rate),
+ * capacity, and maintenance information.
  *
  * Lifecycle States:
  * - active: true, exists: true = Available for bookings
@@ -10,12 +11,13 @@
  * - active: false, exists: false = Soft deleted (audit trail only).
  * @augments BaseModel
  * @author Amexing Development Team
- * @version 1.0.0
+ * @version 1.1.0
  * @since 2024-01-15
  * @example
- * // Create new vehicle
+ * // Create new vehicle with rate
  * const vehicle = new Vehicle();
  * vehicle.setVehicleType(vehicleTypePointer);
+ * vehicle.setRate(ratePointer); // Optional
  * vehicle.setBrand('Mercedes-Benz');
  * vehicle.setModel('Clase E');
  * vehicle.setYear(2024);
@@ -89,6 +91,35 @@ class Vehicle extends BaseModel {
    */
   setService(service) {
     this.set('serviceId', service);
+  }
+
+  /**
+   * Get rate (Pointer to Rate).
+   * @returns {Parse.Object} Rate pointer.
+   * @example
+   * const rate = vehicle.getRate();
+   * if (rate) {
+   *   console.log('Rate:', rate.get('name'));
+   * }
+   */
+  getRate() {
+    return this.get('rateId');
+  }
+
+  /**
+   * Set rate.
+   * @param {Parse.Object|null} rate - Rate pointer or null to remove rate.
+   * @example
+   * vehicle.setRate(ratePointer);
+   * // Or remove rate
+   * vehicle.setRate(null);
+   */
+  setRate(rate) {
+    if (rate === null) {
+      this.unset('rateId');
+    } else {
+      this.set('rateId', rate);
+    }
   }
 
   /**
@@ -292,12 +323,7 @@ class Vehicle extends BaseModel {
    * // Usage example documented above
    */
   setMaintenanceStatus(status) {
-    const validStatuses = [
-      'operational',
-      'maintenance',
-      'repair',
-      'out_of_service',
-    ];
+    const validStatuses = ['operational', 'maintenance', 'repair', 'out_of_service'];
     if (!validStatuses.includes(status)) {
       throw new Error(`Invalid maintenance status: ${status}`);
     }

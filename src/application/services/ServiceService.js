@@ -78,13 +78,7 @@ class ServiceService {
    * //   newStatus: false
    * // }
    */
-  async toggleServiceStatus(
-    currentUser,
-    serviceId,
-    targetStatus,
-    reason = '',
-    userRole = null
-  ) {
+  async toggleServiceStatus(currentUser, serviceId, targetStatus, reason = '', userRole = null) {
     try {
       // Validate user authentication
       if (!currentUser) {
@@ -96,9 +90,7 @@ class ServiceService {
 
       // Validate user permissions
       if (!this.allowedRoles.includes(role)) {
-        throw new Error(
-          `Unauthorized: Role '${role}' cannot toggle Service status`
-        );
+        throw new Error(`Unauthorized: Role '${role}' cannot toggle Service status`);
       }
 
       // Validate Service ID
@@ -214,9 +206,7 @@ class ServiceService {
 
       // Validate user permissions (only superadmin and admin)
       if (!['superadmin', 'admin'].includes(role)) {
-        throw new Error(
-          `Unauthorized: Role '${role}' cannot delete Services`
-        );
+        throw new Error(`Unauthorized: Role '${role}' cannot delete Services`);
       }
 
       // Validate Service ID

@@ -68,11 +68,7 @@ class BulkImportController {
         if (ext === '.xlsx' || ext === '.xls') {
           cb(null, true);
         } else {
-          cb(
-            new Error(
-              'Tipo de archivo no permitido. Solo se aceptan archivos .xlsx o .xls'
-            )
-          );
+          cb(new Error('Tipo de archivo no permitido. Solo se aceptan archivos .xlsx o .xls'));
         }
       },
     });
@@ -98,11 +94,7 @@ class BulkImportController {
       // Verify permissions
       const userRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(userRole)) {
-        return this.sendError(
-          res,
-          'No tienes permisos para descargar la plantilla',
-          403
-        );
+        return this.sendError(res, 'No tienes permisos para descargar la plantilla', 403);
       }
 
       // Generate Excel template
@@ -200,21 +192,19 @@ class BulkImportController {
       };
 
       // Add data validation for email column
-      clientsSheet
-        .getColumn('email')
-        .eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-          if (rowNumber > 1) {
-            // eslint-disable-next-line no-param-reassign -- ExcelJS requires direct property assignment to cell objects
-            cell.dataValidation = {
-              type: 'textLength',
-              operator: 'lessThanOrEqual',
-              showErrorMessage: true,
-              formulae: [255],
-              errorTitle: 'Email demasiado largo',
-              error: 'El email no debe exceder 255 caracteres',
-            };
-          }
-        });
+      clientsSheet.getColumn('email').eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+        if (rowNumber > 1) {
+          // eslint-disable-next-line no-param-reassign -- ExcelJS requires direct property assignment to cell objects
+          cell.dataValidation = {
+            type: 'textLength',
+            operator: 'lessThanOrEqual',
+            showErrorMessage: true,
+            formulae: [255],
+            errorTitle: 'Email demasiado largo',
+            error: 'El email no debe exceder 255 caracteres',
+          };
+        }
+      });
 
       // Add comments to header cells
       const comments = {
@@ -412,14 +402,8 @@ class BulkImportController {
       });
 
       // Set response headers for file download
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      );
-      res.setHeader(
-        'Content-Disposition',
-        'attachment; filename=plantilla-importacion-clientes.xlsx'
-      );
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=plantilla-importacion-clientes.xlsx');
 
       // Write to response
       await workbook.xlsx.write(res);
@@ -459,11 +443,7 @@ class BulkImportController {
       // Verify permissions
       const userRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(userRole)) {
-        return this.sendError(
-          res,
-          'No tienes permisos para importar clientes',
-          403
-        );
+        return this.sendError(res, 'No tienes permisos para importar clientes', 403);
       }
 
       // Check if file was uploaded
@@ -490,21 +470,14 @@ class BulkImportController {
         // eslint-disable-next-line security/detect-non-literal-fs-filename -- filePath is from multer-generated secure filename in controlled uploadDir
         await fs.unlink(filePath).catch(() => {});
 
-        return this.sendError(
-          res,
-          validation.errors.join(', '),
-          400,
-          validation.errors
-        );
+        return this.sendError(res, validation.errors.join(', '), 400, validation.errors);
       }
 
       // Parse file
       const parseResult = await this.bulkImportService.parseExcelFile(filePath);
 
       // Validate records
-      const validationResult = await this.bulkImportService.validateRecords(
-        parseResult.records
-      );
+      const validationResult = await this.bulkImportService.validateRecords(parseResult.records);
 
       // Store job info
       const jobId = crypto.randomBytes(16).toString('hex');
@@ -540,10 +513,7 @@ class BulkImportController {
             invalid: validationResult.invalid.length,
             total: validationResult.summary.total,
           },
-          invalidRecords:
-            validationResult.invalid.length > 0
-              ? validationResult.invalid
-              : undefined,
+          invalidRecords: validationResult.invalid.length > 0 ? validationResult.invalid : undefined,
         },
         'Archivo validado exitosamente',
         200
@@ -633,11 +603,7 @@ class BulkImportController {
         userId: req.user?.id,
       });
 
-      this.sendError(
-        res,
-        error.message || 'Error al procesar importación',
-        500
-      );
+      this.sendError(res, error.message || 'Error al procesar importación', 500);
     }
   }
 
@@ -652,15 +618,11 @@ class BulkImportController {
   async processImportAsync(jobId, job, currentUser) {
     try {
       // Process valid records
-      const result = await this.bulkImportService.bulkCreateClients(
-        job.validation.valid,
-        currentUser,
-        (progress) => {
-          // Update job progress
-          // eslint-disable-next-line no-param-reassign -- Mutating job object is required for progress tracking in async operation
-          job.progress = progress;
-        }
-      );
+      const result = await this.bulkImportService.bulkCreateClients(job.validation.valid, currentUser, (progress) => {
+        // Update job progress
+        // eslint-disable-next-line no-param-reassign -- Mutating job object is required for progress tracking in async operation
+        job.progress = progress;
+      });
 
       // Update job status
       // eslint-disable-next-line no-param-reassign -- Mutating job object is required for status tracking in async operation
@@ -672,15 +634,10 @@ class BulkImportController {
 
       // Generate error report if needed
       if (result.failed.length > 0) {
-        const errorReport = await this.bulkImportService.generateErrorReport(
-          result.failed
-        );
+        const errorReport = await this.bulkImportService.generateErrorReport(result.failed);
         // Sanitize jobId to prevent path traversal (remove any path separators)
         const sanitizedJobId = jobId.replace(/[/\\]/g, '');
-        const errorReportPath = path.join(
-          this.uploadDir,
-          `error-report-${sanitizedJobId}.xlsx`
-        );
+        const errorReportPath = path.join(this.uploadDir, `error-report-${sanitizedJobId}.xlsx`);
         // errorReportPath is constructed from controlled uploadDir + fixed prefix + sanitized jobId
         // eslint-disable-next-line security/detect-non-literal-fs-filename -- errorReportPath is constructed from controlled uploadDir with fixed prefix and sanitized jobId
         await fs.writeFile(errorReportPath, errorReport);
@@ -810,14 +767,8 @@ class BulkImportController {
       }
 
       // Send file
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=reporte-errores-${jobId}.xlsx`
-      );
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=reporte-errores-${jobId}.xlsx`);
 
       // job.errorReportPath is generated from uploadDir + fixed prefix + jobId, ensuring path safety
       // eslint-disable-next-line security/detect-non-literal-fs-filename -- job.errorReportPath is constructed from controlled uploadDir with sanitized jobId

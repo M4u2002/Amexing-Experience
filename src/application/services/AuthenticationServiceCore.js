@@ -80,25 +80,15 @@ class AuthenticationServiceCore {
 
     required.forEach((field) => {
       // eslint-disable-next-line security/detect-object-injection
-      if (
-        !userData[field]
-        || typeof userData[field] !== 'string'
-        || userData[field].trim() === ''
-      ) {
-        throw new Parse.Error(
-          Parse.Error.VALIDATION_ERROR,
-          `${field} is required`
-        );
+      if (!userData[field] || typeof userData[field] !== 'string' || userData[field].trim() === '') {
+        throw new Parse.Error(Parse.Error.VALIDATION_ERROR, `${field} is required`);
       }
     });
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
-      throw new Parse.Error(
-        Parse.Error.VALIDATION_ERROR,
-        'Invalid email format'
-      );
+      throw new Parse.Error(Parse.Error.VALIDATION_ERROR, 'Invalid email format');
     }
 
     // Validate username format (alphanumeric and underscores only)
@@ -143,10 +133,7 @@ class AuthenticationServiceCore {
 
     // Throw error if username already taken
     if (existingUsername) {
-      throw new Parse.Error(
-        Parse.Error.USERNAME_TAKEN,
-        'Username already exists'
-      );
+      throw new Parse.Error(Parse.Error.USERNAME_TAKEN, 'Username already exists');
     }
   }
 
@@ -274,13 +261,10 @@ class AuthenticationServiceCore {
       } catch (roleError) {
         // Fall back to old role field if new relationship fails
         roleName = user.get('role') || 'guest';
-        logger.warn(
-          'Failed to resolve role from Pointer, falling back to string role',
-          {
-            userId: user.id,
-            error: roleError.message,
-          }
-        );
+        logger.warn('Failed to resolve role from Pointer, falling back to string role', {
+          userId: user.id,
+          error: roleError.message,
+        });
       }
     } else {
       // Fall back to old role field if no roleId
@@ -297,17 +281,11 @@ class AuthenticationServiceCore {
       iat: Math.floor(Date.now() / 1000),
     };
 
-    const accessToken = jwt.sign(
-      { ...payload, type: 'access' },
-      this.jwtSecret,
-      { expiresIn: this.jwtExpiresIn }
-    );
+    const accessToken = jwt.sign({ ...payload, type: 'access' }, this.jwtSecret, { expiresIn: this.jwtExpiresIn });
 
-    const refreshToken = jwt.sign(
-      { ...payload, type: 'refresh' },
-      this.jwtSecret,
-      { expiresIn: this.refreshExpiresIn }
-    );
+    const refreshToken = jwt.sign({ ...payload, type: 'refresh' }, this.jwtSecret, {
+      expiresIn: this.refreshExpiresIn,
+    });
 
     return {
       accessToken,

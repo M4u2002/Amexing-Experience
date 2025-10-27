@@ -62,10 +62,7 @@ class ServiceController {
       // Parse DataTables parameters
       const draw = parseInt(req.query.draw, 10) || 1;
       const start = parseInt(req.query.start, 10) || 0;
-      const length = Math.min(
-        parseInt(req.query.length, 10) || this.defaultPageSize,
-        this.maxPageSize
-      );
+      const length = Math.min(parseInt(req.query.length, 10) || this.defaultPageSize, this.maxPageSize);
       const searchValue = req.query.search?.value || '';
       const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
@@ -231,9 +228,7 @@ class ServiceController {
         // Batch fetch all incomplete first-level Pointers by class
         const fetchPromises = [];
         if (pointersByClass.POI.length > 0) {
-          fetchPromises.push(
-            Parse.Object.fetchAll(pointersByClass.POI, { useMasterKey: true })
-          );
+          fetchPromises.push(Parse.Object.fetchAll(pointersByClass.POI, { useMasterKey: true }));
         }
         if (pointersByClass.VehicleType.length > 0) {
           fetchPromises.push(
@@ -243,9 +238,7 @@ class ServiceController {
           );
         }
         if (pointersByClass.Rate.length > 0) {
-          fetchPromises.push(
-            Parse.Object.fetchAll(pointersByClass.Rate, { useMasterKey: true })
-          );
+          fetchPromises.push(Parse.Object.fetchAll(pointersByClass.Rate, { useMasterKey: true }));
         }
 
         // Wait for first-level fetch operations to complete
@@ -285,8 +278,8 @@ class ServiceController {
 
       // Sort services in memory (Parse doesn't support nested field sorting)
       allServices.sort((a, b) => {
-        let valueA; let
-          valueB;
+        let valueA;
+        let valueB;
 
         switch (sortField) {
           case 'rate.name':
@@ -400,9 +393,7 @@ class ServiceController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Error al obtener los servicios',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Error al obtener los servicios',
         500
       );
     }
@@ -455,11 +446,7 @@ class ServiceController {
         };
       });
 
-      return this.sendSuccess(
-        res,
-        options,
-        'Active services retrieved successfully'
-      );
+      return this.sendSuccess(res, options, 'Active services retrieved successfully');
     } catch (error) {
       logger.error('Error in ServiceController.getActiveServices', {
         error: error.message,
@@ -587,11 +574,7 @@ class ServiceController {
 
       // Validate origin !== destination (only if both exist)
       if (originPOI && destinationPOI && originPOI === destinationPOI) {
-        return this.sendError(
-          res,
-          'El origen y destino deben ser diferentes',
-          400
-        );
+        return this.sendError(res, 'El origen y destino deben ser diferentes', 400);
       }
 
       if (!vehicleType) {
@@ -607,11 +590,7 @@ class ServiceController {
       }
 
       if (note && note.length > 500) {
-        return this.sendError(
-          res,
-          'La nota debe tener 500 caracteres o menos',
-          400
-        );
+        return this.sendError(res, 'La nota debe tener 500 caracteres o menos', 400);
       }
 
       // Check if route already exists
@@ -647,11 +626,7 @@ class ServiceController {
       const existingCount = await existingQuery.count({ useMasterKey: true });
 
       if (existingCount > 0) {
-        return this.sendError(
-          res,
-          'Ya existe un servicio con esta ruta, tipo de vehículo y tarifa',
-          409
-        );
+        return this.sendError(res, 'Ya existe un servicio con esta ruta, tipo de vehículo y tarifa', 409);
       }
 
       // Verify POIs exist
@@ -837,11 +812,7 @@ class ServiceController {
       const currentOrigin = service.get('originPOI');
       const currentDest = service.get('destinationPOI');
       if (currentOrigin && currentDest && currentOrigin.id === currentDest.id) {
-        return this.sendError(
-          res,
-          'El origen y destino deben ser diferentes',
-          400
-        );
+        return this.sendError(res, 'El origen y destino deben ser diferentes', 400);
       }
 
       // Update vehicleType if provided
@@ -871,11 +842,7 @@ class ServiceController {
       // Update note if provided
       if (note !== undefined) {
         if (note.length > 500) {
-          return this.sendError(
-            res,
-            'La nota debe tener 500 caracteres o menos',
-            400
-          );
+          return this.sendError(res, 'La nota debe tener 500 caracteres o menos', 400);
         }
         service.set('note', note);
       }
@@ -983,11 +950,7 @@ class ServiceController {
       }
 
       if (typeof active !== 'boolean') {
-        return this.sendError(
-          res,
-          'El estado activo debe ser un valor booleano',
-          400
-        );
+        return this.sendError(res, 'El estado activo debe ser un valor booleano', 400);
       }
 
       const result = await this.serviceService.toggleServiceStatus(
@@ -998,11 +961,7 @@ class ServiceController {
         req.userRole // Pass userRole from JWT middleware
       );
 
-      return this.sendSuccess(
-        res,
-        result.service,
-        result.message || 'Estado actualizado exitosamente'
-      );
+      return this.sendSuccess(res, result.service, result.message || 'Estado actualizado exitosamente');
     } catch (error) {
       logger.error('Error in ServiceController.toggleServiceStatus', {
         error: error.message,
@@ -1011,11 +970,7 @@ class ServiceController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        error.message || 'Error al cambiar el estado del servicio',
-        500
-      );
+      return this.sendError(res, error.message || 'Error al cambiar el estado del servicio', 500);
     }
   }
 
@@ -1056,11 +1011,7 @@ class ServiceController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        error.message || 'Error al eliminar el servicio',
-        500
-      );
+      return this.sendError(res, error.message || 'Error al eliminar el servicio', 500);
     }
   }
 

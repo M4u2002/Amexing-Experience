@@ -62,10 +62,7 @@ class RateController {
       // Parse DataTables parameters
       const draw = parseInt(req.query.draw, 10) || 1;
       const start = parseInt(req.query.start, 10) || 0;
-      const length = Math.min(
-        parseInt(req.query.length, 10) || this.defaultPageSize,
-        this.maxPageSize
-      );
+      const length = Math.min(parseInt(req.query.length, 10) || this.defaultPageSize, this.maxPageSize);
       const searchValue = req.query.search?.value || '';
       const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
@@ -118,10 +115,7 @@ class RateController {
           objectId: rate.id,
           name: rate.get('name'),
           percentage,
-          formattedPercentage:
-            percentage !== undefined && percentage !== null
-              ? `${percentage}%`
-              : '-',
+          formattedPercentage: percentage !== undefined && percentage !== null ? `${percentage}%` : '-',
           color: rate.get('color') || '#6366F1',
           active: rate.get('active'),
           createdAt: rate.createdAt,
@@ -147,9 +141,7 @@ class RateController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Error al obtener las tarifas',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Error al obtener las tarifas',
         500
       );
     }
@@ -182,19 +174,12 @@ class RateController {
           value: rate.id,
           label: rate.get('name'),
           percentage,
-          formattedPercentage:
-            percentage !== undefined && percentage !== null
-              ? `${percentage}%`
-              : '-',
+          formattedPercentage: percentage !== undefined && percentage !== null ? `${percentage}%` : '-',
           color: rate.get('color') || '#6366F1',
         };
       });
 
-      return this.sendSuccess(
-        res,
-        options,
-        'Active Rates retrieved successfully'
-      );
+      return this.sendSuccess(res, options, 'Active Rates retrieved successfully');
     } catch (error) {
       logger.error('Error in RateController.getActiveRates', {
         error: error.message,
@@ -239,10 +224,7 @@ class RateController {
         id: rate.id,
         name: rate.get('name'),
         percentage,
-        formattedPercentage:
-          percentage !== undefined && percentage !== null
-            ? `${percentage}%`
-            : '-',
+        formattedPercentage: percentage !== undefined && percentage !== null ? `${percentage}%` : '-',
         color: rate.get('color') || '#6366F1',
         active: rate.get('active'),
         createdAt: rate.createdAt,
@@ -289,11 +271,7 @@ class RateController {
       }
 
       if (name.length > 200) {
-        return this.sendError(
-          res,
-          'El nombre debe tener 200 caracteres o menos',
-          400
-        );
+        return this.sendError(res, 'El nombre debe tener 200 caracteres o menos', 400);
       }
 
       if (percentage === undefined || percentage === null) {
@@ -305,22 +283,14 @@ class RateController {
       }
 
       if (percentage < 0 || percentage > 100) {
-        return this.sendError(
-          res,
-          'El porcentaje debe estar entre 0 y 100',
-          400
-        );
+        return this.sendError(res, 'El porcentaje debe estar entre 0 y 100', 400);
       }
 
       // Validate color format if provided
       if (color) {
         const hexColorRegex = /^#[0-9A-F]{6}$/i;
         if (!hexColorRegex.test(color)) {
-          return this.sendError(
-            res,
-            'El color debe estar en formato hexadecimal (#RRGGBB)',
-            400
-          );
+          return this.sendError(res, 'El color debe estar en formato hexadecimal (#RRGGBB)', 400);
         }
       }
 
@@ -423,11 +393,7 @@ class RateController {
       // Update name if provided
       if (name && name.trim().length > 0) {
         if (name.length > 200) {
-          return this.sendError(
-            res,
-            'El nombre debe tener 200 caracteres o menos',
-            400
-          );
+          return this.sendError(res, 'El nombre debe tener 200 caracteres o menos', 400);
         }
 
         // Check name uniqueness if changing
@@ -439,11 +405,7 @@ class RateController {
           const existingCount = await checkQuery.count({ useMasterKey: true });
 
           if (existingCount > 0) {
-            return this.sendError(
-              res,
-              'Ya existe una tarifa con ese nombre',
-              409
-            );
+            return this.sendError(res, 'Ya existe una tarifa con ese nombre', 409);
           }
 
           rate.set('name', name.trim());
@@ -457,11 +419,7 @@ class RateController {
         }
 
         if (percentage < 0 || percentage > 100) {
-          return this.sendError(
-            res,
-            'El porcentaje debe estar entre 0 y 100',
-            400
-          );
+          return this.sendError(res, 'El porcentaje debe estar entre 0 y 100', 400);
         }
 
         rate.set('percentage', percentage);
@@ -471,11 +429,7 @@ class RateController {
       if (color) {
         const hexColorRegex = /^#[0-9A-F]{6}$/i;
         if (!hexColorRegex.test(color)) {
-          return this.sendError(
-            res,
-            'El color debe estar en formato hexadecimal (#RRGGBB)',
-            400
-          );
+          return this.sendError(res, 'El color debe estar en formato hexadecimal (#RRGGBB)', 400);
         }
         rate.set('color', color);
       }
@@ -511,10 +465,7 @@ class RateController {
         id: rate.id,
         name: rate.get('name'),
         percentage: finalPercentage,
-        formattedPercentage:
-          finalPercentage !== undefined && finalPercentage !== null
-            ? `${finalPercentage}%`
-            : '-',
+        formattedPercentage: finalPercentage !== undefined && finalPercentage !== null ? `${finalPercentage}%` : '-',
         color: rate.get('color'),
         active: rate.get('active'),
         updatedAt: rate.updatedAt,
@@ -557,11 +508,7 @@ class RateController {
       }
 
       if (typeof active !== 'boolean') {
-        return this.sendError(
-          res,
-          'El estado activo debe ser un valor booleano',
-          400
-        );
+        return this.sendError(res, 'El estado activo debe ser un valor booleano', 400);
       }
 
       const result = await this.rateService.toggleRateStatus(
@@ -572,11 +519,7 @@ class RateController {
         req.userRole // Pass userRole from JWT middleware
       );
 
-      return this.sendSuccess(
-        res,
-        result.rate,
-        result.message || 'Estado actualizado exitosamente'
-      );
+      return this.sendSuccess(res, result.rate, result.message || 'Estado actualizado exitosamente');
     } catch (error) {
       logger.error('Error in RateController.toggleRateStatus', {
         error: error.message,
@@ -585,11 +528,7 @@ class RateController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        error.message || 'Error al cambiar el estado de la tarifa',
-        500
-      );
+      return this.sendError(res, error.message || 'Error al cambiar el estado de la tarifa', 500);
     }
   }
 
@@ -630,11 +569,7 @@ class RateController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        error.message || 'Error al eliminar la tarifa',
-        500
-      );
+      return this.sendError(res, error.message || 'Error al eliminar la tarifa', 500);
     }
   }
 

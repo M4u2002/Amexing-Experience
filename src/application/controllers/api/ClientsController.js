@@ -97,9 +97,7 @@ class ClientsController {
       // Send detailed error for debugging
       this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve clients',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve clients',
         500
       );
     }
@@ -138,11 +136,7 @@ class ClientsController {
       const roleName = typeof role === 'string' ? role : role?.name;
 
       if (roleName !== this.clientRole) {
-        return this.sendError(
-          res,
-          'User is not a client (department_manager)',
-          403
-        );
+        return this.sendError(res, 'User is not a client (department_manager)', 403);
       }
 
       // PCI DSS Audit: Log individual READ access to client data
@@ -194,11 +188,7 @@ class ClientsController {
       // Validate user role (only superadmin and admin can create clients)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can create clients.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can create clients.', 403);
       }
 
       // Validate required fields
@@ -209,11 +199,7 @@ class ClientsController {
       if (!clientData.companyName?.trim()) missingFields.push('companyName');
 
       if (missingFields.length > 0) {
-        return this.sendError(
-          res,
-          `Campos requeridos faltantes: ${missingFields.join(', ')}`,
-          400
-        );
+        return this.sendError(res, `Campos requeridos faltantes: ${missingFields.join(', ')}`, 400);
       }
 
       // Email format validation
@@ -266,10 +252,7 @@ class ClientsController {
       userWithRole.role = currentUserRole;
 
       // Create client user via UserManagementService
-      const result = await this.userService.createUser(
-        clientData,
-        userWithRole
-      );
+      const result = await this.userService.createUser(clientData, userWithRole);
 
       logger.info('Client created successfully', {
         clientId: result.user?.id,
@@ -284,8 +267,7 @@ class ClientsController {
         res,
         {
           client: result.user,
-          message:
-            'Cliente creado exitosamente. Se ha generado una contraseña temporal.',
+          message: 'Cliente creado exitosamente. Se ha generado una contraseña temporal.',
         },
         'Cliente creado exitosamente',
         201
@@ -334,28 +316,16 @@ class ClientsController {
       // Validate user role (only superadmin and admin can update clients)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can modify clients.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can modify clients.', 403);
       }
 
       // Prevent role change - clients must remain department_manager
       if (updateData.role && updateData.role !== this.clientRole) {
-        return this.sendError(
-          res,
-          `Cannot change client role. Must be ${this.clientRole}`,
-          400
-        );
+        return this.sendError(res, `Cannot change client role. Must be ${this.clientRole}`, 400);
       }
 
       // Update user using service
-      const result = await this.userService.updateUser(
-        clientId,
-        updateData,
-        currentUser
-      );
+      const result = await this.userService.updateUser(clientId, updateData, currentUser);
 
       this.sendSuccess(res, result, 'Client updated successfully');
     } catch (error) {
@@ -394,18 +364,11 @@ class ClientsController {
       // Validate user role (only superadmin and admin can delete clients)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can delete clients.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can delete clients.', 403);
       }
 
       // Deactivate client using service
-      const result = await this.userService.deactivateUser(
-        clientId,
-        currentUser
-      );
+      const result = await this.userService.deactivateUser(clientId, currentUser);
 
       this.sendSuccess(res, result, 'Client deactivated successfully');
     } catch (error) {
@@ -450,11 +413,7 @@ class ClientsController {
       // Validate user role (only superadmin and admin can toggle client status)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can modify client status.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can modify client status.', 403);
       }
 
       // Toggle status using service
@@ -465,11 +424,7 @@ class ClientsController {
         'Status changed via clients dashboard'
       );
 
-      this.sendSuccess(
-        res,
-        result,
-        `Client ${active ? 'activated' : 'deactivated'} successfully`
-      );
+      this.sendSuccess(res, result, `Client ${active ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       logger.error('Error in ClientsController.toggleClientStatus', {
         error: error.message,

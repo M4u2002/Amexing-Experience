@@ -135,9 +135,7 @@ class BulkImportService {
       if (missingColumns.length > 0) {
         return {
           valid: false,
-          errors: [
-            `Columnas requeridas faltantes: ${missingColumns.join(', ')}`,
-          ],
+          errors: [`Columnas requeridas faltantes: ${missingColumns.join(', ')}`],
           warnings: [],
         };
       }
@@ -161,9 +159,7 @@ class BulkImportService {
       if (rowCount > this.maxRecords) {
         return {
           valid: false,
-          errors: [
-            `El archivo contiene ${rowCount} registros. Máximo permitido: ${this.maxRecords}`,
-          ],
+          errors: [`El archivo contiene ${rowCount} registros. Máximo permitido: ${this.maxRecords}`],
           warnings: [],
         };
       }
@@ -188,9 +184,7 @@ class BulkImportService {
 
       return {
         valid: false,
-        errors: [
-          'Error al leer el archivo Excel. Asegúrate de que sea un archivo válido (.xlsx)',
-        ],
+        errors: ['Error al leer el archivo Excel. Asegúrate de que sea un archivo válido (.xlsx)'],
         warnings: [],
       };
     }
@@ -469,9 +463,7 @@ class BulkImportService {
     const roleObject = await roleQuery.first({ useMasterKey: true });
 
     if (!roleObject) {
-      throw new Error(
-        `Role '${this.clientRole}' not found. Please ensure roles are configured.`
-      );
+      throw new Error(`Role '${this.clientRole}' not found. Please ensure roles are configured.`);
     }
 
     for (let i = 0; i < records.length; i++) {
@@ -526,10 +518,7 @@ class BulkImportService {
         const userWithRole = currentUser;
         userWithRole.role = currentUser.get?.('role') || 'admin';
 
-        const result = await this.userService.createUser(
-          clientData,
-          userWithRole
-        );
+        const result = await this.userService.createUser(clientData, userWithRole);
 
         created.push({
           rowNumber: record.rowNumber,
@@ -622,9 +611,7 @@ class BulkImportService {
           rowNumber: record.rowNumber,
           email: record.email || '',
           companyName: record.companyName || '',
-          error: Array.isArray(record.errors)
-            ? record.errors.join('; ')
-            : record.error || '',
+          error: Array.isArray(record.errors) ? record.errors.join('; ') : record.error || '',
         });
       });
 
@@ -649,10 +636,7 @@ class BulkImportService {
    */
   normalizeColumnName(value) {
     if (!value) return '';
-    return String(value)
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '')
+    return String(value).toLowerCase().trim().replace(/\s+/g, '')
       .replace(/[*_-]/g, ''); // Remove asterisks, underscores, and dashes
   }
 

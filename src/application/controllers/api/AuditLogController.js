@@ -82,10 +82,7 @@ class AuditLogController {
 
       // Validate and sanitize pagination
       const validatedPage = Math.max(1, parseInt(page, 10) || 1);
-      const validatedLimit = Math.min(
-        this.maxPageSize,
-        Math.max(1, parseInt(limit, 10) || this.defaultPageSize)
-      );
+      const validatedLimit = Math.min(this.maxPageSize, Math.max(1, parseInt(limit, 10) || this.defaultPageSize));
       const skip = (validatedPage - 1) * validatedLimit;
 
       // Build query
@@ -198,9 +195,7 @@ class AuditLogController {
 
       this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve audit logs',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve audit logs',
         500
       );
     }
@@ -233,10 +228,7 @@ class AuditLogController {
         return this.sendError(res, 'User ID is required', 400);
       }
 
-      const limit = Math.min(
-        this.maxPageSize,
-        parseInt(req.query.limit, 10) || this.defaultPageSize
-      );
+      const limit = Math.min(this.maxPageSize, parseInt(req.query.limit, 10) || this.defaultPageSize);
 
       const logs = await AuditLog.queryByUser(targetUserId, limit);
 
@@ -299,10 +291,7 @@ class AuditLogController {
         return this.sendError(res, 'Entity type is required', 400);
       }
 
-      const limit = Math.min(
-        this.maxPageSize,
-        parseInt(req.query.limit, 10) || this.defaultPageSize
-      );
+      const limit = Math.min(this.maxPageSize, parseInt(req.query.limit, 10) || this.defaultPageSize);
 
       const logs = await AuditLog.queryByEntity(entityType, entityId, limit);
 

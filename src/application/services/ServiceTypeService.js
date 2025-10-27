@@ -78,12 +78,7 @@ class ServiceTypeService {
    * //   newStatus: false
    * // }
    */
-  async toggleServiceTypeStatus(
-    currentUser,
-    typeId,
-    targetStatus,
-    reason = 'Status change via API'
-  ) {
+  async toggleServiceTypeStatus(currentUser, typeId, targetStatus, reason = 'Status change via API') {
     try {
       // Validate inputs
       if (!currentUser || !currentUser.id) {
@@ -120,13 +115,10 @@ class ServiceTypeService {
       try {
         serviceType = await query.get(typeId, { useMasterKey: true });
       } catch (error) {
-        logger.warn(
-          'Service type not found in exists:true query, trying all records',
-          {
-            typeId,
-            error: error.message,
-          }
-        );
+        logger.warn('Service type not found in exists:true query, trying all records', {
+          typeId,
+          error: error.message,
+        });
 
         // Try without exists filter as fallback
         const fallbackQuery = new Parse.Query(LocalServiceType);
@@ -245,11 +237,7 @@ class ServiceTypeService {
    *   'Type deprecated and no longer used'
    * );
    */
-  async softDeleteServiceType(
-    currentUser,
-    typeId,
-    reason = 'Soft delete via API'
-  ) {
+  async softDeleteServiceType(currentUser, typeId, reason = 'Soft delete via API') {
     try {
       // Validate inputs
       if (!currentUser || !currentUser.id) {

@@ -55,22 +55,13 @@ class VehicleController {
       // Parse DataTables parameters
       const draw = parseInt(req.query.draw, 10) || 1;
       const start = parseInt(req.query.start, 10) || 0;
-      const length = Math.min(
-        parseInt(req.query.length, 10) || this.defaultPageSize,
-        this.maxPageSize
-      );
+      const length = Math.min(parseInt(req.query.length, 10) || this.defaultPageSize, this.maxPageSize);
       const searchValue = req.query.search?.value || '';
       const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Column mapping for sorting
-      const columns = [
-        'brand',
-        'licensePlate',
-        'capacity',
-        'maintenanceStatus',
-        'updatedAt',
-      ];
+      const columns = ['brand', 'licensePlate', 'capacity', 'maintenanceStatus', 'updatedAt'];
       const sortField = columns[sortColumnIndex] || 'updatedAt';
 
       // Get total records count (without search filter) - do this first
@@ -113,8 +104,9 @@ class VehicleController {
         filteredQuery.descending(sortField);
       }
 
-      // Include VehicleType for display
+      // Include VehicleType and Rate for display
       filteredQuery.include('vehicleTypeId');
+      filteredQuery.include('rateId');
 
       // Apply pagination
       filteredQuery.skip(start);
@@ -139,6 +131,20 @@ class VehicleController {
             };
           }
 
+          // Include rate information
+          const rate = vehicle.get('rateId');
+          let rateData = null;
+
+          if (rate) {
+            await rate.fetch({ useMasterKey: true });
+            rateData = {
+              id: rate.id,
+              name: rate.get('name'),
+              percentage: rate.get('percentage'),
+              color: rate.get('color') || '#6366F1',
+            };
+          }
+
           return {
             id: vehicle.id,
             objectId: vehicle.id,
@@ -147,6 +153,7 @@ class VehicleController {
             year: vehicle.get('year'),
             licensePlate: vehicle.get('licensePlate'),
             vehicleTypeId: vehicleTypeData,
+            rateId: rateData,
             capacity: vehicle.get('capacity'),
             color: vehicle.get('color'),
             maintenanceStatus: vehicle.get('maintenanceStatus'),
@@ -176,9 +183,7 @@ class VehicleController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve vehicles',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve vehicles',
         500
       );
     }
@@ -208,6 +213,7 @@ class VehicleController {
       const query = new Parse.Query('Vehicle');
       query.equalTo('exists', true);
       query.include('vehicleTypeId');
+      query.include('rateId');
       const vehicle = await query.get(vehicleId, { useMasterKey: true });
 
       if (!vehicle) {
@@ -221,13 +227,11 @@ class VehicleController {
         year: vehicle.get('year'),
         licensePlate: vehicle.get('licensePlate'),
         vehicleTypeId: vehicle.get('vehicleTypeId')?.id,
+        rateId: vehicle.get('rateId')?.id,
         capacity: vehicle.get('capacity'),
         color: vehicle.get('color'),
         maintenanceStatus: vehicle.get('maintenanceStatus'),
-        insuranceExpiry: vehicle
-          .get('insuranceExpiry')
-          ?.toISOString()
-          .split('T')[0], // Format for input[type=date]
+        insuranceExpiry: vehicle.get('insuranceExpiry')?.toISOString().split('T')[0], // Format for input[type=date]
         active: vehicle.get('active'),
         createdAt: vehicle.createdAt,
         updatedAt: vehicle.updatedAt,
@@ -254,6 +258,7 @@ class VehicleController {
    * - year: number (required)
    * - licensePlate: string (required, unique)
    * - vehicleTypeId: string (required, Pointer to VehicleType)
+   * - rateId: string (optional, Pointer to Rate - must be active)
    * - capacity: number (required)
    * - color: string (required)
    * - maintenanceStatus: string (required)
@@ -277,6 +282,7 @@ class VehicleController {
         year,
         licensePlate,
         vehicleTypeId,
+        rateId,
         capacity,
         color,
         maintenanceStatus,
@@ -284,16 +290,7 @@ class VehicleController {
       } = req.body;
 
       // Validate required fields
-      if (
-        !brand
-        || !model
-        || !year
-        || !licensePlate
-        || !vehicleTypeId
-        || !capacity
-        || !color
-        || !maintenanceStatus
-      ) {
+      if (!brand || !model || !year || !licensePlate || !vehicleTypeId || !capacity || !color || !maintenanceStatus) {
         return this.sendError(res, 'Missing required fields', 400);
       }
 
@@ -315,6 +312,23 @@ class VehicleController {
         return this.sendError(res, 'Vehicle type not found', 404);
       }
 
+      // Validate Rate if provided (optional field)
+      let rate = null;
+      if (rateId) {
+        const rateQuery = new Parse.Query('Rate');
+        rateQuery.equalTo('exists', true);
+        try {
+          rate = await rateQuery.get(rateId, { useMasterKey: true });
+
+          // Check if rate is active
+          if (!rate.get('active')) {
+            return this.sendError(res, 'Rate is inactive and cannot be assigned', 400);
+          }
+        } catch (error) {
+          return this.sendError(res, 'Rate not found', 404);
+        }
+      }
+
       // Create new vehicle using Parse.Object.extend (not registered subclass)
       const VehicleClass = Parse.Object.extend('Vehicle');
       const vehicle = new VehicleClass();
@@ -329,6 +343,11 @@ class VehicleController {
       vehicle.set('maintenanceStatus', maintenanceStatus);
       vehicle.set('active', true);
       vehicle.set('exists', true);
+
+      // Set rate if provided
+      if (rate) {
+        vehicle.set('rateId', rate);
+      }
 
       if (insuranceExpiry) {
         vehicle.set('insuranceExpiry', new Date(insuranceExpiry));
@@ -382,11 +401,7 @@ class VehicleController {
         body: req.body,
       });
 
-      return this.sendError(
-        res,
-        error.message || 'Failed to create vehicle',
-        500
-      );
+      return this.sendError(res, error.message || 'Failed to create vehicle', 500);
     }
   }
 
@@ -426,6 +441,7 @@ class VehicleController {
         year,
         licensePlate,
         vehicleTypeId,
+        rateId,
         capacity,
         color,
         maintenanceStatus,
@@ -448,10 +464,7 @@ class VehicleController {
 
       // Update license plate if changed
       if (licensePlate && licensePlate !== vehicle.get('licensePlate')) {
-        const isUnique = await Vehicle.isLicensePlateUnique(
-          licensePlate,
-          vehicleId
-        );
+        const isUnique = await Vehicle.isLicensePlateUnique(licensePlate, vehicleId);
         if (!isUnique) {
           return this.sendError(res, 'License plate already exists', 409);
         }
@@ -471,6 +484,33 @@ class VehicleController {
           return this.sendError(res, 'Vehicle type not found', 404);
         }
         vehicle.set('vehicleTypeId', vehicleType);
+      }
+
+      // Update rate if changed
+      if (rateId !== undefined) {
+        if (rateId === null) {
+          // Remove rate assignment
+          vehicle.unset('rateId');
+        } else {
+          const currentRateId = vehicle.get('rateId')?.id;
+          if (rateId !== currentRateId) {
+            // Validate new rate
+            const rateQuery = new Parse.Query('Rate');
+            rateQuery.equalTo('exists', true);
+            try {
+              const rate = await rateQuery.get(rateId, { useMasterKey: true });
+
+              // Check if rate is active
+              if (!rate.get('active')) {
+                return this.sendError(res, 'Rate is inactive and cannot be assigned', 400);
+              }
+
+              vehicle.set('rateId', rate);
+            } catch (error) {
+              return this.sendError(res, 'Rate not found', 404);
+            }
+          }
+        }
       }
 
       // Save changes with user context for audit trail

@@ -211,28 +211,18 @@ class UserManagementService {
   async getAmexingUsers(currentUser, options = {}, explicitRole = null) {
     try {
       const {
-        page = 1,
-        limit = 25,
-        filters = {},
-        sort = { field: 'lastName', direction: 'asc' },
+        page = 1, limit = 25, filters = {}, sort = { field: 'lastName', direction: 'asc' },
       } = options;
 
       // Validate authorization using centralized service
-      this.authService.validateRoleAccess(
-        currentUser,
-        ['superadmin', 'admin'],
-        {
-          throwError: true,
-          context: 'getAmexingUsers',
-          explicitRole, // Pass explicit role from controller (JWT middleware)
-        }
-      );
+      this.authService.validateRoleAccess(currentUser, ['superadmin', 'admin'], {
+        throwError: true,
+        context: 'getAmexingUsers',
+        explicitRole, // Pass explicit role from controller (JWT middleware)
+      });
 
       // Get current user's role for filtering logic
-      const currentUserRole = this.authService.extractUserRole(
-        currentUser,
-        explicitRole
-      );
+      const currentUserRole = this.authService.extractUserRole(currentUser, explicitRole);
 
       // Query all existing users from Amexing organization
       const query = BaseModel.queryExisting(this.className);
@@ -371,9 +361,7 @@ class UserManagementService {
     try {
       // Validate permissions
       if (!this.canCreateUser(createdBy, userData.role)) {
-        throw new Error(
-          'Insufficient permissions to create user with this role'
-        );
+        throw new Error('Insufficient permissions to create user with this role');
       }
 
       // Validate input data
@@ -449,7 +437,10 @@ class UserManagementService {
     try {
       // Get existing user using AI agent compliant query
       const query = BaseModel.queryActive(this.className);
-      const user = await query.get(userId, { useMasterKey: true, context: extractUserContext(modifiedBy) });
+      const user = await query.get(userId, {
+        useMasterKey: true,
+        context: extractUserContext(modifiedBy),
+      });
 
       if (!user) {
         throw new Error('User not found or not accessible');
@@ -543,7 +534,10 @@ class UserManagementService {
     try {
       // Get user using existing records query (includes archived)
       const query = BaseModel.queryExisting(this.className);
-      const user = await query.get(userId, { useMasterKey: true, context: extractUserContext(deactivatedBy) });
+      const user = await query.get(userId, {
+        useMasterKey: true,
+        context: extractUserContext(deactivatedBy),
+      });
 
       if (!user) {
         throw new Error('User not found');
@@ -605,7 +599,10 @@ class UserManagementService {
     try {
       // Query archived users (deactivated but still exist)
       const query = BaseModel.queryArchived(this.className);
-      const user = await query.get(userId, { useMasterKey: true, context: extractUserContext(reactivatedBy) });
+      const user = await query.get(userId, {
+        useMasterKey: true,
+        context: extractUserContext(reactivatedBy),
+      });
 
       if (!user) {
         throw new Error('User not found or permanently deleted');
@@ -659,23 +656,24 @@ class UserManagementService {
    * // const result = await service.methodName(parameters);
    * // Returns: Promise resolving to operation result
    */
-  async toggleUserStatus(
-    currentUser,
-    userId,
-    targetStatus,
-    reason = 'Status change via API'
-  ) {
+  async toggleUserStatus(currentUser, userId, targetStatus, reason = 'Status change via API') {
     try {
       // Query active users to get current user data
       const query = BaseModel.queryActive(this.className);
       let user;
 
       try {
-        user = await query.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
+        user = await query.get(userId, {
+          useMasterKey: true,
+          context: extractUserContext(currentUser),
+        });
       } catch (error) {
         // If user not found in active query, try archived query
         const archivedQuery = BaseModel.queryArchived(this.className);
-        user = await archivedQuery.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
+        user = await archivedQuery.get(userId, {
+          useMasterKey: true,
+          context: extractUserContext(currentUser),
+        });
       }
 
       if (!user) {
@@ -708,18 +706,13 @@ class UserManagementService {
       await saveWithContext(user, currentUser);
 
       // Log activity
-      await this.logUserCRUDActivity(
-        currentUser,
-        targetStatus ? 'activate' : 'deactivate',
-        userId,
-        {
-          reason,
-          role: user.get('role'),
-          email: user.get('email'),
-          previousStatus,
-          newStatus: targetStatus,
-        }
-      );
+      await this.logUserCRUDActivity(currentUser, targetStatus ? 'activate' : 'deactivate', userId, {
+        reason,
+        role: user.get('role'),
+        email: user.get('email'),
+        previousStatus,
+        newStatus: targetStatus,
+      });
 
       logger.info('User status toggled successfully', {
         userId,
@@ -768,11 +761,17 @@ class UserManagementService {
       let user;
 
       try {
-        user = await query.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
+        user = await query.get(userId, {
+          useMasterKey: true,
+          context: extractUserContext(currentUser),
+        });
       } catch (error) {
         // If user not found in active query, try archived query
         const archivedQuery = BaseModel.queryArchived(this.className);
-        user = await archivedQuery.get(userId, { useMasterKey: true, context: extractUserContext(currentUser) });
+        user = await archivedQuery.get(userId, {
+          useMasterKey: true,
+          context: extractUserContext(currentUser),
+        });
       }
 
       if (!user) {
@@ -879,15 +878,7 @@ class UserManagementService {
       });
 
       // Get role distribution
-      const roles = [
-        'superadmin',
-        'admin',
-        'client',
-        'department_manager',
-        'employee',
-        'driver',
-        'guest',
-      ];
+      const roles = ['superadmin', 'admin', 'client', 'department_manager', 'employee', 'driver', 'guest'];
       const roleDistribution = {};
 
       for (const role of roles) {
@@ -904,16 +895,8 @@ class UserManagementService {
         const monthDate = new Date(currentDate);
         monthDate.setMonth(currentDate.getMonth() - i);
 
-        const startDate = new Date(
-          monthDate.getFullYear(),
-          monthDate.getMonth(),
-          1
-        );
-        const endDate = new Date(
-          monthDate.getFullYear(),
-          monthDate.getMonth() + 1,
-          0
-        );
+        const startDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const endDate = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
 
         const monthQuery = BaseModel.queryActive(this.className);
         monthQuery.greaterThanOrEqualTo('createdAt', startDate);
@@ -976,11 +959,7 @@ class UserManagementService {
         const lastNameQuery = new Parse.Query(this.className);
         lastNameQuery.matches('lastName', searchTerms, 'i');
 
-        const compoundQuery = Parse.Query.or(
-          emailQuery,
-          firstNameQuery,
-          lastNameQuery
-        );
+        const compoundQuery = Parse.Query.or(emailQuery, firstNameQuery, lastNameQuery);
         query.matchesQuery('objectId', compoundQuery);
       }
 
@@ -1062,17 +1041,9 @@ class UserManagementService {
    * // Returns: Promise resolving to operation result
    * @returns {Promise<void>} - Operation result.
    */
-  async applyRoleBasedFiltering(
-    query,
-    currentUser,
-    targetRole = null,
-    explicitRole = null
-  ) {
+  async applyRoleBasedFiltering(query, currentUser, targetRole = null, explicitRole = null) {
     // Get current user's role using centralized service
-    const currentUserRole = this.authService.extractUserRole(
-      currentUser,
-      explicitRole
-    );
+    const currentUserRole = this.authService.extractUserRole(currentUser, explicitRole);
 
     switch (currentUserRole) {
       case 'superadmin':
@@ -1158,20 +1129,20 @@ class UserManagementService {
           case 'role':
             // Support both Pointer and string-based role filtering
             this.filterByRoleName(query, value).catch((error) => {
-              logger.warn(
-                'Failed to filter by role pointer, using string fallback',
-                { role: value, error: error.message }
-              );
+              logger.warn('Failed to filter by role pointer, using string fallback', {
+                role: value,
+                error: error.message,
+              });
               query.equalTo('role', value);
             });
             break;
           case 'roleNames':
             // Support filtering by multiple roles (async operation)
             await this.filterByRoleNames(query, value).catch((error) => {
-              logger.warn(
-                'Failed to filter by role names, no results will be returned',
-                { roleNames: value, error: error.message }
-              );
+              logger.warn('Failed to filter by role names, no results will be returned', {
+                roleNames: value,
+                error: error.message,
+              });
               query.equalTo('objectId', 'non-existent-id');
             });
             break;
@@ -1203,20 +1174,12 @@ class UserManagementService {
               new Parse.Query(this.className).matches('email', searchRegex),
               new Parse.Query(this.className).matches('firstName', searchRegex),
               new Parse.Query(this.className).matches('lastName', searchRegex),
-              new Parse.Query(this.className).matches(
-                'contextualData.companyName',
-                searchRegex
-              ),
+              new Parse.Query(this.className).matches('contextualData.companyName', searchRegex),
             ]);
 
             logger.info('Multi-field search applied', {
               searchTerm: value,
-              fields: [
-                'email',
-                'firstName',
-                'lastName',
-                'contextualData.companyName',
-              ],
+              fields: ['email', 'firstName', 'lastName', 'contextualData.companyName'],
             });
 
             break;
@@ -1377,11 +1340,7 @@ class UserManagementService {
       const lastNameQuery = new Parse.Query(this.className);
       lastNameQuery.matches('lastName', searchTerms, 'i');
 
-      const compoundQuery = Parse.Query.or(
-        emailQuery,
-        firstNameQuery,
-        lastNameQuery
-      );
+      const compoundQuery = Parse.Query.or(emailQuery, firstNameQuery, lastNameQuery);
       countQuery.matchesQuery('objectId', compoundQuery);
     }
 
@@ -1418,9 +1377,7 @@ class UserManagementService {
         // Check if it's a fetched Parse Object with .get() method
         if (rolePointer.get && typeof rolePointer.get === 'function') {
           roleName = rolePointer.get('name') || roleName;
-          roleDisplayName = rolePointer.get('displayName')
-            || rolePointer.get('name')
-            || roleName;
+          roleDisplayName = rolePointer.get('displayName') || rolePointer.get('name') || roleName;
           roleObjectId = rolePointer.id;
         } else if (typeof rolePointer === 'string') {
           // It's a string ID, keep the string role name
@@ -1430,13 +1387,10 @@ class UserManagementService {
           roleObjectId = rolePointer.id;
         }
       } catch (error) {
-        logger.warn(
-          'Error processing role pointer in transformUserToSafeFormat',
-          {
-            userId: user.id,
-            error: error.message,
-          }
-        );
+        logger.warn('Error processing role pointer in transformUserToSafeFormat', {
+          userId: user.id,
+          error: error.message,
+        });
       }
     }
 
@@ -1611,17 +1565,11 @@ class UserManagementService {
     }
 
     // Client/Department manager specific rules
-    if (
-      currentUser.role === 'client'
-      && targetUser.get('clientId') === currentUser.clientId
-    ) {
+    if (currentUser.role === 'client' && targetUser.get('clientId') === currentUser.clientId) {
       return true;
     }
 
-    if (
-      currentUser.role === 'department_manager'
-      && targetUser.get('departmentId') === currentUser.departmentId
-    ) {
+    if (currentUser.role === 'department_manager' && targetUser.get('departmentId') === currentUser.departmentId) {
       return true;
     }
 
@@ -1670,10 +1618,7 @@ class UserManagementService {
     }
 
     // Cannot modify other superadmins unless you are superadmin
-    if (
-      targetUser.get('role') === 'superadmin'
-      && currentUser.role !== 'superadmin'
-    ) {
+    if (targetUser.get('role') === 'superadmin' && currentUser.role !== 'superadmin') {
       return false;
     }
 

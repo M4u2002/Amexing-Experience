@@ -96,18 +96,12 @@ class AmexingUser extends BaseModel {
     }
 
     // Validate organization ID format
-    if (
-      userData.organizationId
-      && !/^[a-z0-9_-]+$/i.test(userData.organizationId)
-    ) {
+    if (userData.organizationId && !/^[a-z0-9_-]+$/i.test(userData.organizationId)) {
       throw new Error('Invalid organization ID format');
     }
 
     // Validate contextual data structure
-    if (
-      userData.contextualData
-      && typeof userData.contextualData !== 'object'
-    ) {
+    if (userData.contextualData && typeof userData.contextualData !== 'object') {
       throw new Error('Contextual data must be an object');
     }
 
@@ -353,10 +347,7 @@ class AmexingUser extends BaseModel {
      * // Returns: model operation result
      */
     if (errors.length > 0) {
-      throw new Parse.Error(
-        Parse.Error.VALIDATION_ERROR,
-        `Password validation failed: ${errors.join(', ')}`
-      );
+      throw new Parse.Error(Parse.Error.VALIDATION_ERROR, `Password validation failed: ${errors.join(', ')}`);
     }
   }
 
@@ -470,8 +461,7 @@ class AmexingUser extends BaseModel {
 
     // Check if account already exists
     const existingIndex = existingAccounts.findIndex(
-      (account) => account.provider === oauthData.provider
-        && account.providerId === oauthData.providerId
+      (account) => account.provider === oauthData.provider && account.providerId === oauthData.providerId
     );
 
     if (existingIndex >= 0) {
@@ -521,10 +511,7 @@ class AmexingUser extends BaseModel {
 
     // Update primary provider if needed
     if (this.get('primaryOAuthProvider') === provider) {
-      this.set(
-        'primaryOAuthProvider',
-        filteredAccounts.length > 0 ? filteredAccounts[0].provider : null
-      );
+      this.set('primaryOAuthProvider', filteredAccounts.length > 0 ? filteredAccounts[0].provider : null);
     }
   }
 
@@ -885,10 +872,7 @@ class AmexingUser extends BaseModel {
           };
         }
 
-        rolePermission = await role.hasContextualPermission(
-          permission,
-          finalContext
-        );
+        rolePermission = await role.hasContextualPermission(permission, finalContext);
       }
 
       if (rolePermission) {
@@ -896,10 +880,7 @@ class AmexingUser extends BaseModel {
       }
 
       // Check delegated permissions
-      const hasDelegatedPermission = await this.hasDelegatedPermission(
-        permission,
-        context
-      );
+      const hasDelegatedPermission = await this.hasDelegatedPermission(permission, context);
       return hasDelegatedPermission;
     } catch (error) {
       logger.error('Error checking user permission', {
@@ -989,20 +970,13 @@ class AmexingUser extends BaseModel {
       for (const delegationData of delegationsData) {
         // Check if role can delegate this specific permission
         if (!role.canDelegatePermission(delegationData.permission)) {
-          throw new Error(
-            `Role cannot delegate permission: ${delegationData.permission}`
-          );
+          throw new Error(`Role cannot delegate permission: ${delegationData.permission}`);
         }
 
         // Verify permission can be delegated
-        const hasPermission = await this.hasPermission(
-          delegationData.permission,
-          delegationData.context || {}
-        );
+        const hasPermission = await this.hasPermission(delegationData.permission, delegationData.context || {});
         if (!hasPermission) {
-          throw new Error(
-            `Cannot delegate permission ${delegationData.permission} - user doesn't have it`
-          );
+          throw new Error(`Cannot delegate permission ${delegationData.permission} - user doesn't have it`);
         }
 
         // Validate delegation context constraints (if specified)
@@ -1011,12 +985,9 @@ class AmexingUser extends BaseModel {
           const userContextualData = this.get('contextualData') || {};
           if (
             userContextualData.maxApprovalAmount
-            && delegationData.context.maxAmount
-              > userContextualData.maxApprovalAmount
+            && delegationData.context.maxAmount > userContextualData.maxApprovalAmount
           ) {
-            throw new Error(
-              'Cannot delegate with higher limits than own permissions'
-            );
+            throw new Error('Cannot delegate with higher limits than own permissions');
           }
         }
 
@@ -1065,10 +1036,7 @@ class AmexingUser extends BaseModel {
       // For now, return a basic structure
       return {
         id: organizationId,
-        name:
-          organizationId === 'amexing'
-            ? 'Amexing'
-            : organizationId.toUpperCase(),
+        name: organizationId === 'amexing' ? 'Amexing' : organizationId.toUpperCase(),
         type: organizationId === 'amexing' ? 'internal' : 'client',
       };
     } catch (error) {
@@ -1194,9 +1162,7 @@ class AmexingUser extends BaseModel {
           return this.get('departmentId') === targetUser.get('departmentId');
 
         case 'organization':
-          return (
-            this.get('organizationId') === targetUser.get('organizationId')
-          );
+          return this.get('organizationId') === targetUser.get('organizationId');
 
         case 'system': {
           const role = await this.getRole();

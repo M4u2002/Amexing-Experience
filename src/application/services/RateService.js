@@ -78,13 +78,7 @@ class RateService {
    * //   newStatus: false
    * // }
    */
-  async toggleRateStatus(
-    currentUser,
-    rateId,
-    targetStatus,
-    reason = '',
-    userRole = null
-  ) {
+  async toggleRateStatus(currentUser, rateId, targetStatus, reason = '', userRole = null) {
     try {
       // Validate user authentication
       if (!currentUser) {
@@ -96,9 +90,7 @@ class RateService {
 
       // Validate user permissions
       if (!this.allowedRoles.includes(role)) {
-        throw new Error(
-          `Unauthorized: Role '${role}' cannot toggle Rate status`
-        );
+        throw new Error(`Unauthorized: Role '${role}' cannot toggle Rate status`);
       }
 
       // Validate Rate ID
@@ -284,10 +276,7 @@ class RateService {
       id: rate.id,
       name: rate.get('name'),
       percentage,
-      formattedPercentage:
-        percentage !== undefined && percentage !== null
-          ? `${percentage}%`
-          : '-',
+      formattedPercentage: percentage !== undefined && percentage !== null ? `${percentage}%` : '-',
       color: rate.get('color') || '#6366F1',
       active: rate.get('active'),
       createdAt: rate.createdAt,

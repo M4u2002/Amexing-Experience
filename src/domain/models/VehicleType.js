@@ -192,9 +192,7 @@ class VehicleType extends BaseModel {
     }
 
     if (this.getCode() && !/^[a-z0-9_-]+$/.test(this.getCode())) {
-      errors.push(
-        'Code must contain only lowercase letters, numbers, hyphens and underscores'
-      );
+      errors.push('Code must contain only lowercase letters, numbers, hyphens and underscores');
     }
 
     const capacity = this.getDefaultCapacity();

@@ -144,10 +144,7 @@ class AuthenticationService extends AuthenticationServiceCore {
 
       if (!user) {
         logger.logAccessAttempt(false, identifier, 'User not found');
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          'Invalid credentials'
-        );
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Invalid credentials');
       }
 
       // Check if account is locked
@@ -156,10 +153,7 @@ class AuthenticationService extends AuthenticationServiceCore {
           userId: user.id,
           username: user.get('username'),
         });
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          'Account is temporarily locked'
-        );
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Account is temporarily locked');
       }
 
       // Check if account is active
@@ -168,10 +162,7 @@ class AuthenticationService extends AuthenticationServiceCore {
           userId: user.id,
           username: user.get('username'),
         });
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          'Account is inactive'
-        );
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Account is inactive');
       }
 
       // Validate password
@@ -182,15 +173,9 @@ class AuthenticationService extends AuthenticationServiceCore {
         logger.logAccessAttempt(false, identifier, 'Invalid password');
 
         if (isLocked) {
-          throw new Parse.Error(
-            Parse.Error.OBJECT_NOT_FOUND,
-            'Account has been locked due to failed login attempts'
-          );
+          throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Account has been locked due to failed login attempts');
         } else {
-          throw new Parse.Error(
-            Parse.Error.OBJECT_NOT_FOUND,
-            'Invalid credentials'
-          );
+          throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Invalid credentials');
         }
       }
 
@@ -241,20 +226,14 @@ class AuthenticationService extends AuthenticationServiceCore {
       const decoded = jwt.verify(refreshToken, this.jwtSecret);
 
       if (decoded.type !== 'refresh') {
-        throw new Parse.Error(
-          Parse.Error.INVALID_REQUEST,
-          'Invalid refresh token'
-        );
+        throw new Parse.Error(Parse.Error.INVALID_REQUEST, 'Invalid refresh token');
       }
 
       // Find user
       const user = await this.findUserById(decoded.userId);
 
       if (!user || !user.get('active')) {
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          'User not found or inactive'
-        );
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'User not found or inactive');
       }
 
       // Generate new tokens
@@ -272,10 +251,7 @@ class AuthenticationService extends AuthenticationServiceCore {
       };
     } catch (error) {
       logger.error('Token refresh error:', error);
-      throw new Parse.Error(
-        Parse.Error.INVALID_REQUEST,
-        'Invalid or expired refresh token'
-      );
+      throw new Parse.Error(Parse.Error.INVALID_REQUEST, 'Invalid or expired refresh token');
     }
   }
 
@@ -338,20 +314,14 @@ class AuthenticationService extends AuthenticationServiceCore {
 
       // Check token type if present (backward compatibility)
       if (decoded.type && decoded.type !== 'access') {
-        throw new Parse.Error(
-          Parse.Error.INVALID_REQUEST,
-          'Invalid token type'
-        );
+        throw new Parse.Error(Parse.Error.INVALID_REQUEST, 'Invalid token type');
       }
 
       // Check if user still exists and is active
       const user = await this.findUserById(decoded.userId);
 
       if (!user || !user.get('active')) {
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          'User not found or inactive'
-        );
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'User not found or inactive');
       }
 
       // Get role object if roleId is available
@@ -487,10 +457,7 @@ class AuthenticationService extends AuthenticationServiceCore {
       const user = await query.first({ useMasterKey: true });
 
       if (!user) {
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          'Invalid or expired reset token'
-        );
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Invalid or expired reset token');
       }
 
       await user.setPassword(newPassword);
@@ -541,10 +508,7 @@ class AuthenticationService extends AuthenticationServiceCore {
       const isValidPassword = await user.validatePassword(currentPassword);
 
       if (!isValidPassword) {
-        throw new Parse.Error(
-          Parse.Error.OBJECT_NOT_FOUND,
-          'Current password is incorrect'
-        );
+        throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Current password is incorrect');
       }
 
       await user.setPassword(newPassword);

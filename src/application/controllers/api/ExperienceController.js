@@ -53,10 +53,7 @@ class ExperienceController {
       // Parse DataTables parameters
       const draw = parseInt(req.query.draw, 10) || 1;
       const start = parseInt(req.query.start, 10) || 0;
-      const length = Math.min(
-        parseInt(req.query.length, 10) || this.defaultPageSize,
-        this.maxPageSize
-      );
+      const length = Math.min(parseInt(req.query.length, 10) || this.defaultPageSize, this.maxPageSize);
       const searchValue = req.query.search?.value || '';
       const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
@@ -161,9 +158,7 @@ class ExperienceController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve experiences',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve experiences',
         500
       );
     }
@@ -236,9 +231,7 @@ class ExperienceController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve experience',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve experience',
         500
       );
     }
@@ -265,19 +258,11 @@ class ExperienceController {
 
       // Validation
       if (!name || !description || !type || cost === undefined) {
-        return this.sendError(
-          res,
-          'Required fields: name, description, type, cost',
-          400
-        );
+        return this.sendError(res, 'Required fields: name, description, type, cost', 400);
       }
 
       if (!['Experience', 'Provider'].includes(type)) {
-        return this.sendError(
-          res,
-          'Type must be Experience or Provider',
-          400
-        );
+        return this.sendError(res, 'Type must be Experience or Provider', 400);
       }
 
       if (cost < 0) {
@@ -289,20 +274,12 @@ class ExperienceController {
       }
 
       if (description.length > 1000) {
-        return this.sendError(
-          res,
-          'Description must be 1000 characters or less',
-          400
-        );
+        return this.sendError(res, 'Description must be 1000 characters or less', 400);
       }
 
       // Validate experiences array
       if (experiences && experiences.length > this.maxExperiencesPerPackage) {
-        return this.sendError(
-          res,
-          `Maximum ${this.maxExperiencesPerPackage} experiences per package`,
-          400
-        );
+        return this.sendError(res, `Maximum ${this.maxExperiencesPerPackage} experiences per package`, 400);
       }
 
       // Create experience object
@@ -325,11 +302,7 @@ class ExperienceController {
             const expQuery = new Parse.Query('Experience');
             const exp = await expQuery.get(expId, { useMasterKey: true });
             if (!exp) {
-              return this.sendError(
-                res,
-                `Experience ${expId} not found`,
-                404
-              );
+              return this.sendError(res, `Experience ${expId} not found`, 404);
             }
             experiencePointers.push(exp);
           } catch (error) {
@@ -380,9 +353,7 @@ class ExperienceController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to create experience',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to create experience',
         500
       );
     }
@@ -429,11 +400,7 @@ class ExperienceController {
           return this.sendError(res, 'Name cannot be empty', 400);
         }
         if (name.length > 200) {
-          return this.sendError(
-            res,
-            'Name must be 200 characters or less',
-            400
-          );
+          return this.sendError(res, 'Name must be 200 characters or less', 400);
         }
         experienceObj.set('name', name);
       }
@@ -443,22 +410,14 @@ class ExperienceController {
           return this.sendError(res, 'Description cannot be empty', 400);
         }
         if (description.length > 1000) {
-          return this.sendError(
-            res,
-            'Description must be 1000 characters or less',
-            400
-          );
+          return this.sendError(res, 'Description must be 1000 characters or less', 400);
         }
         experienceObj.set('description', description);
       }
 
       if (cost !== undefined) {
         if (cost < 0) {
-          return this.sendError(
-            res,
-            'Cost must be greater than or equal to 0',
-            400
-          );
+          return this.sendError(res, 'Cost must be greater than or equal to 0', 400);
         }
         experienceObj.set('cost', parseFloat(cost));
       }
@@ -470,20 +429,12 @@ class ExperienceController {
       // Update experiences array
       if (experiences !== undefined) {
         if (experiences.length > this.maxExperiencesPerPackage) {
-          return this.sendError(
-            res,
-            `Maximum ${this.maxExperiencesPerPackage} experiences per package`,
-            400
-          );
+          return this.sendError(res, `Maximum ${this.maxExperiencesPerPackage} experiences per package`, 400);
         }
 
         // Prevent self-inclusion
         if (experiences.includes(experienceId)) {
-          return this.sendError(
-            res,
-            'An experience cannot include itself',
-            400
-          );
+          return this.sendError(res, 'An experience cannot include itself', 400);
         }
 
         // Convert experience IDs to Pointers
@@ -494,11 +445,7 @@ class ExperienceController {
               const expQuery = new Parse.Query('Experience');
               const exp = await expQuery.get(expId, { useMasterKey: true });
               if (!exp) {
-                return this.sendError(
-                  res,
-                  `Experience ${expId} not found`,
-                  404
-                );
+                return this.sendError(res, `Experience ${expId} not found`, 404);
               }
               experiencePointers.push(exp);
             } catch (error) {
@@ -528,7 +475,11 @@ class ExperienceController {
         experienceId: experienceObj.id,
         userId: currentUser.id,
         updates: {
-          name, description, cost, experiences, active,
+          name,
+          description,
+          cost,
+          experiences,
+          active,
         },
       });
 
@@ -554,9 +505,7 @@ class ExperienceController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to update experience',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to update experience',
         500
       );
     }
@@ -628,9 +577,7 @@ class ExperienceController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to delete experience',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to delete experience',
         500
       );
     }
@@ -663,7 +610,9 @@ class ExperienceController {
 
       // Verify experience exists
       const experienceQuery = new Parse.Query('Experience');
-      const targetExperience = await experienceQuery.get(experienceId, { useMasterKey: true });
+      const targetExperience = await experienceQuery.get(experienceId, {
+        useMasterKey: true,
+      });
 
       if (!targetExperience || !targetExperience.get('exists')) {
         return this.sendError(res, 'Experience not found', 404);
@@ -704,9 +653,7 @@ class ExperienceController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to check dependencies',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to check dependencies',
         500
       );
     }

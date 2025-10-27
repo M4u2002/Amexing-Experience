@@ -55,18 +55,20 @@ async function callCloudFunctionWithRetry(
       lastError = error;
 
       // Check if error is "Invalid function" (code 141) - function not yet loaded
-      const isInvalidFunction = error.code === 141
-        || error.message?.includes('Invalid function');
+      const isInvalidFunction = error.code === 141 || error.message?.includes('Invalid function');
 
       // Only retry for "Invalid function" errors on first few attempts
       if (isInvalidFunction && attempt < maxRetries - 1) {
         const delay = baseDelay * 2 ** attempt; // Exponential backoff
 
-        logger.warn(`Cloud function ${functionName} not ready, retrying in ${delay}ms`, {
-          attempt: attempt + 1,
-          maxRetries,
-          error: error.message,
-        });
+        logger.warn(
+          `Cloud function ${functionName} not ready, retrying in ${delay}ms`,
+          {
+            attempt: attempt + 1,
+            maxRetries,
+            error: error.message,
+          }
+        );
 
         // Wait before retrying
         await new Promise((resolve) => {
@@ -81,10 +83,13 @@ async function callCloudFunctionWithRetry(
   }
 
   // All retries exhausted
-  logger.error(`Cloud function ${functionName} failed after ${maxRetries} attempts`, {
-    error: lastError.message,
-    code: lastError.code,
-  });
+  logger.error(
+    `Cloud function ${functionName} failed after ${maxRetries} attempts`,
+    {
+      error: lastError.message,
+      code: lastError.code,
+    }
+  );
 
   throw lastError;
 }
@@ -1071,8 +1076,7 @@ router.get('/oauth/providers', async (req, res) => {
     logger.error('OAuth providers route error:', error);
 
     // Check if this is an "Invalid function" error
-    const isInvalidFunction = error.code === 141
-      || error.message?.includes('Invalid function');
+    const isInvalidFunction = error.code === 141 || error.message?.includes('Invalid function');
 
     res.status(500).json({
       success: false,

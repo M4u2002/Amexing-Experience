@@ -461,9 +461,7 @@ class Service extends BaseModel {
    */
   static async seedDefaults() {
     // TODO: Implement seed with actual POI and VehicleType IDs from database
-    logger.info(
-      'Service seeding not implemented - requires existing POIs and VehicleTypes'
-    );
+    logger.info('Service seeding not implemented - requires existing POIs and VehicleTypes');
     return { created: 0, errors: 0 };
   }
 }

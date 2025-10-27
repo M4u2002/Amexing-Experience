@@ -106,9 +106,7 @@ class ClientEmployeesController {
 
       this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve employees',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve employees',
         500
       );
     }
@@ -135,38 +133,24 @@ class ClientEmployeesController {
       }
 
       if (!clientId || !employeeId) {
-        return this.sendError(
-          res,
-          'Client ID and Employee ID are required',
-          400
-        );
+        return this.sendError(res, 'Client ID and Employee ID are required', 400);
       }
 
       // Validate client exists
       await this.validateClientExists(clientId);
 
       // Get employee from service
-      const employee = await this.userService.getUserById(
-        currentUser,
-        employeeId
-      );
+      const employee = await this.userService.getUserById(currentUser, employeeId);
 
       if (!employee) {
         return this.sendError(res, 'Employee not found', 404);
       }
 
       // Validate employee belongs to this client
-      const employeeClientId = employee.clientId
-        || employee.get?.('clientId')
-        || employee.organizationId
-        || employee.get?.('organizationId');
+      const employeeClientId = employee.clientId || employee.get?.('clientId') || employee.organizationId || employee.get?.('organizationId');
 
       if (employeeClientId !== clientId) {
-        return this.sendError(
-          res,
-          'Employee does not belong to specified client',
-          403
-        );
+        return this.sendError(res, 'Employee does not belong to specified client', 403);
       }
 
       // Verify employee has allowed role
@@ -174,11 +158,7 @@ class ClientEmployeesController {
       const roleName = typeof role === 'string' ? role : role?.name;
 
       if (!this.allowedRoles.includes(roleName)) {
-        return this.sendError(
-          res,
-          `User is not a valid employee role (allowed: ${this.allowedRoles.join(', ')})`,
-          403
-        );
+        return this.sendError(res, `User is not a valid employee role (allowed: ${this.allowedRoles.join(', ')})`, 403);
       }
 
       this.sendSuccess(res, { employee }, 'Employee retrieved successfully');
@@ -230,15 +210,8 @@ class ClientEmployeesController {
 
       // Validate user role (only superadmin and admin can create employees)
       const currentUserRole = req.userRole;
-      if (
-        !currentUserRole
-        || !['superadmin', 'admin'].includes(currentUserRole)
-      ) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can create employees.',
-          403
-        );
+      if (!currentUserRole || !['superadmin', 'admin'].includes(currentUserRole)) {
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can create employees.', 403);
       }
 
       // Validate required fields FIRST (before database queries)
@@ -249,20 +222,12 @@ class ClientEmployeesController {
       if (!employeeData.role?.toString().trim()) missingFields.push('role');
 
       if (missingFields.length > 0) {
-        return this.sendError(
-          res,
-          `Campos requeridos faltantes: ${missingFields.join(', ')}`,
-          400
-        );
+        return this.sendError(res, `Campos requeridos faltantes: ${missingFields.join(', ')}`, 400);
       }
 
       // Validate role is allowed
       if (!this.allowedRoles.includes(employeeData.role)) {
-        return this.sendError(
-          res,
-          `Rol inválido. Roles permitidos: ${this.allowedRoles.join(', ')}`,
-          400
-        );
+        return this.sendError(res, `Rol inválido. Roles permitidos: ${this.allowedRoles.join(', ')}`, 400);
       }
 
       // Email format validation
@@ -314,10 +279,7 @@ class ClientEmployeesController {
       userWithRole.role = currentUserRole;
 
       // Create employee via UserManagementService
-      const result = await this.userService.createUser(
-        employeeData,
-        userWithRole
-      );
+      const result = await this.userService.createUser(employeeData, userWithRole);
 
       logger.info('Employee created successfully for client', {
         employeeId: result.user?.id,
@@ -333,8 +295,7 @@ class ClientEmployeesController {
         res,
         {
           employee: result.user,
-          message:
-            'Empleado creado exitosamente. Se ha generado una contraseña temporal.',
+          message: 'Empleado creado exitosamente. Se ha generado una contraseña temporal.',
         },
         'Empleado creado exitosamente',
         201
@@ -380,51 +341,30 @@ class ClientEmployeesController {
       }
 
       if (!clientId || !employeeId) {
-        return this.sendError(
-          res,
-          'Client ID and Employee ID are required',
-          400
-        );
+        return this.sendError(res, 'Client ID and Employee ID are required', 400);
       }
 
       // Validate user role (only superadmin and admin can update employees)
       const currentUserRole = req.userRole;
-      if (
-        !currentUserRole
-        || !['superadmin', 'admin'].includes(currentUserRole)
-      ) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can modify employees.',
-          403
-        );
+      if (!currentUserRole || !['superadmin', 'admin'].includes(currentUserRole)) {
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can modify employees.', 403);
       }
 
       // Validate client exists
       await this.validateClientExists(clientId);
 
       // Get employee to verify it belongs to client
-      const employee = await this.userService.getUserById(
-        currentUser,
-        employeeId
-      );
+      const employee = await this.userService.getUserById(currentUser, employeeId);
 
       if (!employee) {
         return this.sendError(res, 'Employee not found', 404);
       }
 
       // Validate employee belongs to this client
-      const employeeClientId = employee.clientId
-        || employee.get?.('clientId')
-        || employee.organizationId
-        || employee.get?.('organizationId');
+      const employeeClientId = employee.clientId || employee.get?.('clientId') || employee.organizationId || employee.get?.('organizationId');
 
       if (employeeClientId !== clientId) {
-        return this.sendError(
-          res,
-          'Employee does not belong to specified client',
-          403
-        );
+        return this.sendError(res, 'Employee does not belong to specified client', 403);
       }
 
       // Prevent role change to invalid roles
@@ -441,11 +381,7 @@ class ClientEmployeesController {
       userWithRole.role = currentUserRole;
 
       // Update user using service
-      const result = await this.userService.updateUser(
-        employeeId,
-        updateData,
-        userWithRole
-      );
+      const result = await this.userService.updateUser(employeeId, updateData, userWithRole);
 
       this.sendSuccess(res, result, 'Employee updated successfully');
     } catch (error) {
@@ -482,24 +418,13 @@ class ClientEmployeesController {
       }
 
       if (!clientId || !employeeId) {
-        return this.sendError(
-          res,
-          'Client ID and Employee ID are required',
-          400
-        );
+        return this.sendError(res, 'Client ID and Employee ID are required', 400);
       }
 
       // Validate user role (only superadmin and admin can delete employees)
       const currentUserRole = req.userRole;
-      if (
-        !currentUserRole
-        || !['superadmin', 'admin'].includes(currentUserRole)
-      ) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can delete employees.',
-          403
-        );
+      if (!currentUserRole || !['superadmin', 'admin'].includes(currentUserRole)) {
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can delete employees.', 403);
       }
 
       // Validate client exists
@@ -525,18 +450,11 @@ class ClientEmployeesController {
       const employeeClientId = employee.get('clientId') || employee.get('organizationId');
 
       if (employeeClientId !== clientId) {
-        return this.sendError(
-          res,
-          'Employee does not belong to specified client',
-          403
-        );
+        return this.sendError(res, 'Employee does not belong to specified client', 403);
       }
 
       // Deactivate employee using service
-      const result = await this.userService.deactivateUser(
-        employeeId,
-        userWithRole
-      );
+      const result = await this.userService.deactivateUser(employeeId, userWithRole);
 
       this.sendSuccess(res, result, 'Employee deactivated successfully');
     } catch (error) {
@@ -574,11 +492,7 @@ class ClientEmployeesController {
       }
 
       if (!clientId || !employeeId) {
-        return this.sendError(
-          res,
-          'Client ID and Employee ID are required',
-          400
-        );
+        return this.sendError(res, 'Client ID and Employee ID are required', 400);
       }
 
       if (typeof active !== 'boolean') {
@@ -598,11 +512,7 @@ class ClientEmployeesController {
       }
 
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can modify employee status.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can modify employee status.', 403);
       }
 
       // Validate client exists
@@ -613,27 +523,17 @@ class ClientEmployeesController {
       userWithRole.role = currentUserRole;
 
       // Get employee to verify it belongs to client
-      const employee = await this.userService.getUserById(
-        userWithRole,
-        employeeId
-      );
+      const employee = await this.userService.getUserById(userWithRole, employeeId);
 
       if (!employee) {
         return this.sendError(res, 'Employee not found', 404);
       }
 
       // Validate employee belongs to this client
-      const employeeClientId = employee.clientId
-        || employee.get?.('clientId')
-        || employee.organizationId
-        || employee.get?.('organizationId');
+      const employeeClientId = employee.clientId || employee.get?.('clientId') || employee.organizationId || employee.get?.('organizationId');
 
       if (employeeClientId !== clientId) {
-        return this.sendError(
-          res,
-          'Employee does not belong to specified client',
-          403
-        );
+        return this.sendError(res, 'Employee does not belong to specified client', 403);
       }
 
       // Toggle status using service
@@ -644,11 +544,7 @@ class ClientEmployeesController {
         'Status changed via client employees dashboard'
       );
 
-      this.sendSuccess(
-        res,
-        result,
-        `Employee ${active ? 'activated' : 'deactivated'} successfully`
-      );
+      this.sendSuccess(res, result, `Employee ${active ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       logger.error('Error in ClientEmployeesController.toggleEmployeeStatus', {
         error: error.message,

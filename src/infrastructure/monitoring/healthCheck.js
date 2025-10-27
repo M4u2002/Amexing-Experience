@@ -92,8 +92,7 @@ const getSystemMetrics = () => ({
   },
   cpu: {
     usage: process.cpuUsage(),
-    loadAverage:
-      process.platform !== 'win32' ? require('os').loadavg() : [0, 0, 0],
+    loadAverage: process.platform !== 'win32' ? require('os').loadavg() : [0, 0, 0],
   },
 });
 
@@ -140,9 +139,7 @@ const getHealthCheck = async () => {
     healthCheck.database = dbMetrics;
 
     if (dbMetrics.connected) {
-      logger.debug(
-        `Database health check passed in ${dbMetrics.responseTime}ms`
-      );
+      logger.debug(`Database health check passed in ${dbMetrics.responseTime}ms`);
     } else if (process.env.NODE_ENV === 'production') {
       healthCheck.status = 'unhealthy';
     } else {
@@ -150,10 +147,7 @@ const getHealthCheck = async () => {
     }
   } catch (error) {
     healthCheck.database.error = error.message;
-    logger.warn(
-      'Database health check failed (continuing gracefully):',
-      error.message
-    );
+    logger.warn('Database health check failed (continuing gracefully):', error.message);
 
     if (process.env.NODE_ENV === 'production') {
       healthCheck.status = 'unhealthy';

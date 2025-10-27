@@ -151,11 +151,7 @@ class AppleTokenExchanger {
              * // Returns: { success: true, data: {...} }
              */
             if (response.statusCode !== 200) {
-              reject(
-                new Error(
-                  `Token exchange failed: ${result.error_description || result.error}`
-                )
-              );
+              reject(new Error(`Token exchange failed: ${result.error_description || result.error}`));
             } else {
               resolve(result);
             }

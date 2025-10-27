@@ -78,13 +78,7 @@ class POIService {
    * //   newStatus: false
    * // }
    */
-  async togglePOIStatus(
-    currentUser,
-    poiId,
-    targetStatus,
-    reason = '',
-    userRole = null
-  ) {
+  async togglePOIStatus(currentUser, poiId, targetStatus, reason = '', userRole = null) {
     try {
       // Validate user authentication
       if (!currentUser) {
@@ -96,9 +90,7 @@ class POIService {
 
       // Validate user permissions
       if (!this.allowedRoles.includes(role)) {
-        throw new Error(
-          `Unauthorized: Role '${role}' cannot toggle POI status`
-        );
+        throw new Error(`Unauthorized: Role '${role}' cannot toggle POI status`);
       }
 
       // Validate POI ID

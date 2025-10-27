@@ -61,10 +61,7 @@ class POIController {
       // Parse DataTables parameters
       const draw = parseInt(req.query.draw, 10) || 1;
       const start = parseInt(req.query.start, 10) || 0;
-      const length = Math.min(
-        parseInt(req.query.length, 10) || this.defaultPageSize,
-        this.maxPageSize
-      );
+      const length = Math.min(parseInt(req.query.length, 10) || this.defaultPageSize, this.maxPageSize);
       const searchValue = req.query.search?.value || '';
       const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
@@ -149,9 +146,7 @@ class POIController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Error al obtener los puntos de interés',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Error al obtener los puntos de interés',
         500
       );
     }
@@ -193,22 +188,14 @@ class POIController {
         };
       });
 
-      return this.sendSuccess(
-        res,
-        options,
-        'Active POIs retrieved successfully'
-      );
+      return this.sendSuccess(res, options, 'Active POIs retrieved successfully');
     } catch (error) {
       logger.error('Error in POIController.getActivePOIs', {
         error: error.message,
         stack: error.stack,
       });
 
-      return this.sendError(
-        res,
-        'Error al obtener los puntos de interés activos',
-        500
-      );
+      return this.sendError(res, 'Error al obtener los puntos de interés activos', 500);
     }
   }
 
@@ -230,11 +217,7 @@ class POIController {
       }
 
       if (!poiId) {
-        return this.sendError(
-          res,
-          'El ID del punto de interés es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del punto de interés es requerido', 400);
       }
 
       const query = new Parse.Query('POI');
@@ -261,11 +244,7 @@ class POIController {
         updatedAt: poi.updatedAt,
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Punto de interés obtenido exitosamente'
-      );
+      return this.sendSuccess(res, data, 'Punto de interés obtenido exitosamente');
     } catch (error) {
       logger.error('Error in POIController.getPOIById', {
         error: error.message,
@@ -303,11 +282,7 @@ class POIController {
       }
 
       if (name.length > 200) {
-        return this.sendError(
-          res,
-          'El nombre debe tener 200 caracteres o menos',
-          400
-        );
+        return this.sendError(res, 'El nombre debe tener 200 caracteres o menos', 400);
       }
 
       if (!serviceTypeId) {
@@ -324,11 +299,7 @@ class POIController {
           useMasterKey: true,
         });
       } catch (error) {
-        return this.sendError(
-          res,
-          'El tipo de traslado seleccionado no existe o no está activo',
-          400
-        );
+        return this.sendError(res, 'El tipo de traslado seleccionado no existe o no está activo', 400);
       }
 
       // Check name uniqueness
@@ -338,11 +309,7 @@ class POIController {
       const existingCount = await checkQuery.count({ useMasterKey: true });
 
       if (existingCount > 0) {
-        return this.sendError(
-          res,
-          'Ya existe un punto de interés con ese nombre',
-          409
-        );
+        return this.sendError(res, 'Ya existe un punto de interés con ese nombre', 409);
       }
 
       // Create new POI using Parse.Object.extend
@@ -384,12 +351,7 @@ class POIController {
         },
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Punto de interés creado exitosamente',
-        201
-      );
+      return this.sendSuccess(res, data, 'Punto de interés creado exitosamente', 201);
     } catch (error) {
       logger.error('Error in POIController.createPOI', {
         error: error.message,
@@ -420,11 +382,7 @@ class POIController {
       }
 
       if (!poiId) {
-        return this.sendError(
-          res,
-          'El ID del punto de interés es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del punto de interés es requerido', 400);
       }
 
       // Get existing POI
@@ -441,11 +399,7 @@ class POIController {
       // Update name if provided
       if (name && name.trim().length > 0) {
         if (name.length > 200) {
-          return this.sendError(
-            res,
-            'El nombre debe tener 200 caracteres o menos',
-            400
-          );
+          return this.sendError(res, 'El nombre debe tener 200 caracteres o menos', 400);
         }
 
         // Check name uniqueness if changing
@@ -457,11 +411,7 @@ class POIController {
           const existingCount = await checkQuery.count({ useMasterKey: true });
 
           if (existingCount > 0) {
-            return this.sendError(
-              res,
-              'Ya existe un punto de interés con ese nombre',
-              409
-            );
+            return this.sendError(res, 'Ya existe un punto de interés con ese nombre', 409);
           }
 
           poi.set('name', name.trim());
@@ -484,11 +434,7 @@ class POIController {
           });
           poi.set('serviceType', serviceType);
         } catch (error) {
-          return this.sendError(
-            res,
-            'El tipo de traslado seleccionado no existe o no está activo',
-            400
-          );
+          return this.sendError(res, 'El tipo de traslado seleccionado no existe o no está activo', 400);
         }
       }
 
@@ -532,11 +478,7 @@ class POIController {
         updatedAt: updatedPoi.updatedAt,
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Punto de interés actualizado exitosamente'
-      );
+      return this.sendSuccess(res, data, 'Punto de interés actualizado exitosamente');
     } catch (error) {
       logger.error('Error in POIController.updatePOI', {
         error: error.message,
@@ -546,11 +488,7 @@ class POIController {
         body: req.body,
       });
 
-      return this.sendError(
-        res,
-        'Error al actualizar el punto de interés',
-        500
-      );
+      return this.sendError(res, 'Error al actualizar el punto de interés', 500);
     }
   }
 
@@ -573,19 +511,11 @@ class POIController {
       }
 
       if (!poiId) {
-        return this.sendError(
-          res,
-          'El ID del punto de interés es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del punto de interés es requerido', 400);
       }
 
       if (typeof active !== 'boolean') {
-        return this.sendError(
-          res,
-          'El estado activo debe ser un valor booleano',
-          400
-        );
+        return this.sendError(res, 'El estado activo debe ser un valor booleano', 400);
       }
 
       const result = await this.poiService.togglePOIStatus(
@@ -596,11 +526,7 @@ class POIController {
         req.userRole // Pass userRole from JWT middleware
       );
 
-      return this.sendSuccess(
-        res,
-        result.poi,
-        result.message || 'Estado actualizado exitosamente'
-      );
+      return this.sendSuccess(res, result.poi, result.message || 'Estado actualizado exitosamente');
     } catch (error) {
       logger.error('Error in POIController.togglePOIStatus', {
         error: error.message,
@@ -609,11 +535,7 @@ class POIController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        error.message || 'Error al cambiar el estado del punto de interés',
-        500
-      );
+      return this.sendError(res, error.message || 'Error al cambiar el estado del punto de interés', 500);
     }
   }
 
@@ -635,11 +557,7 @@ class POIController {
       }
 
       if (!poiId) {
-        return this.sendError(
-          res,
-          'El ID del punto de interés es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del punto de interés es requerido', 400);
       }
 
       await this.poiService.softDeletePOI(
@@ -649,11 +567,7 @@ class POIController {
         req.userRole // Pass userRole from JWT middleware
       );
 
-      return this.sendSuccess(
-        res,
-        null,
-        'Punto de interés eliminado exitosamente'
-      );
+      return this.sendSuccess(res, null, 'Punto de interés eliminado exitosamente');
     } catch (error) {
       logger.error('Error in POIController.deletePOI', {
         error: error.message,
@@ -662,11 +576,7 @@ class POIController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        error.message || 'Error al eliminar el punto de interés',
-        500
-      );
+      return this.sendError(res, error.message || 'Error al eliminar el punto de interés', 500);
     }
   }
 

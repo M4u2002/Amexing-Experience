@@ -72,10 +72,7 @@ class AppleIdTokenValidator {
       return payload;
     } catch (error) {
       logger.error('Apple ID token verification failed:', error);
-      throw new Parse.Error(
-        Parse.Error.OTHER_CAUSE,
-        'Failed to verify Apple ID token'
-      );
+      throw new Parse.Error(Parse.Error.OTHER_CAUSE, 'Failed to verify Apple ID token');
     }
   }
 

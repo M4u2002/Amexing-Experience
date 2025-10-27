@@ -61,10 +61,7 @@ class VehicleTypeController {
       // Parse DataTables parameters
       const draw = parseInt(req.query.draw, 10) || 1;
       const start = parseInt(req.query.start, 10) || 0;
-      const length = Math.min(
-        parseInt(req.query.length, 10) || this.defaultPageSize,
-        this.maxPageSize
-      );
+      const length = Math.min(parseInt(req.query.length, 10) || this.defaultPageSize, this.maxPageSize);
       const searchValue = req.query.search?.value || '';
       const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
@@ -154,9 +151,7 @@ class VehicleTypeController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Error al obtener los tipos de vehículos',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Error al obtener los tipos de vehículos',
         500
       );
     }
@@ -192,22 +187,14 @@ class VehicleTypeController {
         icon: type.get('icon') || 'car',
       }));
 
-      return this.sendSuccess(
-        res,
-        options,
-        'Active vehicle types retrieved successfully'
-      );
+      return this.sendSuccess(res, options, 'Active vehicle types retrieved successfully');
     } catch (error) {
       logger.error('Error in VehicleTypeController.getActiveVehicleTypes', {
         error: error.message,
         stack: error.stack,
       });
 
-      return this.sendError(
-        res,
-        'Error al obtener los tipos de vehículos activos',
-        500
-      );
+      return this.sendError(res, 'Error al obtener los tipos de vehículos activos', 500);
     }
   }
 
@@ -229,11 +216,7 @@ class VehicleTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de vehículo es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de vehículo es requerido', 400);
       }
 
       const query = new Parse.Query('VehicleType');
@@ -257,11 +240,7 @@ class VehicleTypeController {
         updatedAt: vehicleType.updatedAt,
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Tipo de vehículo obtenido exitosamente'
-      );
+      return this.sendSuccess(res, data, 'Tipo de vehículo obtenido exitosamente');
     } catch (error) {
       logger.error('Error in VehicleTypeController.getVehicleTypeById', {
         error: error.message,
@@ -312,11 +291,7 @@ class VehicleTypeController {
       const existingCount = await checkQuery.count({ useMasterKey: true });
 
       if (existingCount > 0) {
-        return this.sendError(
-          res,
-          'El código del tipo de vehículo ya existe',
-          409
-        );
+        return this.sendError(res, 'El código del tipo de vehículo ya existe', 409);
       }
 
       // Create new vehicle type using Parse.Object.extend
@@ -374,12 +349,7 @@ class VehicleTypeController {
         sortOrder: vehicleType.get('sortOrder'),
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Tipo de vehículo creado exitosamente',
-        201
-      );
+      return this.sendSuccess(res, data, 'Tipo de vehículo creado exitosamente', 201);
     } catch (error) {
       logger.error('Error in VehicleTypeController.createVehicleType', {
         error: error.message,
@@ -410,11 +380,7 @@ class VehicleTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de vehículo es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de vehículo es requerido', 400);
       }
 
       // Get existing vehicle type
@@ -427,13 +393,7 @@ class VehicleTypeController {
       }
 
       const {
-        name,
-        code,
-        description,
-        icon,
-        defaultCapacity,
-        sortOrder,
-        active,
+        name, code, description, icon, defaultCapacity, sortOrder, active,
       } = req.body;
 
       // Update fields if provided using set()
@@ -448,11 +408,7 @@ class VehicleTypeController {
         const existingCount = await checkQuery.count({ useMasterKey: true });
 
         if (existingCount > 0) {
-          return this.sendError(
-            res,
-            'El código del tipo de vehículo ya existe',
-            409
-          );
+          return this.sendError(res, 'El código del tipo de vehículo ya existe', 409);
         }
         vehicleType.set('code', code.toLowerCase());
       }
@@ -465,11 +421,7 @@ class VehicleTypeController {
 
       // Basic validation
       if (code && !/^[a-z0-9_-]+$/.test(code.toLowerCase())) {
-        return this.sendError(
-          res,
-          'Code must contain only lowercase letters, numbers, hyphens and underscores',
-          400
-        );
+        return this.sendError(res, 'Code must contain only lowercase letters, numbers, hyphens and underscores', 400);
       }
 
       // Save changes with user context for audit trail
@@ -503,11 +455,7 @@ class VehicleTypeController {
         active: vehicleType.get('active'),
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Tipo de vehículo actualizado exitosamente'
-      );
+      return this.sendSuccess(res, data, 'Tipo de vehículo actualizado exitosamente');
     } catch (error) {
       logger.error('Error in VehicleTypeController.updateVehicleType', {
         error: error.message,
@@ -515,11 +463,7 @@ class VehicleTypeController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        'Error al actualizar el tipo de vehículo',
-        500
-      );
+      return this.sendError(res, 'Error al actualizar el tipo de vehículo', 500);
     }
   }
 
@@ -543,11 +487,7 @@ class VehicleTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de vehículo es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de vehículo es requerido', 400);
       }
 
       // Get vehicle type
@@ -567,11 +507,7 @@ class VehicleTypeController {
       const vehicleCount = await vehicleQuery.count({ useMasterKey: true });
 
       if (vehicleCount > 0) {
-        return this.sendError(
-          res,
-          `Cannot delete: ${vehicleCount} vehicle(s) are using this type`,
-          409
-        );
+        return this.sendError(res, `Cannot delete: ${vehicleCount} vehicle(s) are using this type`, 409);
       }
 
       // Soft delete: set both active and exists to false with user context for audit trail
@@ -595,11 +531,7 @@ class VehicleTypeController {
         deletedBy: currentUser.id,
       });
 
-      return this.sendSuccess(
-        res,
-        null,
-        'Tipo de vehículo eliminado exitosamente'
-      );
+      return this.sendSuccess(res, null, 'Tipo de vehículo eliminado exitosamente');
     } catch (error) {
       logger.error('Error in VehicleTypeController.deleteVehicleType', {
         error: error.message,
@@ -631,19 +563,11 @@ class VehicleTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de vehículo es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de vehículo es requerido', 400);
       }
 
       if (typeof active !== 'boolean') {
-        return this.sendError(
-          res,
-          'El estado activo debe ser un valor booleano',
-          400
-        );
+        return this.sendError(res, 'El estado activo debe ser un valor booleano', 400);
       }
 
       // Add role to currentUser for service validation

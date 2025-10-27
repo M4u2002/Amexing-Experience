@@ -77,9 +77,7 @@ class AuthController {
       });
     }
 
-    const csrf = securityMiddlewares.csrfProtection.create(
-      req.session.csrfSecret
-    );
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
 
     // Get OAuth providers for login form
     let oauthProviders = [];
@@ -129,17 +127,12 @@ class AuthController {
     if (!req.session.csrfSecret) {
       const uidSafe = require('uid-safe');
       req.session.csrfSecret = await uidSafe(32);
-      logger.warn(
-        'CSRF secret was missing in showRegister, generated new one',
-        {
-          sessionID: req.session.id,
-        }
-      );
+      logger.warn('CSRF secret was missing in showRegister, generated new one', {
+        sessionID: req.session.id,
+      });
     }
 
-    const csrf = securityMiddlewares.csrfProtection.create(
-      req.session.csrfSecret
-    );
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
     res.render('auth/register', {
       title: 'Register - AmexingWeb',
       error: req.query.error || null,
@@ -243,17 +236,12 @@ class AuthController {
     if (!req.session || !req.session.csrfSecret) {
       const uidSafe = require('uid-safe');
       req.session.csrfSecret = await uidSafe(32);
-      logger.warn(
-        'CSRF secret was missing in returnWithToken, generated new one',
-        {
-          sessionID: req.session?.id,
-        }
-      );
+      logger.warn('CSRF secret was missing in returnWithToken, generated new one', {
+        sessionID: req.session?.id,
+      });
     }
 
-    const csrf = securityMiddlewares.csrfProtection.create(
-      req.session.csrfSecret
-    );
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
     return res.render('auth/login', {
       title: 'Login - AmexingWeb',
       error: 'Invalid username or password',
@@ -292,10 +280,7 @@ class AuthController {
     try {
       const validationResult = this.validateRegistration(req.body);
       if (!validationResult.isValid) {
-        return this.handleRegistrationValidationError(
-          res,
-          validationResult.error
-        );
+        return this.handleRegistrationValidationError(res, validationResult.error);
       }
 
       const newUser = await this.createUser(req.body);
@@ -368,17 +353,12 @@ class AuthController {
     if (!res.req.session || !res.req.session.csrfSecret) {
       const uidSafe = require('uid-safe');
       res.req.session.csrfSecret = await uidSafe(32);
-      logger.warn(
-        'CSRF secret was missing in handleRegistrationValidationError, generated new one',
-        {
-          sessionID: res.req.session?.id,
-        }
-      );
+      logger.warn('CSRF secret was missing in handleRegistrationValidationError, generated new one', {
+        sessionID: res.req.session?.id,
+      });
     }
 
-    const csrf = securityMiddlewares.csrfProtection.create(
-      res.req.session.csrfSecret
-    );
+    const csrf = securityMiddlewares.csrfProtection.create(res.req.session.csrfSecret);
     return res.render('auth/register', {
       title: 'Register - AmexingWeb',
       error: 'All fields are required',
@@ -499,17 +479,12 @@ class AuthController {
     if (!res.req.session || !res.req.session.csrfSecret) {
       const uidSafe = require('uid-safe');
       res.req.session.csrfSecret = await uidSafe(32);
-      logger.warn(
-        'CSRF secret was missing in handleRegistrationError, generated new one',
-        {
-          sessionID: res.req.session?.id,
-        }
-      );
+      logger.warn('CSRF secret was missing in handleRegistrationError, generated new one', {
+        sessionID: res.req.session?.id,
+      });
     }
 
-    const csrf = securityMiddlewares.csrfProtection.create(
-      res.req.session.csrfSecret
-    );
+    const csrf = securityMiddlewares.csrfProtection.create(res.req.session.csrfSecret);
 
     return res.render('auth/register', {
       title: 'Register - AmexingWeb',
@@ -610,17 +585,12 @@ class AuthController {
     if (!req.session.csrfSecret) {
       const uidSafe = require('uid-safe');
       req.session.csrfSecret = await uidSafe(32);
-      logger.warn(
-        'CSRF secret was missing in showForgotPassword, generated new one',
-        {
-          sessionID: req.session.id,
-        }
-      );
+      logger.warn('CSRF secret was missing in showForgotPassword, generated new one', {
+        sessionID: req.session.id,
+      });
     }
 
-    const csrf = securityMiddlewares.csrfProtection.create(
-      req.session.csrfSecret
-    );
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
     res.render('auth/forgot-password', {
       title: 'Forgot Password - AmexingWeb',
       error: req.query.error || null,
@@ -660,23 +630,16 @@ class AuthController {
     if (!req.session.csrfSecret) {
       const uidSafe = require('uid-safe');
       req.session.csrfSecret = await uidSafe(32);
-      logger.warn(
-        'CSRF secret was missing in showResetPassword, generated new one',
-        {
-          sessionID: req.session.id,
-        }
-      );
+      logger.warn('CSRF secret was missing in showResetPassword, generated new one', {
+        sessionID: req.session.id,
+      });
     }
 
-    const csrf = securityMiddlewares.csrfProtection.create(
-      req.session.csrfSecret
-    );
+    const csrf = securityMiddlewares.csrfProtection.create(req.session.csrfSecret);
     const { token } = req.query;
 
     if (!token) {
-      return res.redirect(
-        `/auth/forgot-password?error=${encodeURIComponent('Invalid or missing reset token')}`
-      );
+      return res.redirect(`/auth/forgot-password?error=${encodeURIComponent('Invalid or missing reset token')}`);
     }
 
     res.render('auth/reset-password', {

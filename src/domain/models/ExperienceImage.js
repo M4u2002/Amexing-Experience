@@ -360,12 +360,9 @@ class ExperienceImage extends BaseModel {
       const LocalExperienceImage = Parse.Object.extend('ExperienceImage');
       const query = new Parse.Query(LocalExperienceImage);
 
-      const experience = await new Parse.Query('Experience').get(
-        experienceId,
-        {
-          useMasterKey: true,
-        }
-      );
+      const experience = await new Parse.Query('Experience').get(experienceId, {
+        useMasterKey: true,
+      });
       query.equalTo('experienceId', experience);
       query.equalTo('exists', true);
       query.equalTo('isPrimary', true);
@@ -393,9 +390,7 @@ class ExperienceImage extends BaseModel {
       const images = await this.findByExperience(experienceId);
 
       // Sort by creation time
-      images.sort(
-        (a, b) => a.get('createdAt').getTime() - b.get('createdAt').getTime()
-      );
+      images.sort((a, b) => a.get('createdAt').getTime() - b.get('createdAt').getTime());
 
       // Update display order based on sorted position
       const updatePromises = images.map((img, index) => {

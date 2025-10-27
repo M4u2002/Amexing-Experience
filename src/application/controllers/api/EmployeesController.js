@@ -92,9 +92,7 @@ class EmployeesController {
       // Send detailed error for debugging
       this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve employees',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve employees',
         500
       );
     }
@@ -133,18 +131,10 @@ class EmployeesController {
       const roleName = typeof role === 'string' ? role : role?.name;
 
       if (roleName !== this.employeeRole) {
-        return this.sendError(
-          res,
-          'User is not an employee (employee_amexing)',
-          403
-        );
+        return this.sendError(res, 'User is not an employee (employee_amexing)', 403);
       }
 
-      this.sendSuccess(
-        res,
-        { employee: user },
-        'Employee retrieved successfully'
-      );
+      this.sendSuccess(res, { employee: user }, 'Employee retrieved successfully');
     } catch (error) {
       logger.error('Error in EmployeesController.getEmployeeById', {
         error: error.message,
@@ -187,11 +177,7 @@ class EmployeesController {
       // Validate user role (only superadmin and admin can create employees)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can create employees.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can create employees.', 403);
       }
 
       // Validate required fields
@@ -202,21 +188,13 @@ class EmployeesController {
       if (!employeeData.role?.toString().trim()) missingFields.push('role');
 
       if (missingFields.length > 0) {
-        return this.sendError(
-          res,
-          `Campos requeridos faltantes: ${missingFields.join(', ')}`,
-          400
-        );
+        return this.sendError(res, `Campos requeridos faltantes: ${missingFields.join(', ')}`, 400);
       }
 
       // Validate role (only employee_amexing and driver are allowed)
       const allowedRoles = ['employee_amexing', 'driver'];
       if (!allowedRoles.includes(employeeData.role)) {
-        return this.sendError(
-          res,
-          `Rol inválido. Los roles permitidos son: ${allowedRoles.join(', ')}`,
-          400
-        );
+        return this.sendError(res, `Rol inválido. Los roles permitidos son: ${allowedRoles.join(', ')}`, 400);
       }
 
       // Email format validation
@@ -267,10 +245,7 @@ class EmployeesController {
       userWithRole.role = currentUserRole;
 
       // Create employee user via UserManagementService
-      const result = await this.userService.createUser(
-        employeeData,
-        userWithRole
-      );
+      const result = await this.userService.createUser(employeeData, userWithRole);
 
       logger.info('Employee created successfully', {
         employeeId: result.user?.id,
@@ -285,8 +260,7 @@ class EmployeesController {
         res,
         {
           employee: result.user,
-          message:
-            'Empleado creado exitosamente. Se ha generado una contraseña temporal.',
+          message: 'Empleado creado exitosamente. Se ha generado una contraseña temporal.',
         },
         'Empleado creado exitosamente',
         201
@@ -335,28 +309,16 @@ class EmployeesController {
       // Validate user role (only superadmin and admin can update employees)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can modify employees.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can modify employees.', 403);
       }
 
       // Prevent role change - employees must remain employee_amexing
       if (updateData.role && updateData.role !== this.employeeRole) {
-        return this.sendError(
-          res,
-          `Cannot change employee role. Must be ${this.employeeRole}`,
-          400
-        );
+        return this.sendError(res, `Cannot change employee role. Must be ${this.employeeRole}`, 400);
       }
 
       // Update user using service
-      const result = await this.userService.updateUser(
-        employeeId,
-        updateData,
-        currentUser
-      );
+      const result = await this.userService.updateUser(employeeId, updateData, currentUser);
 
       this.sendSuccess(res, result, 'Employee updated successfully');
     } catch (error) {
@@ -395,18 +357,11 @@ class EmployeesController {
       // Validate user role (only superadmin and admin can delete employees)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can delete employees.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can delete employees.', 403);
       }
 
       // Deactivate employee using service
-      const result = await this.userService.deactivateUser(
-        employeeId,
-        currentUser
-      );
+      const result = await this.userService.deactivateUser(employeeId, currentUser);
 
       this.sendSuccess(res, result, 'Employee deactivated successfully');
     } catch (error) {
@@ -451,11 +406,7 @@ class EmployeesController {
       // Validate user role (only superadmin and admin can toggle employee status)
       const currentUserRole = req.userRole || currentUser.role || currentUser.get?.('role');
       if (!['superadmin', 'admin'].includes(currentUserRole)) {
-        return this.sendError(
-          res,
-          'Access denied. Only SuperAdmin or Admin can modify employee status.',
-          403
-        );
+        return this.sendError(res, 'Access denied. Only SuperAdmin or Admin can modify employee status.', 403);
       }
 
       // Toggle status using service
@@ -466,11 +417,7 @@ class EmployeesController {
         'Status changed via employees dashboard'
       );
 
-      this.sendSuccess(
-        res,
-        result,
-        `Employee ${active ? 'activated' : 'deactivated'} successfully`
-      );
+      this.sendSuccess(res, result, `Employee ${active ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       logger.error('Error in EmployeesController.toggleEmployeeStatus', {
         error: error.message,

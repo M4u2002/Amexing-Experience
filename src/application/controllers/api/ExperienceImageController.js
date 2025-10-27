@@ -63,11 +63,7 @@ class ExperienceImageController {
         if (this.allowedMimeTypes.includes(file.mimetype)) {
           cb(null, true);
         } else {
-          cb(
-            new Error(
-              'Tipo de archivo no permitido. Solo se aceptan JPG, PNG y WEBP'
-            )
-          );
+          cb(new Error('Tipo de archivo no permitido. Solo se aceptan JPG, PNG y WEBP'));
         }
       },
     });
@@ -122,10 +118,7 @@ class ExperienceImageController {
       const experienceImage = new ExperienceImageClass();
 
       experienceImage.set('experienceId', experience);
-      experienceImage.set(
-        'url',
-        `/uploads/experiences/${experienceId}/${file.filename}`
-      );
+      experienceImage.set('url', `/uploads/experiences/${experienceId}/${file.filename}`);
       experienceImage.set('fileName', file.originalname);
       experienceImage.set('fileSize', file.size);
       experienceImage.set('mimeType', file.mimetype);

@@ -97,9 +97,7 @@ class Rate extends BaseModel {
    */
   getFormattedPercentage() {
     const percentage = this.getPercentage();
-    return percentage !== undefined && percentage !== null
-      ? `${percentage}%`
-      : '-';
+    return percentage !== undefined && percentage !== null ? `${percentage}%` : '-';
   }
 
   /**

@@ -390,9 +390,7 @@ class VehicleImage extends BaseModel {
       const images = await this.findByVehicle(vehicleId);
 
       // Sort by creation time
-      images.sort(
-        (a, b) => a.get('createdAt').getTime() - b.get('createdAt').getTime()
-      );
+      images.sort((a, b) => a.get('createdAt').getTime() - b.get('createdAt').getTime());
 
       // Update display order based on sorted position
       const updatePromises = images.map((img, index) => {

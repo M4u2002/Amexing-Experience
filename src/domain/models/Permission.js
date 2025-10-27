@@ -59,43 +59,27 @@ class Permission extends BaseModel {
     // Validate resource and action format
     const validPartRegex = /^[a-z][a-z0-9_]*$/;
     if (!validPartRegex.test(permissionData.resource)) {
-      throw new Error(
-        'Resource must contain only lowercase letters, numbers, and underscores, starting with a letter'
-      );
+      throw new Error('Resource must contain only lowercase letters, numbers, and underscores, starting with a letter');
     }
     if (!validPartRegex.test(permissionData.action)) {
-      throw new Error(
-        'Action must contain only lowercase letters, numbers, and underscores, starting with a letter'
-      );
+      throw new Error('Action must contain only lowercase letters, numbers, and underscores, starting with a letter');
     }
 
     // Validate conditions structure if provided
-    if (
-      permissionData.conditions
-      && typeof permissionData.conditions !== 'object'
-    ) {
+    if (permissionData.conditions && typeof permissionData.conditions !== 'object') {
       throw new Error('Conditions must be an object');
     }
 
     // Validate condition values if provided
     if (permissionData.conditions) {
       const { conditions } = permissionData;
-      if (
-        conditions.maxAmount !== undefined
-        && typeof conditions.maxAmount !== 'number'
-      ) {
+      if (conditions.maxAmount !== undefined && typeof conditions.maxAmount !== 'number') {
         throw new Error('maxAmount must be a number');
       }
-      if (
-        conditions.minAmount !== undefined
-        && typeof conditions.minAmount !== 'number'
-      ) {
+      if (conditions.minAmount !== undefined && typeof conditions.minAmount !== 'number') {
         throw new Error('minAmount must be a number');
       }
-      if (
-        conditions.businessHoursOnly !== undefined
-        && typeof conditions.businessHoursOnly !== 'boolean'
-      ) {
+      if (conditions.businessHoursOnly !== undefined && typeof conditions.businessHoursOnly !== 'boolean') {
         throw new Error('businessHoursOnly must be a boolean');
       }
     }
@@ -103,8 +87,7 @@ class Permission extends BaseModel {
     const permission = new Permission();
 
     // Auto-generate name if not provided
-    const name = permissionData.name
-      || `${permissionData.resource}.${permissionData.action}`;
+    const name = permissionData.name || `${permissionData.resource}.${permissionData.action}`;
 
     // Core permission identification
     permission.set('name', name);
@@ -120,20 +103,9 @@ class Permission extends BaseModel {
     // Permission metadata
     permission.set('category', permissionData.category || 'general');
     permission.set('priority', permissionData.priority || 0);
-    permission.set(
-      'isSystemPermission',
-      permissionData.isSystemPermission || false
-    );
-    permission.set(
-      'requiresApproval',
-      permissionData.requiresApproval || false
-    );
-    permission.set(
-      'delegatable',
-      permissionData.delegatable !== undefined
-        ? permissionData.delegatable
-        : true
-    );
+    permission.set('isSystemPermission', permissionData.isSystemPermission || false);
+    permission.set('requiresApproval', permissionData.requiresApproval || false);
+    permission.set('delegatable', permissionData.delegatable !== undefined ? permissionData.delegatable : true);
 
     // Permission inheritance
     permission.set('includes', permissionData.includes || []);
@@ -143,14 +115,8 @@ class Permission extends BaseModel {
     permission.set('prerequisites', permissionData.prerequisites || []);
 
     // Base model fields
-    permission.set(
-      'active',
-      permissionData.active !== undefined ? permissionData.active : true
-    );
-    permission.set(
-      'exists',
-      permissionData.exists !== undefined ? permissionData.exists : true
-    );
+    permission.set('active', permissionData.active !== undefined ? permissionData.active : true);
+    permission.set('exists', permissionData.exists !== undefined ? permissionData.exists : true);
 
     return permission;
   }
@@ -186,10 +152,8 @@ class Permission extends BaseModel {
 
     // Check department scope - only validate if department info is provided in context
     if (
-      (conditions.departmentScope === 'own'
-        || conditions.departmentScope === true)
-      && (context.departmentId !== undefined
-        || context.userDepartmentId !== undefined)
+      (conditions.departmentScope === 'own' || conditions.departmentScope === true)
+      && (context.departmentId !== undefined || context.userDepartmentId !== undefined)
     ) {
       if (!context.departmentId || !context.userDepartmentId) {
         return false;
@@ -202,11 +166,7 @@ class Permission extends BaseModel {
     // Special case: if context is empty but conditions exist that require context
     if (Object.keys(context).length === 0) {
       // Return false only if conditions require specific context validation
-      if (
-        conditions.maxAmount !== undefined
-        || conditions.businessHoursOnly
-        || conditions.departmentScope
-      ) {
+      if (conditions.maxAmount !== undefined || conditions.businessHoursOnly || conditions.departmentScope) {
         return false;
       }
     }
@@ -221,10 +181,7 @@ class Permission extends BaseModel {
    * // Usage example documented above
    */
   isSystemPermission() {
-    return (
-      this.get('isSystemPermission') === true
-      || this.get('category') === 'system'
-    );
+    return this.get('isSystemPermission') === true || this.get('category') === 'system';
   }
 
   /**
@@ -303,9 +260,7 @@ class Permission extends BaseModel {
     const parentParts = parentPermission.split('.');
 
     if (parentParts.length < nameParts.length) {
-      return (
-        nameParts.slice(0, parentParts.length).join('.') === parentPermission
-      );
+      return nameParts.slice(0, parentParts.length).join('.') === parentPermission;
     }
 
     return false;
@@ -363,17 +318,11 @@ class Permission extends BaseModel {
     }
 
     // Validate specific condition values
-    if (
-      conditions.maxAmount !== undefined
-      && typeof conditions.maxAmount !== 'number'
-    ) {
+    if (conditions.maxAmount !== undefined && typeof conditions.maxAmount !== 'number') {
       return false;
     }
 
-    if (
-      conditions.businessHoursOnly !== undefined
-      && typeof conditions.businessHoursOnly !== 'boolean'
-    ) {
+    if (conditions.businessHoursOnly !== undefined && typeof conditions.businessHoursOnly !== 'boolean') {
       return false;
     }
 
@@ -447,27 +396,20 @@ class Permission extends BaseModel {
 
       // Check time-based conditions
       if (conditions.businessHoursOnly) {
-        const now = context.timestamp
-          ? new Date(context.timestamp)
-          : new Date();
+        const now = context.timestamp ? new Date(context.timestamp) : new Date();
         const hour = now.getHours();
         const day = now.getDay();
 
         if (day === 0 || day === 6 || hour < 9 || hour > 17) {
           return {
             valid: false,
-            reason:
-              'Action only allowed during business hours (9 AM - 5 PM, Monday-Friday)',
+            reason: 'Action only allowed during business hours (9 AM - 5 PM, Monday-Friday)',
           };
         }
       }
 
       // Check department scope
-      if (
-        conditions.departmentScope === 'own'
-        && user
-        && context.departmentId
-      ) {
+      if (conditions.departmentScope === 'own' && user && context.departmentId) {
         if (user.get('departmentId') !== context.departmentId) {
           return {
             valid: false,
@@ -477,11 +419,7 @@ class Permission extends BaseModel {
       }
 
       // Check organization scope
-      if (
-        conditions.organizationScope === 'own'
-        && user
-        && context.organizationId
-      ) {
+      if (conditions.organizationScope === 'own' && user && context.organizationId) {
         if (user.get('organizationId') !== context.organizationId) {
           return {
             valid: false,
@@ -492,11 +430,7 @@ class Permission extends BaseModel {
 
       // Check custom validation rules
       if (validationRules.customValidator) {
-        const customResult = await this.executeCustomValidator(
-          validationRules.customValidator,
-          context,
-          user
-        );
+        const customResult = await this.executeCustomValidator(validationRules.customValidator, context, user);
         if (!customResult.valid) {
           return customResult;
         }
@@ -505,10 +439,7 @@ class Permission extends BaseModel {
       // Check prerequisites
       const prerequisites = this.get('prerequisites') || [];
       if (prerequisites.length > 0) {
-        const prerequisiteResult = await this.checkPrerequisites(
-          prerequisites,
-          user
-        );
+        const prerequisiteResult = await this.checkPrerequisites(prerequisites, user);
         if (!prerequisiteResult.valid) {
           return prerequisiteResult;
         }

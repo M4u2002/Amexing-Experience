@@ -63,11 +63,7 @@ class VehicleImageController {
         if (this.allowedMimeTypes.includes(file.mimetype)) {
           cb(null, true);
         } else {
-          cb(
-            new Error(
-              'Tipo de archivo no permitido. Solo se aceptan JPG, PNG y WEBP'
-            )
-          );
+          cb(new Error('Tipo de archivo no permitido. Solo se aceptan JPG, PNG y WEBP'));
         }
       },
     });
@@ -122,10 +118,7 @@ class VehicleImageController {
       const vehicleImage = new VehicleImageClass();
 
       vehicleImage.set('vehicleId', vehicle);
-      vehicleImage.set(
-        'url',
-        `/uploads/vehicles/${vehicleId}/${file.filename}`
-      );
+      vehicleImage.set('url', `/uploads/vehicles/${vehicleId}/${file.filename}`);
       vehicleImage.set('fileName', file.originalname);
       vehicleImage.set('fileSize', file.size);
       vehicleImage.set('mimeType', file.mimetype);

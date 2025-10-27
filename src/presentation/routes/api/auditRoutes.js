@@ -31,8 +31,7 @@ const auditApiLimiter = rateLimit({
   max: 200, // Limit each IP to 200 requests per windowMs (read-heavy operations)
   message: {
     success: false,
-    error:
-      'Too many audit log requests from this IP, please try again later.',
+    error: 'Too many audit log requests from this IP, please try again later.',
     retryAfter: '15 minutes',
   },
   standardHeaders: true,

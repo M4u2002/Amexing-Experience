@@ -50,20 +50,8 @@ class RoleBasedController extends DashboardController {
         'allocate_budget',
         'view_department_reports',
       ],
-      employee: [
-        'view_own_profile',
-        'create_booking',
-        'view_own_bookings',
-        'view_own_budget',
-        'submit_feedback',
-      ],
-      driver: [
-        'view_own_profile',
-        'view_assigned_trips',
-        'update_trip_status',
-        'view_earnings',
-        'manage_vehicle',
-      ],
+      employee: ['view_own_profile', 'create_booking', 'view_own_bookings', 'view_own_budget', 'submit_feedback'],
+      driver: ['view_own_profile', 'view_assigned_trips', 'update_trip_status', 'view_earnings', 'manage_vehicle'],
       guest: ['view_event_info', 'view_transport_details'],
     };
 
@@ -85,12 +73,7 @@ class RoleBasedController extends DashboardController {
     return (req, res, next) => {
       // Redirect to login if user not authenticated
       if (!req.user) {
-        return this.redirectWithMessage(
-          res,
-          '/login',
-          'Please login to continue',
-          'error'
-        );
+        return this.redirectWithMessage(res, '/login', 'Please login to continue', 'error');
       }
 
       const roleHierarchy = {
@@ -109,11 +92,7 @@ class RoleBasedController extends DashboardController {
 
       // Check if user has sufficient permissions
       if (userLevel < requiredLevel) {
-        return this.handleError(
-          res,
-          new Error('Insufficient permissions'),
-          403
-        );
+        return this.handleError(res, new Error('Insufficient permissions'), 403);
       }
 
       next();

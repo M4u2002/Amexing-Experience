@@ -174,9 +174,7 @@ function handleValidationError(err) {
     return null;
   }
 
-  const message = err.details
-    ? err.details.map((detail) => detail.message).join(', ')
-    : 'Validation error';
+  const message = err.details ? err.details.map((detail) => detail.message).join(', ') : 'Validation error';
 
   return { status: 400, message };
 }
@@ -324,9 +322,7 @@ function getErrorDetails(err) {
 const errorHandler = (err, req, res, _next) => {
   logError(err, req);
   const { status, message } = getErrorDetails(err);
-  const finalMessage = process.env.NODE_ENV === 'production' && status === 500
-    ? 'An error occurred processing your request'
-    : message;
+  const finalMessage = process.env.NODE_ENV === 'production' && status === 500 ? 'An error occurred processing your request' : message;
 
   res.status(status);
 

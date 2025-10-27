@@ -52,8 +52,8 @@
     "test:components:create": "node scripts/testing/component-completeness-check.js --create",
     "lint": "eslint src/ --ext .js --config .config/eslint/eslintrc.js",
     "lint:fix": "eslint src/ --ext .js --fix --config .config/eslint/eslintrc.js",
-    "format": "prettier --write \"src/**/*.js\"",
-    "format:check": "prettier --check \"src/**/*.js\"",
+    "format": "prettier --write \"src/**/*.js\" --config .config/prettier/.prettierrc",
+    "format:check": "prettier --check \"src/**/*.js\" --config .config/prettier/.prettierrc",
     "clean:logs": "node scripts/global/cleanup/remove-console-logs.js",
     "clean:logs:preview": "node scripts/global/cleanup/remove-console-logs.js --dry-run",
     "clean:logs:backend": "node scripts/global/cleanup/remove-console-logs.js --scope=backend",
@@ -302,8 +302,8 @@
   },
   "lint-staged": {
     "src/**/*.js": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint --fix --config .config/eslint/eslintrc.js",
+      "prettier --write --config .config/prettier/.prettierrc"
     ]
   }
 }

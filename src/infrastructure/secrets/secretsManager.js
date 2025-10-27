@@ -44,9 +44,7 @@ class SecureSecretsManager {
       this.encryptionKey = Buffer.from(encryptionKey, 'base64');
       // Validate encryption key length
       if (this.encryptionKey.length !== this.keyLength) {
-        throw new Error(
-          `Encryption key must be ${this.keyLength} bytes when decoded`
-        );
+        throw new Error(`Encryption key must be ${this.keyLength} bytes when decoded`);
       }
     } catch (error) {
       throw new Error(`Invalid encryption key format: ${error.message}`);
@@ -72,11 +70,7 @@ class SecureSecretsManager {
     }
 
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(
-      this.algorithm,
-      this.encryptionKey,
-      iv
-    );
+    const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
     cipher.setAAD(Buffer.from('secrets-manager'));
 
     let encrypted = cipher.update(value, 'utf8', 'hex');
@@ -116,11 +110,7 @@ class SecureSecretsManager {
       const iv = Buffer.from(ivHex, 'hex');
       const authTag = Buffer.from(authTagHex, 'hex');
 
-      const decipher = crypto.createDecipheriv(
-        this.algorithm,
-        this.encryptionKey,
-        iv
-      );
+      const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
       decipher.setAAD(Buffer.from('secrets-manager'));
       decipher.setAuthTag(authTag);
 
@@ -307,9 +297,7 @@ class SecureSecretsManager {
 
     const bytes = crypto.randomBytes(length);
     // Return secret in requested encoding
-    return encoding === 'hex'
-      ? bytes.toString('hex')
-      : bytes.toString('base64');
+    return encoding === 'hex' ? bytes.toString('hex') : bytes.toString('base64');
   }
 
   /**

@@ -61,10 +61,7 @@ class ServiceTypeController {
       // Parse DataTables parameters
       const draw = parseInt(req.query.draw, 10) || 1;
       const start = parseInt(req.query.start, 10) || 0;
-      const length = Math.min(
-        parseInt(req.query.length, 10) || this.defaultPageSize,
-        this.maxPageSize
-      );
+      const length = Math.min(parseInt(req.query.length, 10) || this.defaultPageSize, this.maxPageSize);
       const searchValue = req.query.search?.value || '';
       const sortColumnIndex = parseInt(req.query.order?.[0]?.column, 10) || 0;
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
@@ -140,9 +137,7 @@ class ServiceTypeController {
 
       return this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Error al obtener los tipos de traslado',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Error al obtener los tipos de traslado',
         500
       );
     }
@@ -175,22 +170,14 @@ class ServiceTypeController {
         label: type.get('name'),
       }));
 
-      return this.sendSuccess(
-        res,
-        options,
-        'Active service types retrieved successfully'
-      );
+      return this.sendSuccess(res, options, 'Active service types retrieved successfully');
     } catch (error) {
       logger.error('Error in ServiceTypeController.getActiveServiceTypes', {
         error: error.message,
         stack: error.stack,
       });
 
-      return this.sendError(
-        res,
-        'Error al obtener los tipos de traslado activos',
-        500
-      );
+      return this.sendError(res, 'Error al obtener los tipos de traslado activos', 500);
     }
   }
 
@@ -212,11 +199,7 @@ class ServiceTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de traslado es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de traslado es requerido', 400);
       }
 
       const query = new Parse.Query('ServiceType');
@@ -235,11 +218,7 @@ class ServiceTypeController {
         updatedAt: serviceType.updatedAt,
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Tipo de traslado obtenido exitosamente'
-      );
+      return this.sendSuccess(res, data, 'Tipo de traslado obtenido exitosamente');
     } catch (error) {
       logger.error('Error in ServiceTypeController.getServiceTypeById', {
         error: error.message,
@@ -277,11 +256,7 @@ class ServiceTypeController {
       }
 
       if (name.length > 100) {
-        return this.sendError(
-          res,
-          'El nombre debe tener 100 caracteres o menos',
-          400
-        );
+        return this.sendError(res, 'El nombre debe tener 100 caracteres o menos', 400);
       }
 
       // Check name uniqueness manually
@@ -291,11 +266,7 @@ class ServiceTypeController {
       const existingCount = await checkQuery.count({ useMasterKey: true });
 
       if (existingCount > 0) {
-        return this.sendError(
-          res,
-          'Ya existe un tipo de traslado con ese nombre',
-          409
-        );
+        return this.sendError(res, 'Ya existe un tipo de traslado con ese nombre', 409);
       }
 
       // Create new service type using Parse.Object.extend
@@ -331,12 +302,7 @@ class ServiceTypeController {
         active: serviceType.get('active'),
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Tipo de traslado creado exitosamente',
-        201
-      );
+      return this.sendSuccess(res, data, 'Tipo de traslado creado exitosamente', 201);
     } catch (error) {
       logger.error('Error in ServiceTypeController.createServiceType', {
         error: error.message,
@@ -367,11 +333,7 @@ class ServiceTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de traslado es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de traslado es requerido', 400);
       }
 
       // Get existing service type
@@ -396,11 +358,7 @@ class ServiceTypeController {
           const existingCount = await checkQuery.count({ useMasterKey: true });
 
           if (existingCount > 0) {
-            return this.sendError(
-              res,
-              'Ya existe un tipo de traslado con ese nombre',
-              409
-            );
+            return this.sendError(res, 'Ya existe un tipo de traslado con ese nombre', 409);
           }
         }
         serviceType.set('name', name);
@@ -438,11 +396,7 @@ class ServiceTypeController {
         updatedAt: serviceType.get('updatedAt'),
       };
 
-      return this.sendSuccess(
-        res,
-        data,
-        'Tipo de traslado actualizado exitosamente'
-      );
+      return this.sendSuccess(res, data, 'Tipo de traslado actualizado exitosamente');
     } catch (error) {
       logger.error('Error in ServiceTypeController.updateServiceType', {
         error: error.message,
@@ -451,11 +405,7 @@ class ServiceTypeController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        'Error al actualizar el tipo de traslado',
-        500
-      );
+      return this.sendError(res, 'Error al actualizar el tipo de traslado', 500);
     }
   }
 
@@ -480,19 +430,11 @@ class ServiceTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de traslado es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de traslado es requerido', 400);
       }
 
       if (typeof active !== 'boolean') {
-        return this.sendError(
-          res,
-          'El campo "active" debe ser un booleano',
-          400
-        );
+        return this.sendError(res, 'El campo "active" debe ser un booleano', 400);
       }
 
       // Attach userRole to currentUser for permission validation
@@ -530,11 +472,7 @@ class ServiceTypeController {
         userId: req.user?.id,
       });
 
-      return this.sendError(
-        res,
-        'Error al cambiar el estado del tipo de traslado',
-        500
-      );
+      return this.sendError(res, 'Error al cambiar el estado del tipo de traslado', 500);
     }
   }
 
@@ -556,22 +494,14 @@ class ServiceTypeController {
       }
 
       if (!typeId) {
-        return this.sendError(
-          res,
-          'El ID del tipo de traslado es requerido',
-          400
-        );
+        return this.sendError(res, 'El ID del tipo de traslado es requerido', 400);
       }
 
       // Attach userRole to currentUser for permission validation
       currentUser.userRole = req.userRole;
 
       // Use service for soft delete operation
-      const result = await this.serviceTypeService.softDeleteServiceType(
-        currentUser,
-        typeId,
-        'Soft delete via API'
-      );
+      const result = await this.serviceTypeService.softDeleteServiceType(currentUser, typeId, 'Soft delete via API');
 
       if (!result.success) {
         return this.sendError(res, result.message, 400);

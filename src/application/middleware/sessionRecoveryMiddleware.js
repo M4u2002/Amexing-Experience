@@ -55,9 +55,7 @@ function isSessionNearExpiration(session) {
   }
 
   const now = Date.now();
-  const expires = session.cookie.expires
-    ? new Date(session.cookie.expires).getTime()
-    : now + session.cookie.maxAge;
+  const expires = session.cookie.expires ? new Date(session.cookie.expires).getTime() : now + session.cookie.maxAge;
 
   const timeRemaining = expires - now;
   const fiveMinutes = 5 * 60 * 1000;
@@ -163,17 +161,11 @@ function sessionHealthCheck() {
       // Add session health headers for debugging (safe for production)
       if (req.session) {
         res.setHeader('X-Session-Exists', 'true');
-        res.setHeader(
-          'X-CSRF-Protected',
-          req.session.csrfSecret ? 'true' : 'false'
-        );
+        res.setHeader('X-CSRF-Protected', req.session.csrfSecret ? 'true' : 'false');
 
         // Add truncated session ID for correlation (PCI DSS safe - no sensitive data)
         if (req.session.id) {
-          res.setHeader(
-            'X-Session-ID',
-            `${req.session.id.substring(0, 8)}***`
-          );
+          res.setHeader('X-Session-ID', `${req.session.id.substring(0, 8)}***`);
         }
       } else {
         res.setHeader('X-Session-Exists', 'false');
@@ -229,9 +221,7 @@ function sessionHealthEndpoint(req, res) {
       csrfProtected,
       expiresAt: req.session?.cookie?.expires || null,
       nearExpiration,
-      sessionId: req.session?.id
-        ? `${req.session.id.substring(0, 8)}***`
-        : null,
+      sessionId: req.session?.id ? `${req.session.id.substring(0, 8)}***` : null,
       timestamp: new Date().toISOString(),
     };
 

@@ -61,16 +61,11 @@ class Role extends BaseModel {
 
     // Validate role name format
     if (!/^[a-z_]+$/.test(roleData.name)) {
-      throw new Error(
-        'Role name must contain only lowercase letters and underscores'
-      );
+      throw new Error('Role name must contain only lowercase letters and underscores');
     }
 
     // Validate level
-    if (
-      roleData.level !== undefined
-      && (roleData.level < 1 || roleData.level > 7)
-    ) {
+    if (roleData.level !== undefined && (roleData.level < 1 || roleData.level > 7)) {
       throw new Error('Role level must be between 1 and 7');
     }
 
@@ -86,10 +81,7 @@ class Role extends BaseModel {
 
     // Permission system
     role.set('basePermissions', roleData.basePermissions || []);
-    role.set(
-      'delegatable',
-      roleData.delegatable !== undefined ? roleData.delegatable : false
-    );
+    role.set('delegatable', roleData.delegatable !== undefined ? roleData.delegatable : false);
     role.set('inheritsFrom', roleData.inheritsFrom || null);
 
     // Contextual restrictions
@@ -124,9 +116,7 @@ class Role extends BaseModel {
         const parentRole = await this.getParentRole();
         if (parentRole) {
           const parentPermissions = await parentRole.getAllPermissions();
-          allPermissions = [
-            ...new Set([...allPermissions, ...parentPermissions]),
-          ];
+          allPermissions = [...new Set([...allPermissions, ...parentPermissions])];
         }
       }
 
@@ -309,9 +299,7 @@ class Role extends BaseModel {
    */
   hasSystemPermission(permission) {
     const basePermissions = this.get('basePermissions') || [];
-    return (
-      basePermissions.includes(permission) || basePermissions.includes('*')
-    );
+    return basePermissions.includes(permission) || basePermissions.includes('*');
   }
 
   /**
@@ -329,10 +317,7 @@ class Role extends BaseModel {
     if (!permissionConfig) {
       // Fall back to regular permission check
       const basePermissions = this.get('basePermissions') || [];
-      if (
-        !basePermissions.includes(permission)
-        && !basePermissions.includes('*')
-      ) {
+      if (!basePermissions.includes(permission) && !basePermissions.includes('*')) {
         return false;
       }
     }
@@ -362,15 +347,10 @@ class Role extends BaseModel {
     // If no specific delegatable permissions are set, allow delegation of all base permissions
     if (delegatablePermissions.length === 0) {
       const basePermissions = this.get('basePermissions') || [];
-      return (
-        basePermissions.includes(permission) || basePermissions.includes('*')
-      );
+      return basePermissions.includes(permission) || basePermissions.includes('*');
     }
 
-    return (
-      delegatablePermissions.includes(permission)
-      || delegatablePermissions.includes('*')
-    );
+    return delegatablePermissions.includes(permission) || delegatablePermissions.includes('*');
   }
 
   /**
@@ -540,12 +520,7 @@ class Role extends BaseModel {
         level: 3,
         scope: 'department',
         organization: 'client',
-        basePermissions: [
-          'bookings.read',
-          'bookings.create',
-          'services.read',
-          'pricing.read',
-        ],
+        basePermissions: ['bookings.read', 'bookings.create', 'services.read', 'pricing.read'],
         delegatable: false,
         isSystemRole: true,
         conditions: {

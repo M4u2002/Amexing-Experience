@@ -123,9 +123,7 @@ const customFormat = winston.format.combine(
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.simple(),
-  winston.format.printf(
-    ({ level, message, timestamp }) => `${timestamp} ${level}: ${message}`
-  )
+  winston.format.printf(({ level, message, timestamp }) => `${timestamp} ${level}: ${message}`)
 );
 
 // Determine if we're in test environment
@@ -206,10 +204,7 @@ if (process.env.ENABLE_AUDIT_LOGGING === 'true' && !isTestEnvironment) {
       zippedArchive: true,
       maxSize: '50m',
       maxFiles: process.env.AUDIT_LOG_RETENTION_DAYS || '365d',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-      ),
+      format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
       auditMode: true,
     })
   );

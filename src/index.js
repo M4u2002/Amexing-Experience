@@ -33,17 +33,9 @@ const methodOverride = require('method-override');
 const swaggerUi = require('swagger-ui-express');
 const logger = require('./infrastructure/logger');
 const securityMiddleware = require('./infrastructure/security/securityMiddleware');
-const {
-  initializeParseServer,
-  shutdownParseServer,
-} = require('./infrastructure/server/parseServerInit');
-const {
-  configureStaticFiles,
-} = require('./infrastructure/server/staticFilesConfig');
-const {
-  getHealthCheck,
-  getMetrics,
-} = require('./infrastructure/monitoring/healthCheck');
+const { initializeParseServer, shutdownParseServer } = require('./infrastructure/server/parseServerInit');
+const { configureStaticFiles } = require('./infrastructure/server/staticFilesConfig');
+const { getHealthCheck, getMetrics } = require('./infrastructure/monitoring/healthCheck');
 
 // Swagger/OpenAPI Documentation
 const { swaggerSpec } = require('./infrastructure/swagger/swagger.config');
@@ -129,9 +121,7 @@ securityMiddlewares.forEach((middleware) => {
 // Swagger API Documentation (Development and Test only)
 // SECURITY: Disabled in production - configure proper API documentation strategy for production
 if (process.env.NODE_ENV !== 'production') {
-  logger.info(
-    'Swagger API Documentation enabled at /api-docs (Development/Test only)'
-  );
+  logger.info('Swagger API Documentation enabled at /api-docs (Development/Test only)');
 
   app.use(
     '/api-docs',

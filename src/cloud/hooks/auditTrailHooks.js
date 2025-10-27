@@ -154,7 +154,9 @@ async function extractUserContext(request) {
       Object.assign(context, request.auditContext);
     }
   } catch (error) {
-    logger.error('Error extracting user context for audit', { error: error.message });
+    logger.error('Error extracting user context for audit', {
+      error: error.message,
+    });
     // Fallback to system if error
     context.userId = 'system';
     context.username = 'System (error)';

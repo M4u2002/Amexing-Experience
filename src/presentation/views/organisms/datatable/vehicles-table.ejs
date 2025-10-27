@@ -49,6 +49,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         <th>Vehículo</th>
                         <th>Tipo</th>
                         <th>Placa</th>
+                        <th>Tarifa</th>
                         <th>Capacidad</th>
                         <th>Mantenimiento</th>
                         <th>Seguro</th>
@@ -131,17 +132,28 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                 <div class="form-text">Tipo de vehículo del catálogo</div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="capacity" class="form-label">Capacidad <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="capacity" name="capacity" required min="1" max="50" placeholder="Ej: 4">
-                                <div class="form-text">Número de pasajeros</div>
+                                <label for="rate" class="form-label">Tarifa</label>
+                                <select class="form-select" id="rate" name="rate">
+                                    <option value="">Sin tarifa asignada</option>
+                                    <!-- Options loaded dynamically from API -->
+                                </select>
+                                <div class="form-text">Tarifa de referencia para el cliente (opcional)</div>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label for="capacity" class="form-label">Capacidad <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="capacity" name="capacity" required min="1" max="50" placeholder="Ej: 4">
+                                <div class="form-text">Número de pasajeros</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label for="color" class="form-label">Color <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="color" name="color" required maxlength="50" placeholder="Ej: Negro">
                             </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="maintenanceStatus" class="form-label">Estado de Mantenimiento <span class="text-danger">*</span></label>
                                 <select class="form-select" id="maintenanceStatus" name="maintenanceStatus" required>
@@ -152,12 +164,11 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                     <option value="out_of_service">Fuera de Servicio</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="insuranceExpiry" class="form-label">Vencimiento de Seguro</label>
-                            <input type="date" class="form-control" id="insuranceExpiry" name="insuranceExpiry">
-                            <div class="form-text">Fecha de vencimiento del seguro del vehículo</div>
+                            <div class="col-md-6 mb-3">
+                                <label for="insuranceExpiry" class="form-label">Vencimiento de Seguro</label>
+                                <input type="date" class="form-control" id="insuranceExpiry" name="insuranceExpiry">
+                                <div class="form-text">Fecha de vencimiento del seguro del vehículo</div>
+                            </div>
                         </div>
                     </div>
 
@@ -239,6 +250,18 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     data: 'licensePlate',
                     render: function(data) {
                         return `<code class="badge bg-dark">${data || '-'}</code>`;
+                    }
+                },
+                {
+                    data: null,
+                    render: function(data) {
+                        if (!data.rateId) {
+                            return '<span class="badge bg-secondary">Sin tarifa</span>';
+                        }
+                        const rateColor = data.rateId.color || '#6366F1';
+                        const rateName = data.rateId.name || '-';
+                        const ratePercentage = data.rateId.percentage !== undefined ? `${data.rateId.percentage}%` : '';
+                        return `<span class="badge" style="background-color: ${rateColor}; color: white;">${rateName} ${ratePercentage}</span>`;
                     }
                 },
                 {
@@ -361,7 +384,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json',
                 processing: '<i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando vehículos...'
             },
-            order: [[6, 'desc']],
+            order: [[7, 'desc']], // Changed from 6 to 7 (updatedAt column index)
             pageLength: 10,
             searchDelay: 300,
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
@@ -409,6 +432,24 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             });
         }
 
+        function loadRates() {
+            return $.ajax({
+                url: '/api/rates/active',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const select = $('#rate');
+                        select.find('option:not(:first)').remove();
+                        response.data.forEach(function(rate) {
+                            const ratePercentage = rate.percentage !== undefined ? ` (${rate.percentage}%)` : '';
+                            select.append(`<option value="${rate.value}">${rate.label}${ratePercentage}</option>`);
+                        });
+                    }
+                },
+                error: function(xhr) { showErrorAlert('Error al cargar las tarifas'); }
+            });
+        }
+
         function openVehicleModal(isEdit = false) {
             $('#vehicleModal').modal('show');
             $('#vehicleForm')[0].reset();
@@ -416,6 +457,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             $('#modalTitle').text(isEdit ? 'Editar Vehículo' : 'Crear Nuevo Vehículo');
             $('#saveButtonText').text(isEdit ? 'Guardar Cambios' : 'Crear Vehículo');
             loadVehicleTypes();
+            loadRates();
         }
 
         function loadVehicleData(vehicleId) {
@@ -439,9 +481,10 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         $('#color').val(vehicle.color);
                         $('#maintenanceStatus').val(vehicle.maintenanceStatus);
                         $('#insuranceExpiry').val(vehicle.insuranceExpiry || '');
-                        // Load vehicle types and set the selected one
-                        loadVehicleTypes().done(function() {
+                        // Load vehicle types and rates, then set the selected ones
+                        $.when(loadVehicleTypes(), loadRates()).done(function() {
                             $('#vehicleType').val(vehicle.vehicleTypeId);
+                            $('#rate').val(vehicle.rateId || '');
                         });
                     } else {
                         showErrorAlert('Formato de respuesta inválido');
@@ -461,12 +504,14 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             }
             const vehicleId = $('#vehicleId').val();
             const isEdit = !!vehicleId;
+            const rateValue = $('#rate').val();
             const vehicleData = {
                 brand: $('#brand').val(),
                 model: $('#model').val(),
                 year: parseInt($('#year').val()),
                 licensePlate: $('#licensePlate').val().toUpperCase(),
                 vehicleTypeId: $('#vehicleType').val(),
+                rateId: rateValue || null,
                 capacity: parseInt($('#capacity').val()),
                 color: $('#color').val(),
                 maintenanceStatus: $('#maintenanceStatus').val(),

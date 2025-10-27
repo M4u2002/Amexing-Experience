@@ -91,9 +91,7 @@ class AmexingUsersController {
       // Send detailed error for debugging
       this.sendError(
         res,
-        process.env.NODE_ENV === 'development'
-          ? `Error: ${error.message}`
-          : 'Failed to retrieve users',
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve users',
         500
       );
     }
@@ -129,15 +127,8 @@ class AmexingUsersController {
 
       // Verify user is from Amexing organization
       const role = user.roleId || user.role;
-      if (
-        role
-        && !this.allowedRoles.includes(typeof role === 'string' ? role : role.name)
-      ) {
-        return this.sendError(
-          res,
-          'User is not an Amexing organization user',
-          403
-        );
+      if (role && !this.allowedRoles.includes(typeof role === 'string' ? role : role.name)) {
+        return this.sendError(res, 'User is not an Amexing organization user', 403);
       }
 
       this.sendSuccess(res, { user }, 'User retrieved successfully');
@@ -174,21 +165,13 @@ class AmexingUsersController {
 
       // Validate role is allowed for Amexing users
       if (userData.role && !this.allowedRoles.includes(userData.role)) {
-        return this.sendError(
-          res,
-          `Invalid role for Amexing user. Allowed: ${this.allowedRoles.join(', ')}`,
-          400
-        );
+        return this.sendError(res, `Invalid role for Amexing user. Allowed: ${this.allowedRoles.join(', ')}`, 400);
       }
 
       // Only SuperAdmin can create other SuperAdmins
       const currentUserRole = currentUser.role || currentUser.get?.('role');
       if (userData.role === 'superadmin' && currentUserRole !== 'superadmin') {
-        return this.sendError(
-          res,
-          'Only SuperAdmin can create SuperAdmin users',
-          403
-        );
+        return this.sendError(res, 'Only SuperAdmin can create SuperAdmin users', 403);
       }
 
       // Create user using service
@@ -231,19 +214,11 @@ class AmexingUsersController {
 
       // Validate role if being updated
       if (updateData.role && !this.allowedRoles.includes(updateData.role)) {
-        return this.sendError(
-          res,
-          `Invalid role for Amexing user. Allowed: ${this.allowedRoles.join(', ')}`,
-          400
-        );
+        return this.sendError(res, `Invalid role for Amexing user. Allowed: ${this.allowedRoles.join(', ')}`, 400);
       }
 
       // Update user using service
-      const result = await this.userService.updateUser(
-        userId,
-        updateData,
-        currentUser
-      );
+      const result = await this.userService.updateUser(userId, updateData, currentUser);
 
       this.sendSuccess(res, result, 'Amexing user updated successfully');
     } catch (error) {
@@ -321,17 +296,9 @@ class AmexingUsersController {
       }
 
       // Toggle status using service
-      const result = await this.userService.toggleUserStatus(
-        userId,
-        active,
-        currentUser
-      );
+      const result = await this.userService.toggleUserStatus(userId, active, currentUser);
 
-      this.sendSuccess(
-        res,
-        result,
-        `User ${active ? 'activated' : 'deactivated'} successfully`
-      );
+      this.sendSuccess(res, result, `User ${active ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       logger.error('Error in AmexingUsersController.toggleAmexingUserStatus', {
         error: error.message,

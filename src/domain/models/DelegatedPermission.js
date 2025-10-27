@@ -59,11 +59,7 @@ class DelegatedPermission extends BaseModel {
   static create(delegationData) {
     // Validate required fields
     const hasPermission = delegationData.permission || delegationData.permissions;
-    if (
-      !delegationData.fromUserId
-      || !delegationData.toUserId
-      || !hasPermission
-    ) {
+    if (!delegationData.fromUserId || !delegationData.toUserId || !hasPermission) {
       throw new Error('From user, to user, and permission are required');
     }
 
@@ -105,15 +101,9 @@ class DelegatedPermission extends BaseModel {
 
     // Metadata
     delegation.set('reason', delegationData.reason || '');
-    delegation.set(
-      'delegationType',
-      delegationData.delegationType || 'temporary'
-    ); // 'temporary', 'permanent', 'emergency'
+    delegation.set('delegationType', delegationData.delegationType || 'temporary'); // 'temporary', 'permanent', 'emergency'
     delegation.set('priority', delegationData.priority || 0);
-    delegation.set(
-      'approvalRequired',
-      delegationData.approvalRequired || false
-    );
+    delegation.set('approvalRequired', delegationData.approvalRequired || false);
     delegation.set('approvedBy', delegationData.approvedBy || null);
     delegation.set('approvedAt', delegationData.approvedAt || null);
 
@@ -142,14 +132,8 @@ class DelegatedPermission extends BaseModel {
     delegation.set('revocationReason', null);
 
     // Base model fields
-    delegation.set(
-      'active',
-      delegationData.active !== undefined ? delegationData.active : true
-    );
-    delegation.set(
-      'exists',
-      delegationData.exists !== undefined ? delegationData.exists : true
-    );
+    delegation.set('active', delegationData.active !== undefined ? delegationData.active : true);
+    delegation.set('exists', delegationData.exists !== undefined ? delegationData.exists : true);
 
     return delegation;
   }
@@ -230,8 +214,7 @@ class DelegatedPermission extends BaseModel {
     const singlePermission = this.get('permission');
     const delegatedPermissions = this.get('permissions') || [];
 
-    const hasPermissionMatch = singlePermission === permission
-      || delegatedPermissions.includes(permission);
+    const hasPermissionMatch = singlePermission === permission || delegatedPermissions.includes(permission);
     if (!hasPermissionMatch) {
       return false;
     }
@@ -257,10 +240,7 @@ class DelegatedPermission extends BaseModel {
     if (delegationContext.timeRestriction && context.timestamp) {
       const time = new Date(context.timestamp);
       const hour = time.getHours();
-      if (
-        delegationContext.timeRestriction === 'business'
-        && (hour < 9 || hour > 17)
-      ) {
+      if (delegationContext.timeRestriction === 'business' && (hour < 9 || hour > 17)) {
         return false;
       }
     }
@@ -397,10 +377,7 @@ class DelegatedPermission extends BaseModel {
     const delegationContext = this.get('context') || this.get('conditions') || {};
 
     // If amount is required but not provided
-    if (
-      delegationContext.maxAmount !== undefined
-      && context.amount === undefined
-    ) {
+    if (delegationContext.maxAmount !== undefined && context.amount === undefined) {
       return false;
     }
 
@@ -413,10 +390,7 @@ class DelegatedPermission extends BaseModel {
 
     // Check department constraint
     if (delegationContext.departmentId) {
-      if (
-        !context.departmentId
-        || context.departmentId !== delegationContext.departmentId
-      ) {
+      if (!context.departmentId || context.departmentId !== delegationContext.departmentId) {
         return false;
       }
     }
@@ -437,10 +411,7 @@ class DelegatedPermission extends BaseModel {
       // Check time of day (using UTC to match test expectations)
       if (restrictions.startTime && restrictions.endTime) {
         const currentTime = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}`;
-        if (
-          currentTime < restrictions.startTime
-          || currentTime > restrictions.endTime
-        ) {
+        if (currentTime < restrictions.startTime || currentTime > restrictions.endTime) {
           return false;
         }
       }
@@ -595,10 +566,7 @@ class DelegatedPermission extends BaseModel {
 
     // Custom conditions
     if (conditions.customValidator) {
-      const customResult = await this.executeCustomValidator(
-        conditions.customValidator,
-        context
-      );
+      const customResult = await this.executeCustomValidator(conditions.customValidator, context);
       if (!customResult.valid) {
         return customResult;
       }
@@ -640,10 +608,7 @@ class DelegatedPermission extends BaseModel {
 
     // IP address restrictions
     if (restrictions.allowedIpRanges && context.ipAddress) {
-      const isAllowed = this.isIpAddressAllowed(
-        context.ipAddress,
-        restrictions.allowedIpRanges
-      );
+      const isAllowed = this.isIpAddressAllowed(context.ipAddress, restrictions.allowedIpRanges);
       if (!isAllowed) {
         return {
           valid: false,
