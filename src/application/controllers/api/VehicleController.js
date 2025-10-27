@@ -350,7 +350,9 @@ class VehicleController {
       }
 
       if (insuranceExpiry) {
-        vehicle.set('insuranceExpiry', new Date(insuranceExpiry));
+        // Normalize to end of day UTC to avoid timezone issues
+        const expiryDate = new Date(`${insuranceExpiry}T23:59:59.999Z`);
+        vehicle.set('insuranceExpiry', expiryDate);
       }
 
       // Save with master key and user context for audit trail
@@ -459,7 +461,9 @@ class VehicleController {
       if (active !== undefined) vehicle.set('active', active);
 
       if (insuranceExpiry) {
-        vehicle.set('insuranceExpiry', new Date(insuranceExpiry));
+        // Normalize to end of day UTC to avoid timezone issues
+        const expiryDate = new Date(`${insuranceExpiry}T23:59:59.999Z`);
+        vehicle.set('insuranceExpiry', expiryDate);
       }
 
       // Update license plate if changed

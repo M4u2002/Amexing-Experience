@@ -72,6 +72,9 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             </div>
 
             <div class="modal-body">
+                <!-- Alert container for modal-specific errors -->
+                <div id="vehicleTypeModalAlerts"></div>
+
                 <form id="vehicleTypeForm">
                     <input type="hidden" id="vehicleTypeId">
 
@@ -317,6 +320,12 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
         // Functions
         function openVehicleTypeModal(isEdit = false) {
+            // Clear any previous modal alerts
+            const alertsContainer = document.getElementById('vehicleTypeModalAlerts');
+            if (alertsContainer) {
+                alertsContainer.querySelectorAll('.alert').forEach(el => el.remove());
+            }
+
             $('#vehicleTypeModal').modal('show');
             $('#vehicleTypeForm')[0].reset();
             $('#vehicleTypeId').val('');
@@ -358,7 +367,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', { xhr, status, error });
                     const errorMessage = xhr.responseJSON?.error || 'Error al cargar el tipo de vehículo';
-                    showErrorAlert(errorMessage);
+                    showModalError(errorMessage);
                 }
             });
         }
@@ -402,8 +411,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     if (xhr.responseJSON?.error) {
                         // Translate common errors to Spanish
                         const error = xhr.responseJSON.error;
-                        if (error.includes('already exists') || error.includes('código')) {
-                            errorMessage = 'El código del tipo de vehículo ya existe. Por favor, usa uno diferente.';
+                        if (error.includes('already exists') || error.includes('nombre')) {
+                            errorMessage = 'El nombre del tipo de vehículo ya existe. Por favor, usa uno diferente.';
                         } else if (error.includes('required')) {
                             errorMessage = 'Todos los campos requeridos deben ser completados.';
                         } else {
@@ -411,7 +420,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         }
                     }
 
-                    showErrorAlert(errorMessage);
+                    showModalError(errorMessage);
                 }
             });
         }
@@ -534,6 +543,37 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     }
                 });
             });
+        }
+
+        /**
+         * Show error alert inside modal
+         * @param {string} message - Error message to display
+         */
+        function showModalError(message) {
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="ti ti-alert-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            const container = document.getElementById('vehicleTypeModalAlerts');
+            if (container) {
+                // Remove existing alerts from modal
+                container.querySelectorAll('.alert').forEach(el => el.remove());
+
+                // Insert new alert at the beginning of modal alerts container
+                container.insertAdjacentHTML('afterbegin', alertHtml);
+
+                // Auto-dismiss after 8 seconds
+                setTimeout(() => {
+                    container.querySelectorAll('.alert').forEach(el => {
+                        el.classList.remove('show');
+                        setTimeout(() => el.remove(), 150);
+                    });
+                }, 8000);
+            }
         }
 
         /**

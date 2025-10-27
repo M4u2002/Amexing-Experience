@@ -71,6 +71,9 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             </div>
 
             <div class="modal-body">
+                <!-- Alert container for modal-specific errors -->
+                <div id="serviceTypeModalAlerts"></div>
+
                 <form id="serviceTypeForm">
                     <input type="hidden" id="serviceTypeId">
 
@@ -274,6 +277,12 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
         // Functions
         function openServiceTypeModal(isEdit = false) {
+            // Clear any previous modal alerts
+            const alertsContainer = document.getElementById('serviceTypeModalAlerts');
+            if (alertsContainer) {
+                alertsContainer.querySelectorAll('.alert').forEach(el => el.remove());
+            }
+
             $('#serviceTypeModal').modal('show');
             $('#serviceTypeForm')[0].reset();
             $('#serviceTypeId').val('');
@@ -304,7 +313,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', { xhr, status, error });
                     const errorMessage = xhr.responseJSON?.error || 'Error al cargar el tipo de traslado';
-                    showErrorAlert(errorMessage);
+                    showModalError(errorMessage);
                 }
             });
         }
@@ -353,7 +362,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         }
                     }
 
-                    showErrorAlert(errorMessage);
+                    showModalError(errorMessage);
                 }
             });
         }
@@ -506,6 +515,33 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         setTimeout(() => el.remove(), 150);
                     });
                 }, 5000);
+            }
+        }
+
+        /**
+         * Show error alert inside modal
+         * @param {string} message - Error message to display
+         */
+        function showModalError(message) {
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="ti ti-alert-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            const container = document.getElementById('serviceTypeModalAlerts');
+            if (container) {
+                container.querySelectorAll('.alert').forEach(el => el.remove());
+                container.insertAdjacentHTML('afterbegin', alertHtml);
+
+                setTimeout(() => {
+                    container.querySelectorAll('.alert').forEach(el => {
+                        el.classList.remove('show');
+                        setTimeout(() => el.remove(), 150);
+                    });
+                }, 8000);
             }
         }
 

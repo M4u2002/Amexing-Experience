@@ -71,6 +71,9 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             </div>
 
             <div class="modal-body">
+                <!-- Alert container for modal-specific errors -->
+                <div id="rateModalAlerts"></div>
+
                 <form id="rateForm">
                     <input type="hidden" id="rateId">
 
@@ -345,6 +348,12 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
         // Functions
         function openRateModal(isEdit = false) {
+            // Clear any previous modal alerts
+            const alertsContainer = document.getElementById('rateModalAlerts');
+            if (alertsContainer) {
+                alertsContainer.querySelectorAll('.alert').forEach(el => el.remove());
+            }
+
             $('#rateModal').modal('show');
             $('#rateForm')[0].reset();
             $('#rateId').val('');
@@ -382,7 +391,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', { xhr, status, error });
                     const errorMessage = xhr.responseJSON?.error || 'Error al cargar la tarifa';
-                    showErrorAlert(errorMessage);
+                    showModalError(errorMessage);
                 }
             });
         }
@@ -431,7 +440,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         }
                     }
 
-                    showErrorAlert(errorMessage);
+                    showModalError(errorMessage);
                 }
             });
         }
@@ -552,6 +561,37 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     }
                 });
             });
+        }
+
+        /**
+         * Show error alert inside modal
+         * @param {string} message - Error message to display
+         */
+        function showModalError(message) {
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="ti ti-alert-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            const container = document.getElementById('rateModalAlerts');
+            if (container) {
+                // Remove existing alerts from modal
+                container.querySelectorAll('.alert').forEach(el => el.remove());
+
+                // Insert new alert at the beginning of modal alerts container
+                container.insertAdjacentHTML('afterbegin', alertHtml);
+
+                // Auto-dismiss after 8 seconds
+                setTimeout(() => {
+                    container.querySelectorAll('.alert').forEach(el => {
+                        el.classList.remove('show');
+                        setTimeout(() => el.remove(), 150);
+                    });
+                }, 8000);
+            }
         }
 
         /**
