@@ -120,6 +120,47 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                             selected: []
                         }) %>
 
+                        <!-- Tabla de Costo Sugerido (inicialmente oculta) -->
+                        <div id="suggestedCostContainer" style="display: none;" class="mb-3">
+                            <div class="card border-info">
+                                <div class="card-header bg-info bg-opacity-10 py-2">
+                                    <h6 class="mb-0 text-info">
+                                        <i class="ti ti-calculator me-2"></i>Costo Sugerido (Informativo)
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm mb-0" id="suggestedCostTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Experiencia/Proveedor</th>
+                                                    <th class="text-end" style="width: 150px;">Costo</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="suggestedCostBody">
+                                                <!-- Filas dinámicas generadas por JavaScript -->
+                                            </tbody>
+                                            <tfoot class="table-light">
+                                                <tr>
+                                                    <th>Total Sugerido</th>
+                                                    <th class="text-end">
+                                                        <span id="suggestedTotal" class="fw-bold text-primary">$0.00 MXN</span>
+                                                    </th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2">
+                                    <small class="text-muted">
+                                        <i class="ti ti-info-circle me-1"></i>
+                                        Este es un cálculo sugerido basado en los costos individuales.
+                                        Puedes establecer el precio final en el campo "Costo" abajo.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="cost" class="form-label">Costo <span class="text-danger">*</span></label>
                             <div class="input-group">
@@ -141,6 +182,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     <i class="ti ti-check me-1"></i><span id="saveButtonText">Crear Experiencia</span>
                 </button>
             </div>
+
+            <%- include('../../atoms/common/modal-loader', { text: 'Cargando datos de la experiencia...' }) %>
         </div>
     </div>
 </div>
@@ -165,6 +208,85 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         const showActions = <%= dtShowActions %>;
         const canEdit = <%= canEdit %>;
         const canDelete = <%= canDelete %>;
+
+        // Variable global para almacenar datos de experiencias con costos
+        let experiencesDataMap = {};
+
+        /**
+         * Format money amount with thousands separator and 2 decimals
+         * @param {number} amount - Amount to format
+         * @returns {string} Formatted money string
+         */
+        function formatMoney(amount) {
+            return parseFloat(amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        /**
+         * Update suggested cost table based on selected experiences
+         */
+        function updateSuggestedCostTable() {
+            const selectElement = document.getElementById('experiences');
+            const tomSelectInstance = selectElement?.tomselect;
+            const selectedIds = tomSelectInstance?.getValue() || [];
+
+            const container = $('#suggestedCostContainer');
+            const tbody = $('#suggestedCostBody');
+
+            if (selectedIds.length === 0) {
+                // No selections, hide table
+                container.hide();
+                return;
+            }
+
+            // Clear tbody
+            tbody.empty();
+
+            let total = 0;
+
+            // Generate rows for each selected item
+            selectedIds.forEach(function(id) {
+                const item = experiencesDataMap[id];
+                if (item) {
+                    const cost = parseFloat(item.cost || 0);
+                    total += cost;
+
+                    const row = `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td class="text-end">$${formatMoney(cost)} MXN</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                }
+            });
+
+            // Update total
+            $('#suggestedTotal').text(`$${formatMoney(total)} MXN`);
+
+            // Show table
+            container.show();
+        }
+
+        /**
+         * Initialize suggested cost calculator by binding to Tom Select change event
+         */
+        let calculatorInitialized = false;
+        function initializeSuggestedCostCalculator() {
+            // Prevent multiple initializations
+            if (calculatorInitialized) {
+                return;
+            }
+
+            const selectElement = document.getElementById('experiences');
+            const tomSelectInstance = selectElement?.tomselect;
+
+            if (tomSelectInstance) {
+                tomSelectInstance.on('change', function() {
+                    updateSuggestedCostTable();
+                });
+                calculatorInitialized = true;
+            }
+        }
 
         const dataTable = $(`#${tableId}`).DataTable({
             processing: true,
@@ -328,6 +450,9 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 data: { length: 1000 }, // Get all for selection
                 success: function(response) {
                     if (response.data) {
+                        // Reset data map
+                        experiencesDataMap = {};
+
                         // Get Tom Select instance
                         const selectElement = document.getElementById('experiences');
                         const tomSelectInstance = selectElement ? selectElement.tomselect : null;
@@ -336,18 +461,30 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                             // Clear existing options
                             tomSelectInstance.clearOptions();
 
-                            // Add new options
+                            // Add new options with cost information
                             response.data.forEach(function(item) {
                                 if (item.id !== currentId && item.active) {
+                                    // Store complete data for cost calculation
+                                    experiencesDataMap[item.id] = {
+                                        id: item.id,
+                                        name: item.name,
+                                        cost: item.cost || 0
+                                    };
+
+                                    // Add option to Tom Select with cost in display text
+                                    const costFormatted = formatMoney(item.cost || 0);
                                     tomSelectInstance.addOption({
                                         value: item.id,
-                                        text: item.name
+                                        text: `${item.name} - $${costFormatted} MXN`
                                     });
                                 }
                             });
 
                             // Refresh the dropdown
                             tomSelectInstance.refreshOptions(false);
+
+                            // Initialize cost calculator after loading items
+                            initializeSuggestedCostCalculator();
                         }
                     }
                 },
@@ -372,11 +509,17 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 tomSelectInstance.clear();
             }
 
+            // Hide suggested cost table
+            $('#suggestedCostContainer').hide();
+
             loadAvailableItems();
         }
 
         function loadExperienceData(experienceId) {
             openExperienceModal(true);
+
+            // Show loader to prevent user interaction during data loading
+            showModalLoader('experienceModal');
 
             $.ajax({
                 url: `${apiEndpoint}/${experienceId}`,
@@ -396,14 +539,24 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                 const tomSelectInstance = selectElement ? selectElement.tomselect : null;
                                 if (tomSelectInstance) {
                                     tomSelectInstance.setValue(experience.experiences);
+                                    // Update suggested cost table after setting values
+                                    updateSuggestedCostTable();
                                 }
                             }
+
+                            // Hide loader after all data is loaded and populated
+                            hideModalLoader('experienceModal');
+                        }).fail(function() {
+                            // Hide loader even if loading items fails
+                            hideModalLoader('experienceModal');
                         });
                     } else {
+                        hideModalLoader('experienceModal');
                         showErrorAlert('Formato de respuesta inválido');
                     }
                 },
                 error: function(xhr) {
+                    hideModalLoader('experienceModal');
                     showErrorAlert(xhr.responseJSON?.error || 'Error al cargar la experiencia');
                 }
             });
