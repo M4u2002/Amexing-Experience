@@ -422,7 +422,11 @@ class EmployeesController {
       // Prevent role change - employees must be either employee_amexing or driver
       const allowedEmployeeRoles = ['employee_amexing', 'driver'];
       if (updateData.role && !allowedEmployeeRoles.includes(updateData.role)) {
-        return this.sendError(res, `Cannot change employee role. Must be one of: ${allowedEmployeeRoles.join(', ')}`, 400);
+        return this.sendError(
+          res,
+          `Cannot change employee role. Must be one of: ${allowedEmployeeRoles.join(', ')}`,
+          400
+        );
       }
 
       // Update user using service

@@ -381,8 +381,10 @@ class UserManagementService {
         exists: true,
         emailVerified: false,
         loginAttempts: 0,
-        createdBy, // Pass User object directly for Pointer creation
-        modifiedBy: createdBy, // Pass User object directly for Pointer creation
+        // Only set createdBy/modifiedBy if not already provided in userData
+        // This allows callers to pass user ID strings that will be converted to Pointers
+        createdBy: userData.createdBy || createdBy,
+        modifiedBy: userData.modifiedBy || createdBy,
       };
 
       // Create user using AmexingUser model (follows BaseModel patterns)
@@ -1518,13 +1520,19 @@ class UserManagementService {
    */
   async checkExistingUser(email) {
     try {
+      const normalizedEmail = email.toLowerCase().trim();
+      console.log('[DEBUG] checkExistingUser - Checking email:', normalizedEmail);
+
       const query = BaseModel.queryExisting(this.className);
-      query.equalTo('email', email.toLowerCase().trim());
+      query.equalTo('email', normalizedEmail);
       query.limit(1);
 
       const existingUser = await query.first({ useMasterKey: true });
+      console.log('[DEBUG] checkExistingUser - Found existing user:', existingUser ? existingUser.id : 'null');
+
       return existingUser || null;
     } catch (error) {
+      console.log('[DEBUG] checkExistingUser - Error:', error.message);
       // If error, assume no existing user to proceed safely
       return null;
     }
@@ -1606,8 +1614,17 @@ class UserManagementService {
    * @returns {*} - Operation result.
    */
   canCreateUser(currentUser, targetRole) {
+    console.log('[DEBUG] canCreateUser - currentUser:', {
+      id: currentUser.id,
+      role: currentUser.role,
+      email: currentUser.email,
+    });
+    console.log('[DEBUG] canCreateUser - targetRole:', targetRole);
+
     const currentLevel = this.roleHierarchy[currentUser.role] || 0;
     const targetLevel = this.roleHierarchy[targetRole] || 0;
+
+    console.log('[DEBUG] canCreateUser - currentLevel:', currentLevel, 'targetLevel:', targetLevel);
 
     // Can only create users with lower or equal role level
     return currentLevel >= targetLevel;

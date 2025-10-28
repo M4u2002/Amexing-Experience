@@ -343,9 +343,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Check if account is locked - use method if available, otherwise check field directly
-        const isLocked = typeof user.isAccountLocked === 'function'
-          ? user.isAccountLocked()
-          : user.get('accountLocked') === true;
+        const isLocked = typeof user.isAccountLocked === 'function' ? user.isAccountLocked() : user.get('accountLocked') === true;
 
         if (isLocked) {
           // Check if client expects HTML response
@@ -438,9 +436,10 @@ router.post('/login', async (req, res) => {
           role: roleName,
           roleId: rolePointer,
           organizationId: user.get('organizationId'),
-          name: typeof user.getDisplayName === 'function'
-            ? user.getDisplayName()
-            : (user.get('displayName') || `${user.get('firstName')} ${user.get('lastName')}` || user.get('username')),
+          name:
+            typeof user.getDisplayName === 'function'
+              ? user.getDisplayName()
+              : user.get('displayName') || `${user.get('firstName')} ${user.get('lastName')}` || user.get('username'),
         };
 
         // Record successful login - use method if available, otherwise skip

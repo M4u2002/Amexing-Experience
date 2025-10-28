@@ -295,7 +295,8 @@ class VehicleTypeController {
       }
 
       // Auto-generate code from name
-      const autoCode = name.toLowerCase()
+      const autoCode = name
+        .toLowerCase()
         .replace(/\s+/g, '_')
         .replace(/[^a-z0-9_-]/g, '');
 
@@ -407,7 +408,8 @@ class VehicleTypeController {
 
         // Update name and regenerate code
         vehicleType.set('name', name);
-        const autoCode = name.toLowerCase()
+        const autoCode = name
+          .toLowerCase()
           .replace(/\s+/g, '_')
           .replace(/[^a-z0-9_-]/g, '');
         vehicleType.set('code', autoCode);
