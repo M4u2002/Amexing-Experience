@@ -356,9 +356,7 @@ class RateController {
         return this.sendError(res, 'Tarifa no encontrada', 404);
       }
 
-      const {
-        name, active, color,
-      } = req.body;
+      const { name, active, color } = req.body;
 
       // Update name if provided
       if (name && name.trim().length > 0) {

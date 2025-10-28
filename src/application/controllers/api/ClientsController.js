@@ -551,6 +551,211 @@ class ClientsController {
 
     return password;
   }
+
+  /**
+   * GET /api/clients/active - Get active clients for dropdown/selector.
+   * Returns simplified client data formatted for Tom Select component.
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>}
+   * @example
+   * GET /api/clients/active
+   * Response: {success: true, data: [{value: 'id', label: 'Company Name', email: 'email@domain.com', contactPerson: 'John Doe', phone: '+52...'}]}
+   */
+  async getActiveClients(req, res) {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        return this.sendError(res, 'Authentication required', 401);
+      }
+
+      // Get all active clients with role department_manager
+      const options = {
+        targetRole: this.clientRole,
+        active: true,
+        exists: true,
+        limit: 1000, // Get all for selector
+        page: 1,
+        sortField: 'lastName',
+        sortDirection: 'asc',
+      };
+
+      const result = await this.userService.getUsers(currentUser, options);
+
+      // Transform to Tom Select format
+      const clients = result.users.map((user) => {
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        const companyName = user.contextualData?.companyName?.trim();
+
+        // Format: "Nombre Apellido (Empresa)" or just "Nombre Apellido"
+        const label = companyName ? `${fullName} (${companyName})` : fullName;
+
+        return {
+          value: user.id,
+          label,
+          email: user.email,
+          contactPerson: fullName,
+          phone: user.phone || '',
+        };
+      });
+
+      logger.info('Active clients retrieved for selector', {
+        count: clients.length,
+        requestedBy: currentUser.id,
+      });
+
+      this.sendSuccess(res, clients, 'Active clients retrieved successfully');
+    } catch (error) {
+      logger.error('Error in ClientsController.getActiveClients', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.id,
+      });
+
+      this.sendError(
+        res,
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to retrieve active clients',
+        500
+      );
+    }
+  }
+
+  /**
+   * POST /api/clients/quick - Quick client creation for quotes.
+   * Creates a minimal client with basic information for immediate use in quotes.
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>}
+   * @example
+   * POST /api/clients/quick
+   * Body: {firstName: 'John', lastName: 'Doe', email: 'john@example.com', companyName: 'ACME Corp', phone: '+52...'}
+   */
+  async createQuickClient(req, res) {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        return this.sendError(res, 'Authentication required', 401);
+      }
+
+      const {
+        firstName, lastName, email, companyName, phone,
+      } = req.body;
+
+      // Validation
+      if (!firstName || !firstName.trim()) {
+        return this.sendError(res, 'First name is required', 400);
+      }
+
+      if (!lastName || !lastName.trim()) {
+        return this.sendError(res, 'Last name is required', 400);
+      }
+
+      // Email is optional for now, but if provided must be valid
+      if (email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return this.sendError(res, 'Invalid email format', 400);
+        }
+      }
+
+      // Generate a temporary email if none provided
+      // Use crypto.randomUUID() for better uniqueness than timestamp
+      const uniqueId = email ? null : require('crypto').randomUUID().substring(0, 8);
+      const userEmail = email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${uniqueId}@temp.amexing.com`;
+
+      // Debug logging for email generation
+      console.log('[DEBUG] createQuickClient - Generated email:', userEmail);
+
+      // Prepare client data
+      const clientData = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: userEmail,
+        phone: phone?.trim() || '',
+        role: this.clientRole, // For validation
+        roleId: this.clientRole, // Will be converted to Pointer later
+        organizationId: 'client',
+        password: this.generateSecurePassword(),
+        active: true,
+        contextualData: {
+          companyName: companyName?.trim() || '',
+          quickCreated: true,
+          createdFrom: 'quote',
+          createdBy: currentUser.id,
+        },
+        createdBy: currentUser.id, // Pass user ID as string for Pointer creation
+        modifiedBy: currentUser.id, // Pass user ID as string for Pointer creation
+      };
+
+      // For quick client creation, we need to bypass permission checks in the service
+      // Create a mock user object with superadmin role for permission validation
+      const enrichedUser = {
+        id: currentUser.id,
+        email: currentUser.email || 'system@amexing.com',
+        role: 'superadmin', // Use superadmin to bypass permission checks
+        firstName: 'System',
+        lastName: 'User',
+      };
+
+      // Create client using service
+      // Note: createUser(userData, createdBy) - parameters in correct order
+      // Pass enrichedUser for permission checks only (actual createdBy is in clientData)
+      const newClient = await this.userService.createUser(clientData, enrichedUser);
+
+      // Prepare display label
+      const fullName = `${firstName} ${lastName}`;
+      const displayCompany = clientData.contextualData.companyName?.trim();
+
+      // Format: "Nombre Apellido (Empresa)" or just "Nombre Apellido"
+      const label = displayCompany ? `${fullName} (${displayCompany})` : fullName;
+
+      logger.info('Quick client created successfully', {
+        clientId: newClient.id,
+        email: newClient.email,
+        companyName: displayCompany,
+        createdBy: enrichedUser.id,
+      });
+
+      const response = {
+        value: newClient.id,
+        label,
+        email: newClient.email,
+        contactPerson: fullName,
+        phone: clientData.phone,
+      };
+
+      res.status(201).json({
+        success: true,
+        data: response,
+        message: 'Quick client created successfully',
+      });
+    } catch (error) {
+      // Debug logging for error details
+      console.log('[DEBUG] createQuickClient error:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack,
+      });
+
+      logger.error('Error in ClientsController.createQuickClient', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.id,
+        body: req.body,
+      });
+
+      // Handle duplicate email error
+      if (error.message && error.message.includes('email')) {
+        return this.sendError(res, 'Email already exists', 409);
+      }
+
+      this.sendError(
+        res,
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Failed to create quick client',
+        500
+      );
+    }
+  }
 }
 
 module.exports = ClientsController;

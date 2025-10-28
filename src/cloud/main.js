@@ -179,10 +179,7 @@ function registerCloudFunctions() {
           userId,
           error: error.message,
         });
-        throw new Parse.Error(
-          Parse.Error.INTERNAL_SERVER_ERROR,
-          `Failed to create session: ${error.message}`
-        );
+        throw new Parse.Error(Parse.Error.INTERNAL_SERVER_ERROR, `Failed to create session: ${error.message}`);
       }
     });
 

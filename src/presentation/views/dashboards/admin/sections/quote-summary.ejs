@@ -1,0 +1,887 @@
+<%
+/**
+ * Quote Summary Section
+ * Complete read-only summary of the quote for client viewing and PDF export
+ */
+%>
+
+<style>
+    /* Summary Styles */
+    .quote-summary-container {
+        background: #fff;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .summary-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem;
+        border-bottom: 3px solid #0d6efd;
+        margin-bottom: 2rem;
+    }
+
+    .summary-banner-logo img {
+        max-width: 250px;
+        height: auto;
+    }
+
+    .summary-banner-address {
+        text-align: right;
+        color: #495057;
+        line-height: 1.6;
+    }
+
+    .summary-banner-address div {
+        margin-bottom: 0.25rem;
+    }
+
+    .summary-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+
+    .summary-section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 0.5rem;
+    }
+
+    .summary-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .summary-info-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .summary-info-value {
+        color: #212529;
+        font-size: 1rem;
+    }
+
+    .summary-attention {
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #0d6efd;
+        padding: 1rem;
+        background: #e7f1ff;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+
+    .summary-table {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .summary-table th {
+        background: #0d6efd;
+        color: #fff;
+        font-weight: 600;
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .summary-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .summary-day-header {
+        background: #e7f1ff;
+        font-weight: 600;
+        color: #0d6efd;
+    }
+
+    .summary-subconcept-row {
+        background: #fff;
+    }
+
+    .summary-subconcept-row:hover {
+        background: #f8f9fa;
+    }
+
+    .summary-totals {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: #fff;
+        border: 2px solid #0d6efd;
+        border-radius: 0.5rem;
+    }
+
+    .summary-total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 1.1rem;
+    }
+
+    .summary-total-row.total {
+        border-top: 2px solid #0d6efd;
+        padding-top: 1rem;
+        margin-top: 0.5rem;
+        font-weight: 700;
+        font-size: 1.5rem;
+        color: #0d6efd;
+    }
+
+    .summary-footer {
+        text-align: center;
+        padding: 2rem;
+        font-style: italic;
+        color: #6c757d;
+        border-top: 2px solid #dee2e6;
+        margin-top: 2rem;
+    }
+
+    .experience-included-list {
+        margin: 0.5rem 0 0 1.5rem;
+        padding: 0;
+        list-style: none;
+    }
+
+    .experience-included-list li {
+        padding: 0.25rem 0;
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .experience-included-list li:before {
+        content: "✓ ";
+        color: #198754;
+        font-weight: bold;
+        margin-right: 0.5rem;
+    }
+
+    /* Print Styles */
+    @media print {
+        .sidebar-nav,
+        .topbar,
+        .card-header,
+        .btn,
+        body {
+            display: none !important;
+        }
+
+        .quote-summary-container {
+            display: block !important;
+        }
+
+        .summary-banner,
+        .summary-section,
+        .summary-table,
+        .summary-totals,
+        .summary-footer {
+            break-inside: avoid;
+        }
+
+        .summary-table th {
+            background-color: #0d6efd !important;
+            color: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .summary-day-header {
+            background-color: #e7f1ff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+
+    /* PDF Export Optimization - Fixed Width Strategy */
+    .pdf-export-mode {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        font-size: 0.85rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .pdf-export-mode .summary-banner {
+        padding: 10px 0 !important;
+        margin-bottom: 10px !important;
+    }
+
+    .pdf-export-mode .summary-banner-logo img {
+        max-width: 180px !important;
+    }
+
+    .pdf-export-mode .summary-banner-address {
+        font-size: 0.75rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .pdf-export-mode .summary-section {
+        margin-bottom: 10px !important;
+        padding: 10px !important;
+    }
+
+    .pdf-export-mode .summary-section-title {
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
+        padding-bottom: 4px !important;
+    }
+
+    .pdf-export-mode .summary-attention {
+        font-size: 1.2rem !important;
+        padding: 8px !important;
+    }
+
+    .pdf-export-mode .summary-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        font-size: 0.75rem !important;
+    }
+
+    .pdf-export-mode .summary-table th {
+        padding: 6px 4px !important;
+        font-size: 0.7rem !important;
+        word-wrap: break-word !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+    }
+
+    .pdf-export-mode .summary-table td {
+        padding: 6px 4px !important;
+        font-size: 0.7rem !important;
+        word-wrap: break-word !important;
+    }
+
+    .pdf-export-mode .summary-day-header {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+    }
+
+    .pdf-export-mode .summary-totals {
+        margin-top: 10px !important;
+        padding: 10px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .pdf-export-mode .summary-footer {
+        padding: 10px !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* Ensure backgrounds are visible in PDF */
+    .summary-table th,
+    .summary-day-header,
+    .bg-light {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+    }
+
+    /* Font rendering optimization */
+    .quote-summary-container {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+</style>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-print-none">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="ti ti-file-description me-2"></i>Resumen de la Cotización
+            </h5>
+            <button id="exportPdfBtn" class="btn btn-primary" style="display: none;">
+                <i class="ti ti-download me-2"></i>Exportar a PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Loading State -->
+        <div id="summaryLoading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando resumen...</span>
+            </div>
+            <p class="mt-3 text-muted">Cargando información de la cotización...</p>
+        </div>
+
+        <!-- Summary Content -->
+        <div id="summaryContent" class="quote-summary-container" style="display: none;">
+            <!-- Banner -->
+            <div class="summary-banner">
+                <div class="summary-banner-logo">
+                    <img src="/img/amexing_logo_horizontal.avif" alt="Amexing Experience">
+                </div>
+                <div class="summary-banner-address">
+                    <div>Vicente Suarez 5, Colonia Independencia</div>
+                    <div>San Miguel de Allende, Guanajuato 37732</div>
+                    <div>+52 (415) 167 39 90</div>
+                    <div>contact@amexingexperience.com</div>
+                </div>
+            </div>
+
+            <!-- Summary Information -->
+            <div class="summary-section d-print-none">
+                <div class="summary-section-title">
+                    <i class="ti ti-info-circle me-2"></i>Información del Resumen
+                </div>
+                <div class="summary-info-grid">
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Folio de Cotización</span>
+                        <span class="summary-info-value" id="summaryFolio">-</span>
+                    </div>
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Fecha Actual</span>
+                        <span class="summary-info-value" id="summaryCurrentDate">-</span>
+                    </div>
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Fecha de Generación</span>
+                        <span class="summary-info-value" id="summaryGenerationDate">-</span>
+                    </div>
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Estado</span>
+                        <span id="summaryStatus">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Atención a -->
+            <div class="summary-section">
+                <div class="summary-section-title">
+                    <i class="ti ti-user me-2"></i>Atención a
+                </div>
+                <div class="summary-attention" id="summaryContactPerson">
+                    -
+                </div>
+            </div>
+
+            <!-- Quote Details -->
+            <div class="summary-section">
+                <div class="summary-section-title">
+                    <i class="ti ti-clipboard-list me-2"></i>Detalles de la Cotización
+                </div>
+                <div class="summary-info-grid">
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Concepto/Evento</span>
+                        <span class="summary-info-value" id="summaryEventType">-</span>
+                    </div>
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Número de Personas</span>
+                        <span class="summary-info-value" id="summaryNumberOfPeople">-</span>
+                    </div>
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Cliente</span>
+                        <span class="summary-info-value" id="summaryClientName">-</span>
+                    </div>
+                    <div class="summary-info-item">
+                        <span class="summary-info-label">Tarifa Aplicada</span>
+                        <span id="summaryRateName">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Table -->
+            <div class="summary-section">
+                <div class="summary-section-title">
+                    <i class="ti ti-calendar-event me-2"></i>Servicios e Itinerario
+                </div>
+                <div class="table-responsive">
+                    <table class="summary-table table table-bordered">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">Día</th>
+                                <th style="width: 30%;">Concepto</th>
+                                <th style="width: 12%;">Tipo Vehículo</th>
+                                <th style="width: 8%;">Horas</th>
+                                <th style="width: 10%;">Precio Unit.</th>
+                                <th style="width: 10%;">Total</th>
+                                <th style="width: 22%;">Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryServicesTableBody">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    No hay servicios agregados
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totals -->
+                <div class="summary-totals">
+                    <div class="summary-total-row">
+                        <span>Subtotal:</span>
+                        <span id="summarySubtotal">$0.00 MXN</span>
+                    </div>
+                    <div class="summary-total-row">
+                        <span>IVA (16%):</span>
+                        <span id="summaryIVA">$0.00 MXN</span>
+                    </div>
+                    <div class="summary-total-row total">
+                        <span>Total:</span>
+                        <span id="summaryTotal">$0.00 MXN</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Message -->
+            <div class="summary-footer">
+                Agradecemos su preferencia y quedamos a sus órdenes para cualquier duda o comentario
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- html2pdf.js Library for Client-Side PDF Generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+
+<script>
+    // Currency formatter
+    const currencyFormatter = new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        minimumFractionDigits: 2
+    });
+
+    // Date formatter for Spanish
+    function formatDateSpanish(date) {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(date).toLocaleDateString('es-MX', options);
+    }
+
+    // Get access token
+    function getAccessToken() {
+        return document.cookie
+            .split('; ')
+            .find(row => row.startsWith('accessToken='))
+            ?.split('=')[1];
+    }
+
+    // Get quote status badge
+    function getStatusBadge(status) {
+        const statusMap = {
+            'draft': { label: 'Borrador', class: 'bg-secondary' },
+            'sent': { label: 'Enviada', class: 'bg-info' },
+            'accepted': { label: 'Aceptada', class: 'bg-success' },
+            'rejected': { label: 'Rechazada', class: 'bg-danger' }
+        };
+
+        const statusInfo = statusMap[status] || { label: status, class: 'bg-secondary' };
+        return `<span class="badge ${statusInfo.class}">${statusInfo.label}</span>`;
+    }
+
+    // Load quote summary
+    async function loadQuoteSummary() {
+        try {
+            const quoteId = '<%= quoteId %>';
+            const token = getAccessToken();
+
+            const response = await fetch(`/api/quotes/${quoteId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (!result.success || !result.data) {
+                throw new Error(result.error || 'Error al cargar la cotización');
+            }
+
+            const quote = result.data;
+            console.log('Quote data loaded:', quote);
+
+            // Populate summary information
+            document.getElementById('summaryFolio').textContent = quote.folio || quoteId;
+            document.getElementById('summaryCurrentDate').textContent = formatDateSpanish(new Date());
+            document.getElementById('summaryGenerationDate').textContent = formatDateSpanish(quote.createdAt);
+            document.getElementById('summaryStatus').innerHTML = getStatusBadge(quote.status);
+
+            // Atención a
+            const contactPerson = quote.contactPerson || 'No especificado';
+            document.getElementById('summaryContactPerson').textContent = contactPerson.toUpperCase();
+
+            // Quote details
+            document.getElementById('summaryEventType').textContent = quote.eventType || 'No especificado';
+            document.getElementById('summaryNumberOfPeople').textContent = quote.numberOfPeople || '0';
+
+            // Client name
+            let clientName = 'No especificado';
+            if (quote.client) {
+                if (quote.client.companyName) {
+                    clientName = quote.client.companyName;
+                } else if (quote.client.firstName || quote.client.lastName) {
+                    clientName = `${quote.client.firstName || ''} ${quote.client.lastName || ''}`.trim();
+                }
+            }
+            document.getElementById('summaryClientName').textContent = clientName;
+
+            // Rate name
+            if (quote.rate) {
+                const rateColor = quote.rate.color || '#6c757d';
+                document.getElementById('summaryRateName').innerHTML =
+                    `<span class="badge" style="background-color: ${rateColor};">${quote.rate.name}</span>`;
+            } else {
+                document.getElementById('summaryRateName').textContent = 'No especificada';
+            }
+
+            // Render services table
+            renderServicesTable(quote.serviceItems);
+
+            // Show summary content and export button
+            document.getElementById('summaryLoading').style.display = 'none';
+            document.getElementById('summaryContent').style.display = 'block';
+
+            const exportBtn = document.getElementById('exportPdfBtn');
+            exportBtn.style.display = 'inline-block';
+
+            // Attach export event listener (remove previous if exists)
+            const newExportBtn = exportBtn.cloneNode(true);
+            exportBtn.parentNode.replaceChild(newExportBtn, exportBtn);
+            newExportBtn.addEventListener('click', exportToPdf);
+
+        } catch (error) {
+            console.error('Error loading quote summary:', error);
+            document.getElementById('summaryLoading').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="ti ti-alert-circle me-2"></i>
+                    Error al cargar el resumen de la cotización: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    // Render services table
+    function renderServicesTable(serviceItems) {
+        const tbody = document.getElementById('summaryServicesTableBody');
+        tbody.innerHTML = '';
+
+        if (!serviceItems || !serviceItems.days || serviceItems.days.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        No hay servicios agregados a esta cotización
+                    </td>
+                </tr>
+            `;
+
+            document.getElementById('summarySubtotal').textContent = currencyFormatter.format(0);
+            document.getElementById('summaryIVA').textContent = currencyFormatter.format(0);
+            document.getElementById('summaryTotal').textContent = currencyFormatter.format(0);
+            return;
+        }
+
+        // Render each day
+        serviceItems.days.forEach((day, dayIndex) => {
+            const subconceptsCount = day.subconcepts?.length || 0;
+            const rowspan = subconceptsCount + 1; // +1 for day header row
+
+            // Day header row
+            const dayHeaderRow = document.createElement('tr');
+            dayHeaderRow.className = 'summary-day-header';
+            dayHeaderRow.innerHTML = `
+                <td rowspan="${rowspan}" class="text-center align-middle"><strong>Día ${day.dayNumber}</strong></td>
+                <td colspan="4"><strong>${day.dayTitle || `Día ${day.dayNumber}`}</strong></td>
+                <td rowspan="${rowspan}" class="text-end align-middle bg-light"><strong>${currencyFormatter.format(day.dayTotal || 0)}</strong></td>
+                <td></td>
+            `;
+            tbody.appendChild(dayHeaderRow);
+
+            // Render subconcepts
+            if (day.subconcepts && day.subconcepts.length > 0) {
+                day.subconcepts.forEach((subconcept, subIndex) => {
+                    const subRow = document.createElement('tr');
+                    subRow.className = 'summary-subconcept-row';
+
+                    // Format concept based on type
+                    let conceptHTML = '';
+                    const time = subconcept.time || '';
+                    const timeDisplay = time ? `<span class="text-muted">${time}</span> - ` : '';
+
+                    if (subconcept.type === 'experiencia') {
+                        conceptHTML = `
+                            <div>${timeDisplay}<strong>${subconcept.concept || 'Experiencia'}</strong></div>
+                            ${subconcept.isPackage && subconcept.includedExperiences ? renderIncludedExperiences(subconcept.includedExperiences) : ''}
+                        `;
+                    } else {
+                        conceptHTML = `${timeDisplay}${subconcept.concept || 'Sin especificar'}`;
+                    }
+
+                    // Vehicle type with badge for traslados
+                    let vehicleTypeHTML = '';
+                    if (subconcept.type === 'traslado') {
+                        const vehicleType = subconcept.vehicleType || '-';
+                        const vehicleMultiplier = subconcept.vehicleMultiplier || 1;
+                        const showBadge = subconcept.vehicleCapacity && vehicleMultiplier > 1;
+                        vehicleTypeHTML = showBadge
+                            ? `<span class="badge bg-info me-1">${vehicleMultiplier}x</span>${vehicleType}`
+                            : vehicleType;
+                    } else {
+                        vehicleTypeHTML = subconcept.vehicleType || (subconcept.type === 'regular' || subconcept.type === 'experiencia' ? 'N/A' : '-');
+                    }
+
+                    // Hours
+                    const hours = subconcept.hours !== null && subconcept.hours !== undefined ? subconcept.hours : '-';
+
+                    // Unit price with per-person info
+                    let unitPriceHTML = '';
+                    if (subconcept.unitPrice !== null && subconcept.unitPrice !== undefined) {
+                        const priceFormatted = currencyFormatter.format(subconcept.unitPrice);
+
+                        if (subconcept.type === 'traslado') {
+                            // Traslado: Show price + people count
+                            const peopleCount = subconcept.numberOfPeople || 1;
+                            unitPriceHTML = `
+                                <div style="line-height: 1.4;">
+                                    <div>${priceFormatted}</div>
+                                    <small class="text-muted">${peopleCount} persona${peopleCount !== 1 ? 's' : ''}</small>
+                                </div>
+                            `;
+                        } else if (subconcept.isPerPerson) {
+                            // Regular/Experiencia with per-person enabled
+                            const peopleCount = subconcept.numberOfPeople || 1;
+                            unitPriceHTML = `
+                                <div style="line-height: 1.4;">
+                                    <div>${priceFormatted}</div>
+                                    <small class="text-success">✓ Por Persona</small>
+                                    <small class="text-muted d-block">${peopleCount} persona${peopleCount !== 1 ? 's' : ''}</small>
+                                </div>
+                            `;
+                        } else {
+                            // Standard pricing
+                            unitPriceHTML = priceFormatted;
+                        }
+                    } else {
+                        unitPriceHTML = '-';
+                    }
+
+                    // Total subconcept
+                    const total = subconcept.total !== null && subconcept.total !== undefined
+                        ? currencyFormatter.format(subconcept.total)
+                        : '-';
+
+                    // Notes - show actual notes or empty if none
+                    const notes = subconcept.notes ? `<small>${subconcept.notes}</small>` : '';
+
+                    // Note: columns are: Día (skipped - rowspan), Concepto, Vehículo, Horas, Precio, Total Día (skipped - rowspan), Notas
+                    subRow.innerHTML = `
+                        <td>${conceptHTML}</td>
+                        <td>${vehicleTypeHTML}</td>
+                        <td class="text-center">${hours}</td>
+                        <td class="text-end">${unitPriceHTML}</td>
+                        <td>${notes}</td>
+                    `;
+
+                    tbody.appendChild(subRow);
+                });
+            }
+        });
+
+        // Update totals
+        document.getElementById('summarySubtotal').textContent = currencyFormatter.format(serviceItems.subtotal || 0);
+        document.getElementById('summaryIVA').textContent = currencyFormatter.format(serviceItems.iva || 0);
+        document.getElementById('summaryTotal').textContent = currencyFormatter.format(serviceItems.total || 0);
+    }
+
+    // Render included experiences for packages
+    function renderIncludedExperiences(experiences) {
+        if (!experiences || experiences.length === 0) return '';
+
+        let html = '<ul class="experience-included-list">';
+        experiences.forEach(exp => {
+            html += `<li>${exp.name}${exp.description ? ': ' + exp.description : ''}</li>`;
+        });
+        html += '</ul>';
+
+        return html;
+    }
+
+    // Load summary when section is active
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if this section is active
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get('section');
+
+        if (section === 'summary') {
+            loadQuoteSummary();
+        }
+    });
+
+    // Also load when section becomes visible (for tab switching)
+    const summaryTab = document.querySelector('a[href*="section=summary"]');
+    if (summaryTab) {
+        summaryTab.addEventListener('click', function() {
+            setTimeout(loadQuoteSummary, 100);
+        });
+    }
+
+    // Export to PDF function using html2pdf.js with Wrapper Isolation Pattern
+    function exportToPdf() {
+        // Check if html2pdf is loaded
+        if (typeof html2pdf === 'undefined') {
+            alert('La librería de generación de PDF no se ha cargado correctamente. Por favor recargue la página.');
+            console.error('html2pdf.js is not loaded');
+            return;
+        }
+
+        const element = document.getElementById('summaryContent');
+        const folio = document.getElementById('summaryFolio').textContent || 'cotizacion';
+        const filename = `Cotizacion_${folio.replace(/\s+/g, '_')}.pdf`;
+
+        // Hide "Información del Resumen" section before cloning
+        const infoSection = element.querySelector('.summary-section.d-print-none');
+        if (infoSection) {
+            infoSection.style.display = 'none';
+        }
+
+        // Apply PDF export mode to original element
+        element.classList.add('pdf-export-mode');
+
+        // Create wrapper with fixed dimensions for consistent PDF rendering
+        const wrapper = document.createElement('div');
+        wrapper.id = 'pdf-generation-wrapper';
+        wrapper.style.cssText = `
+            width: 750px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #ffffff;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        `;
+
+        // Move original content into wrapper temporarily
+        const parent = element.parentNode;
+        const nextSibling = element.nextSibling;
+
+        wrapper.appendChild(element);
+        document.body.appendChild(wrapper);
+
+        // PDF generation options with fixed dimensions
+        // Letter page width: 215.9mm, adjusting margins to center content
+        // Increasing left margin to push content to the right
+        const opt = {
+            margin:       [15, 5, 15, 35], // [top, right, bottom, left] - left=35mm to push right
+            filename:     filename,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  {
+                scale: 2,              // High quality rendering (2x resolution)
+                width: 790,            // Wrapper width (750px content + 40px padding)
+                windowWidth: 790,      // Must match width for consistency
+                useCORS: true,         // Allow external images (logo)
+                letterRendering: true, // Better text rendering
+                scrollY: 0,            // No vertical scroll offset
+                scrollX: 0,            // No horizontal scroll offset
+                backgroundColor: '#ffffff',
+                logging: false         // Disable console logs
+            },
+            jsPDF:        {
+                unit: 'mm',
+                format: 'letter',      // US Letter (215.9mm x 279.4mm)
+                orientation: 'portrait',
+                compress: true
+            },
+            pagebreak: {
+                mode: ['css', 'legacy'],
+                avoid: ['.summary-day-header', '.summary-totals', '.summary-banner', 'tr']
+            }
+        };
+
+        // UI feedback
+        const btn = document.getElementById('exportPdfBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando PDF...';
+        btn.disabled = true;
+
+        // Generate and download PDF
+        html2pdf()
+            .set(opt)
+            .from(wrapper)
+            .toPdf()
+            .get('pdf')
+            .then((pdf) => {
+                // Add PDF metadata
+                pdf.setProperties({
+                    title: `Cotización ${folio}`,
+                    subject: 'Cotización Amexing Experience',
+                    author: 'Amexing Experience',
+                    keywords: 'cotización, transporte, servicios',
+                    creator: 'AmexingWeb Platform'
+                });
+            })
+            .save()
+            .then(() => {
+                // Restore original DOM structure
+                element.classList.remove('pdf-export-mode');
+
+                if (nextSibling) {
+                    parent.insertBefore(element, nextSibling);
+                } else {
+                    parent.appendChild(element);
+                }
+
+                // Remove temporary wrapper
+                if (document.body.contains(wrapper)) {
+                    document.body.removeChild(wrapper);
+                }
+
+                // Restore info section visibility
+                if (infoSection) {
+                    infoSection.style.display = '';
+                }
+
+                // Restore button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                console.log('PDF generated successfully with fixed dimensions');
+            })
+            .catch((error) => {
+                console.error('Error generating PDF:', error);
+
+                // Restore original DOM structure on error
+                element.classList.remove('pdf-export-mode');
+
+                if (nextSibling) {
+                    parent.insertBefore(element, nextSibling);
+                } else {
+                    parent.appendChild(element);
+                }
+
+                // Cleanup wrapper
+                if (document.body.contains(wrapper)) {
+                    document.body.removeChild(wrapper);
+                }
+
+                // Restore info section visibility
+                if (infoSection) {
+                    infoSection.style.display = '';
+                }
+
+                alert('Error al generar el PDF. Por favor intente nuevamente.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+    }
+</script>

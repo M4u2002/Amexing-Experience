@@ -240,6 +240,8 @@ const experienceImagesRoutes = require('./api/experienceImagesRoutes');
 const toursRoutes = require('./api/toursRoutes');
 // Audit Log API routes
 const auditRoutes = require('./api/auditRoutes');
+// Quote Management API routes
+const quotesRoutes = require('./api/quotesRoutes');
 // Notifications API controller
 const NotificationsController = require('../../application/controllers/api/NotificationsController');
 
@@ -259,6 +261,7 @@ router.use('/experiences', experiencesRoutes);
 router.use('/experiences', experienceImagesRoutes); // Experience images endpoints
 router.use('/tours', toursRoutes);
 router.use('/audit', auditRoutes); // Audit log endpoints
+router.use('/quotes', quotesRoutes); // Quote management endpoints
 
 /**
  * @swagger

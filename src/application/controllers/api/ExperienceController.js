@@ -214,6 +214,7 @@ class ExperienceController {
         experienceDetails: includedExperiences.map((exp) => ({
           id: exp.id,
           name: exp.get('name'),
+          description: exp.get('description'),
           cost: exp.get('cost'),
         })),
         active: experience.get('active'),

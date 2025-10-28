@@ -41,7 +41,7 @@ function isActiveMenuItem(itemPath, currentPath) {
         <!-- Brand Logo -->
         <div class="brand-logo d-flex align-items-center justify-content-between p-3">
             <a href="/dashboard/<%= sidebarUserRole %>" class="text-nowrap brand-logo-link">
-                <img src="/dashboard/images/logos/amexing-logo.svg" width="140" alt="Amexing Logo" class="img-fluid" />
+                <img src="/img/amexing_logo_horizontal.avif" alt="Amexing Logo" class="brand-logo-img" />
             </a>
             <button class="close-btn d-lg-none sidebartoggler cursor-pointer" id="sidebarCollapse" type="button" aria-label="Cerrar menú">
                 <i class="ti ti-x fs-6"></i>
@@ -94,15 +94,53 @@ function isActiveMenuItem(itemPath, currentPath) {
     /* Brand Logo Styles */
     .brand-logo {
         flex-shrink: 0;
+        border-bottom: 1px solid #e0e6ed;
     }
 
     .brand-logo-link {
         text-decoration: none;
         transition: opacity 0.3s ease;
+        display: block;
+        max-width: 180px;
     }
 
     .brand-logo-link:hover {
         opacity: 0.8;
+    }
+
+    .brand-logo-img {
+        width: 100%;
+        height: auto;
+        max-width: 160px;
+        object-fit: contain;
+        transition: all 0.3s ease;
+    }
+
+    /* Logo responsive adjustments */
+    @media (max-width: 1199.98px) {
+        .brand-logo-img {
+            max-width: 140px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .brand-logo-img {
+            max-width: 150px;
+        }
+
+        .brand-logo-link {
+            max-width: 150px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .brand-logo-img {
+            max-width: 130px;
+        }
+
+        .brand-logo {
+            padding: 0.75rem 1rem !important;
+        }
     }
 
     /* Sidebar Navigation */
@@ -217,9 +255,13 @@ function isActiveMenuItem(itemPath, currentPath) {
             padding: 1rem 0.5rem;
         }
 
-        .left-sidebar.collapsed .brand-logo img {
+        .left-sidebar.collapsed .brand-logo-link {
+            max-width: 50px;
+        }
+
+        .left-sidebar.collapsed .brand-logo-img {
+            max-width: 45px;
             width: 45px;
-            height: auto;
         }
 
         .left-sidebar.collapsed .sidebar-item {

@@ -311,7 +311,8 @@ class ServiceTypeService {
 
         return {
           success: false,
-          message: 'No se puede eliminar este tipo de traslado. Es un tipo de sistema protegido y es fundamental para el funcionamiento del sistema.',
+          message:
+            'No se puede eliminar este tipo de traslado. Es un tipo de sistema protegido y es fundamental para el funcionamiento del sistema.',
         };
       }
 

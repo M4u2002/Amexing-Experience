@@ -216,6 +216,159 @@ router.get('/', async (req, res) => {
 
 /**
  * @swagger
+ * /api/clients/active:
+ *   get:
+ *     tags:
+ *       - Client Management
+ *     summary: Get active clients for dropdowns/selectors
+ *     description: |
+ *       Retrieve simplified list of active clients formatted for Tom Select component.
+ *       Used in quote creation and other forms requiring client selection.
+ *
+ *       **Access Control:**
+ *       - SuperAdmin, Admin, or employee_amexing with permission
+ *
+ *       **Output Format:**
+ *       - value: Client ID
+ *       - label: Company name
+ *       - email: Contact email
+ *       - contactPerson: Full name
+ *       - phone: Contact phone
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Active clients retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       value:
+ *                         type: string
+ *                         example: "abc123"
+ *                       label:
+ *                         type: string
+ *                         example: "ACME Corporation"
+ *                       email:
+ *                         type: string
+ *                         example: "contact@acme.com"
+ *                       contactPerson:
+ *                         type: string
+ *                         example: "John Doe"
+ *                       phone:
+ *                         type: string
+ *                         example: "+52 999 123 4567"
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ */
+router.get('/active', async (req, res) => {
+  await clientsController.getActiveClients(req, res);
+});
+
+/**
+ * @swagger
+ * /api/clients/quick:
+ *   post:
+ *     tags:
+ *       - Client Management
+ *     summary: Quick client creation for quotes
+ *     description: |
+ *       Create a minimal client with basic information for immediate use in quotes.
+ *       Automatically assigns department_manager role and client organization.
+ *       Generates secure password if email is provided.
+ *
+ *       **Access:** Requires SuperAdmin or Admin role
+ *       **Rate Limited:** 30 requests per 15 minutes
+ *
+ *       **Features:**
+ *       - Minimal required fields
+ *       - Auto-generated email if not provided
+ *       - Secure password generation
+ *       - Returns Tom Select format
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "John"
+ *               lastName:
+ *                 type: string
+ *                 example: "Doe"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Optional - auto-generated if not provided
+ *                 example: "john.doe@company.com"
+ *               companyName:
+ *                 type: string
+ *                 description: Optional
+ *                 example: "ACME Corporation"
+ *               phone:
+ *                 type: string
+ *                 description: Optional
+ *                 example: "+52 999 123 4567"
+ *     responses:
+ *       201:
+ *         description: Quick client created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     value:
+ *                       type: string
+ *                     label:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     contactPerson:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *                 message:
+ *                   type: string
+ *                   example: "Quick client created successfully"
+ *       400:
+ *         description: Validation error - firstName and lastName required
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       403:
+ *         $ref: '#/components/responses/ForbiddenError'
+ *       409:
+ *         description: Email already exists
+ */
+router.post('/quick', writeOperationsLimiter, async (req, res) => {
+  await clientsController.createQuickClient(req, res);
+});
+
+/**
+ * @swagger
  * /api/clients/{id}:
  *   get:
  *     tags:

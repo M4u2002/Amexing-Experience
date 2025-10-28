@@ -367,11 +367,7 @@ class ServiceTypeController {
 
       // Also prevent renaming TO a protected type name
       if (name && name !== currentName && PROTECTED_TYPES.includes(name)) {
-        return this.sendError(
-          res,
-          'No se puede usar ese nombre. Es un nombre reservado del sistema.',
-          400
-        );
+        return this.sendError(res, 'No se puede usar ese nombre. Es un nombre reservado del sistema.', 400);
       }
 
       // Update fields if provided
