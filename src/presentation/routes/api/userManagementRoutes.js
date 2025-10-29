@@ -528,7 +528,7 @@ router.patch('/:id/archive', writeOperationsLimiter, jwtMiddleware.requireRoleLe
  * @param {*} next - _next parameter.
  * @param {object} res - Express response object.
  * @param {object} req - Express request object.
- * @param {*} (error - (error parameter.
+ * @param {*} error - Error parameter.
  * @returns {*} - Operation result.
  * @example
  * // Usage example
