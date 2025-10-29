@@ -120,6 +120,32 @@ class SessionMetrics {
   }
 
   /**
+   * Record CSRF persistence issue (authenticated user without CSRF secret).
+   * @param sessionId
+   * @param context
+   * @example
+   */
+  recordCsrfPersistenceIssue(sessionId, context = {}) {
+    // Increment a specific counter for persistence issues
+    if (!this.metrics.csrfPersistenceIssues) {
+      this.metrics.csrfPersistenceIssues = 0;
+    }
+    this.metrics.csrfPersistenceIssues++;
+
+    // Store as recent error
+    this.addRecentError('CSRF_PERSISTENCE_ISSUE', 'Authenticated user missing CSRF secret', {
+      sessionId: `${sessionId?.substring(0, 8)}***`,
+      ...context,
+    });
+
+    logger.warn('CSRF persistence issue recorded', {
+      sessionId: `${sessionId?.substring(0, 8)}***`,
+      totalPersistenceIssues: this.metrics.csrfPersistenceIssues,
+      context,
+    });
+  }
+
+  /**
    * Record CSRF token generation.
    * @example
    */

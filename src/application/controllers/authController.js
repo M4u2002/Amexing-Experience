@@ -621,26 +621,58 @@ class AuthController {
         await Parse.User.logOut({ sessionToken });
       }
 
-      // Destroy Express session
-      req.session.destroy((err) => {
+      // Regenerate session instead of destroying it
+      // This preserves CSRF protection for subsequent requests
+      req.session.regenerate((err) => {
         if (err) {
-          logger.error('Error destroying session:', err);
+          logger.error('Error regenerating session:', err);
+
+          // Fallback to destroy if regenerate fails
+          req.session.destroy((destroyErr) => {
+            if (destroyErr) {
+              logger.error('Error destroying session after regeneration failure:', destroyErr);
+            }
+          });
+
+          // Clear cookie
+          res.clearCookie('amexing.sid');
+
+          // Handle response
+          if (req.accepts('json')) {
+            return res.json({
+              success: true,
+              message: 'Logged out successfully',
+            });
+          }
+
+          return res.redirect('/');
         }
-      });
 
-      // Clear cookie
-      res.clearCookie('amexing.sid');
+        // Generate new CSRF secret for regenerated session
+        const crypto = require('crypto');
+        req.session.csrfSecret = crypto.randomBytes(32).toString('hex');
 
-      // Handle response type
-      if (req.accepts('json')) {
-        return res.json({
-          success: true,
-          message: 'Logged out successfully',
+        // Save regenerated session before redirect
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error('Error saving regenerated session:', saveErr);
+          }
+
+          // Clear cookie (will be recreated with new session)
+          res.clearCookie('amexing.sid');
+
+          // Handle response type
+          if (req.accepts('json')) {
+            return res.json({
+              success: true,
+              message: 'Logged out successfully',
+            });
+          }
+
+          // Redirect to home
+          res.redirect('/');
         });
-      }
-
-      // Redirect to home
-      res.redirect('/');
+      });
     } catch (error) {
       logger.error('Error during logout:', error);
 

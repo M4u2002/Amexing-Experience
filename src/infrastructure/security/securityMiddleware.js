@@ -618,6 +618,27 @@ class SecurityMiddleware {
         if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS' || req.path.startsWith('/api/')) {
           // Generate CSRF token for forms if session exists
           if (req.session && (req.method === 'GET' || req.method === 'HEAD')) {
+            // PERSISTENCE CHECK: Detect authenticated user without CSRF secret
+            // This should not happen in normal operation - indicates session recovery issue
+            if (req.session.user && !req.session.csrfSecret) {
+              winston.error('CSRF secret missing for authenticated user', {
+                sessionID: req.session.id,
+                userId: req.session.user.objectId,
+                username: req.session.user.username,
+                path: req.path,
+                timestamp: new Date().toISOString(),
+              });
+
+              // Record metrics if available
+              if (sessionMetrics.recordCsrfPersistenceIssue) {
+                sessionMetrics.recordCsrfPersistenceIssue(req.session.id, {
+                  userId: req.session.user.objectId,
+                  path: req.path,
+                });
+              }
+            }
+
+            // Generate CSRF secret if missing (auto-recovery)
             if (!req.session.csrfSecret) {
               req.session.csrfSecret = await uidSafe(32);
               winston.debug('Generated CSRF secret for new session', {
