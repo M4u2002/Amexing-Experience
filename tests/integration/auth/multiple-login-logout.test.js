@@ -16,8 +16,21 @@ describe('Multiple Login-Logout Cycles Integration', () => {
     // Import app (Parse Server already running on 1339)
     app = require('../../../src/index');
 
-    // Wait for app initialization
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait longer for full initialization
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Verify app is fully ready by checking health endpoint
+    let retries = 10;
+    while (retries > 0) {
+      try {
+        await request(app).get('/health').expect(200);
+        break;
+      } catch (e) {
+        retries--;
+        if (retries === 0) throw new Error('App failed to initialize after 10 retries');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
   }, 30000);
 
   beforeEach(() => {

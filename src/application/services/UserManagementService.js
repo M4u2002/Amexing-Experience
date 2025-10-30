@@ -949,6 +949,21 @@ class UserManagementService {
     }
   }
 
+  /**
+   * Search users with role-based filtering and pagination
+   * Searches users by name or email with optional role/status filters.
+   * @param {Parse.User} currentUser - Current authenticated user.
+   * @param {object} [searchParams] - Search parameters.
+   * @param {string} [searchParams.query] - Search query for name/email.
+   * @param {string} [searchParams.role] - Filter by role.
+   * @param {boolean} [searchParams.active] - Filter by active status.
+   * @param {number} [searchParams.page] - Page number.
+   * @param {number} [searchParams.limit] - Results per page.
+   * @param {string} [searchParams.sortField] - Sort field.
+   * @param {string} [searchParams.sortDirection] - Sort direction.
+   * @returns {Promise<object>} Search results with pagination.
+   * @example
+   */
   async searchUsers(currentUser, searchParams = {}) {
     try {
       const {

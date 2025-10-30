@@ -96,9 +96,7 @@ function autoRecoverSession() {
         req.session.csrfSecret = await generateCSRFSecret();
 
         // Calculate session age to determine logging level
-        const sessionAge = req.session.createdAt
-          ? Date.now() - req.session.createdAt
-          : 0;
+        const sessionAge = req.session.createdAt ? Date.now() - req.session.createdAt : 0;
 
         // Use appropriate logging level based on session age
         // New sessions (< 30 seconds): debug (expected during startup/logout)
