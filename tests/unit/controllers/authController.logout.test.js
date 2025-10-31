@@ -84,6 +84,9 @@ describe('authController.logout() - Session Regeneration', () => {
     it('should redirect to home page after successful logout', async () => {
       await authController.logout(req, res);
 
+      // Wait for setTimeout(100ms) to complete
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       // Verify redirect was called
       // The mocks automatically call callbacks, so redirect should be called
       expect(res.redirect).toHaveBeenCalledWith('/');
@@ -159,6 +162,9 @@ describe('authController.logout() - Session Regeneration', () => {
       });
 
       await authController.logout(req, res);
+
+      // Wait for setTimeout(100ms) to complete
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Should log error about save failure
       expect(logger.error).toHaveBeenCalledWith(

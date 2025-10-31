@@ -193,6 +193,9 @@ describe('Authentication Controller', () => {
 
       await authController.logout(mockReq, mockRes);
 
+      // Wait for setTimeout(100ms) to complete
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       expect(Parse.User.logOut).toHaveBeenCalledWith({ sessionToken: 'test-session-token' });
       expect(mockReq.session.regenerate).toHaveBeenCalled();
       expect(mockRes.clearCookie).toHaveBeenCalledWith('amexing.sid');
@@ -210,6 +213,9 @@ describe('Authentication Controller', () => {
       mockReq.accepts = jest.fn(() => 'json'); // Mock JSON accept
 
       await authController.logout(mockReq, mockRes);
+
+      // Wait for setTimeout(100ms) to complete
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
