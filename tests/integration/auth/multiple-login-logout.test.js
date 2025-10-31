@@ -156,8 +156,8 @@ describe('Multiple Login-Logout Cycles Integration', () => {
 
         await agent.get('/logout').expect(302);
 
-        // Small delay between cycles
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Delay between cycles to allow logout to complete (logout has internal 100ms delay)
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       // Final verification - should be able to login again
