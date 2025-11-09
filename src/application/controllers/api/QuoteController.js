@@ -117,7 +117,7 @@ class QuoteController {
       quote.set('numberOfPeople', numberOfPeople ? parseInt(numberOfPeople, 10) : 1);
 
       // 9. Set automatic fields
-      quote.set('status', 'draft');
+      quote.set('status', 'requested');
       // validUntil: 30 days from now
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 30);
@@ -134,7 +134,7 @@ class QuoteController {
         contactEmail: contactEmail || '',
         contactPhone: contactPhone || '',
         notes: notes || '',
-        status: 'draft',
+        status: 'requested',
         userId: currentUser.id,
       });
 
@@ -171,7 +171,7 @@ class QuoteController {
         contactEmail: contactEmail || '',
         contactPhone: contactPhone || '',
         notes: notes || '',
-        status: 'draft',
+        status: 'requested',
         validUntil: validUntil.toISOString(),
         active: true,
       };
@@ -319,7 +319,7 @@ class QuoteController {
               fullName: `${createdBy.get('firstName') || ''} ${createdBy.get('lastName') || ''}`.trim(),
             }
             : null,
-          status: quote.get('status') || 'draft',
+          status: quote.get('status') || 'requested',
           contactPerson: quote.get('contactPerson') || '',
           contactEmail: quote.get('contactEmail') || '',
           contactPhone: quote.get('contactPhone') || '',
@@ -418,7 +418,7 @@ class QuoteController {
         contactEmail: quote.get('contactEmail') || '',
         contactPhone: quote.get('contactPhone') || '',
         notes: quote.get('notes') || '',
-        status: quote.get('status') || 'draft',
+        status: quote.get('status') || 'requested',
         validUntil: quote.get('validUntil'),
         serviceItems: quote.get('serviceItems') || {
           days: [],
@@ -640,7 +640,7 @@ class QuoteController {
       }
 
       // 9. Set new values for status and validUntil
-      newQuote.set('status', 'draft');
+      newQuote.set('status', 'requested');
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 30);
       newQuote.set('validUntil', validUntil);

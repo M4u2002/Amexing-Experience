@@ -31,6 +31,8 @@ class ExperienceController {
     this.maxPageSize = 100;
     this.defaultPageSize = 25;
     this.maxExperiencesPerPackage = 20;
+    this.maxToursPerPackage = 20;
+    this.maxTotalItemsPerPackage = 30;
   }
 
   /**
@@ -115,8 +117,9 @@ class ExperienceController {
         filteredQuery.descending(sortField);
       }
 
-      // Include experiences array for display
+      // Include experiences and tours arrays for display
       filteredQuery.include('experiences');
+      filteredQuery.include('tours');
 
       // Apply pagination
       filteredQuery.skip(start);
@@ -128,6 +131,7 @@ class ExperienceController {
       // Format data for DataTables
       const data = experiences.map((experience) => {
         const includedExperiences = experience.get('experiences') || [];
+        const includedTours = experience.get('tours') || [];
 
         return {
           id: experience.id,
@@ -135,12 +139,21 @@ class ExperienceController {
           name: experience.get('name'),
           description: experience.get('description'),
           type: experience.get('type'),
+          providerType: experience.get('providerType'),
+          duration: experience.get('duration'),
           cost: experience.get('cost'),
           experiences: includedExperiences.map((exp) => ({
             id: exp.id,
             name: exp.get('name'),
           })),
+          tours: includedTours.map((tour) => ({
+            id: tour.id,
+            destinationPOI: tour.get('destinationPOI'),
+            time: tour.get('time'),
+          })),
           experienceCount: includedExperiences.length,
+          tourCount: includedTours.length,
+          totalItemCount: includedExperiences.length + includedTours.length,
           active: experience.get('active'),
           createdAt: experience.createdAt,
           updatedAt: experience.updatedAt,
@@ -203,12 +216,15 @@ class ExperienceController {
       }
 
       const includedExperiences = experience.get('experiences') || [];
+      const includedTours = experience.get('tours') || [];
 
       const data = {
         id: experience.id,
         name: experience.get('name'),
         description: experience.get('description'),
         type: experience.get('type'),
+        providerType: experience.get('providerType'),
+        duration: experience.get('duration'),
         cost: experience.get('cost'),
         experiences: includedExperiences.map((exp) => exp.id),
         experienceDetails: includedExperiences.map((exp) => ({
@@ -216,6 +232,15 @@ class ExperienceController {
           name: exp.get('name'),
           description: exp.get('description'),
           cost: exp.get('cost'),
+        })),
+        tours: includedTours.map((tour) => tour.id),
+        tourDetails: includedTours.map((tour) => ({
+          id: tour.id,
+          destinationPOI: tour.get('destinationPOI'),
+          time: tour.get('time'),
+          vehicleType: tour.get('vehicleType'),
+          price: tour.get('price'),
+          rate: tour.get('rate'),
         })),
         active: experience.get('active'),
         createdAt: experience.createdAt,
@@ -261,7 +286,7 @@ class ExperienceController {
       }
 
       const {
-        name, description, type, cost, experiences,
+        name, description, type, providerType, duration, cost, experiences, tours,
       } = req.body;
 
       // Validation
@@ -273,8 +298,22 @@ class ExperienceController {
         return this.sendError(res, 'Type must be Experience or Provider', 400);
       }
 
+      // Validate providerType for Provider type (optional field)
+      if (type === 'Provider' && providerType) {
+        if (!['Exclusivo', 'Compartido', 'Privado'].includes(providerType)) {
+          return this.sendError(res, 'Provider type must be Exclusivo, Compartido, or Privado', 400);
+        }
+      }
+
       if (cost < 0) {
         return this.sendError(res, 'Cost must be greater than or equal to 0', 400);
+      }
+
+      // Validate duration (optional field)
+      if (duration !== undefined && duration !== null && duration !== '') {
+        if (Number.isNaN(parseFloat(duration)) || parseFloat(duration) < 0) {
+          return this.sendError(res, 'Duration must be a positive number', 400);
+        }
       }
 
       if (name.length > 200) {
@@ -290,6 +329,17 @@ class ExperienceController {
         return this.sendError(res, `Maximum ${this.maxExperiencesPerPackage} experiences per package`, 400);
       }
 
+      // Validate tours array
+      if (tours && tours.length > this.maxToursPerPackage) {
+        return this.sendError(res, `Maximum ${this.maxToursPerPackage} tours per package`, 400);
+      }
+
+      // Validate total items count (experiences + tours)
+      const totalItems = (experiences ? experiences.length : 0) + (tours ? tours.length : 0);
+      if (totalItems > this.maxTotalItemsPerPackage) {
+        return this.sendError(res, `Maximum ${this.maxTotalItemsPerPackage} total items (experiences + tours) per package`, 400);
+      }
+
       // Create experience object
       const Experience = Parse.Object.extend('Experience');
       const experienceObj = new Experience();
@@ -297,6 +347,12 @@ class ExperienceController {
       experienceObj.set('name', name);
       experienceObj.set('description', description);
       experienceObj.set('type', type);
+      if (type === 'Provider' && providerType) {
+        experienceObj.set('providerType', providerType);
+      }
+      if (duration !== undefined && duration !== null && duration !== '') {
+        experienceObj.set('duration', parseFloat(duration));
+      }
       experienceObj.set('cost', parseFloat(cost));
       experienceObj.set('active', true);
       experienceObj.set('exists', true);
@@ -320,6 +376,27 @@ class ExperienceController {
         experienceObj.set('experiences', experiencePointers);
       } else {
         experienceObj.set('experiences', []);
+      }
+
+      // Convert tour IDs to Pointers
+      if (tours && tours.length > 0) {
+        const tourPointers = [];
+        for (const tourId of tours) {
+          try {
+            // Validate that tour exists
+            const tourQuery = new Parse.Query('Tours');
+            const tour = await tourQuery.get(tourId, { useMasterKey: true });
+            if (!tour) {
+              return this.sendError(res, `Tour ${tourId} not found`, 404);
+            }
+            tourPointers.push(tour);
+          } catch (error) {
+            return this.sendError(res, `Tour ${tourId} not found`, 404);
+          }
+        }
+        experienceObj.set('tours', tourPointers);
+      } else {
+        experienceObj.set('tours', []);
       }
 
       // Save experience with user context for audit trail
@@ -389,7 +466,7 @@ class ExperienceController {
       }
 
       const {
-        name, description, cost, experiences, active,
+        name, description, providerType, duration, cost, experiences, tours, active,
       } = req.body;
 
       // Get existing experience
@@ -430,6 +507,30 @@ class ExperienceController {
         experienceObj.set('cost', parseFloat(cost));
       }
 
+      if (duration !== undefined) {
+        if (duration === null || duration === '') {
+          // Allow clearing the duration field
+          experienceObj.set('duration', null);
+        } else {
+          if (Number.isNaN(parseFloat(duration)) || parseFloat(duration) < 0) {
+            return this.sendError(res, 'Duration must be a positive number', 400);
+          }
+          experienceObj.set('duration', parseFloat(duration));
+        }
+      }
+
+      if (providerType !== undefined) {
+        // Only validate and set providerType if this is a Provider
+        const currentType = experienceObj.get('type');
+        if (currentType === 'Provider') {
+          if (providerType && !['Exclusivo', 'Compartido', 'Privado'].includes(providerType)) {
+            return this.sendError(res, 'Provider type must be Exclusivo, Compartido, or Privado', 400);
+          }
+          // Allow empty/null providerType to clear the field
+          experienceObj.set('providerType', providerType || null);
+        }
+      }
+
       if (active !== undefined) {
         experienceObj.set('active', active);
       }
@@ -466,6 +567,40 @@ class ExperienceController {
         }
       }
 
+      // Update tours array
+      if (tours !== undefined) {
+        if (tours.length > this.maxToursPerPackage) {
+          return this.sendError(res, `Maximum ${this.maxToursPerPackage} tours per package`, 400);
+        }
+
+        // Validate total items count (experiences + tours)
+        const currentExperiences = experiences !== undefined ? experiences : (experienceObj.get('experiences') || []);
+        const totalItems = currentExperiences.length + tours.length;
+        if (totalItems > this.maxTotalItemsPerPackage) {
+          return this.sendError(res, `Maximum ${this.maxTotalItemsPerPackage} total items (experiences + tours) per package`, 400);
+        }
+
+        // Convert tour IDs to Pointers
+        if (tours.length > 0) {
+          const tourPointers = [];
+          for (const tourId of tours) {
+            try {
+              const tourQuery = new Parse.Query('Tours');
+              const tour = await tourQuery.get(tourId, { useMasterKey: true });
+              if (!tour) {
+                return this.sendError(res, `Tour ${tourId} not found`, 404);
+              }
+              tourPointers.push(tour);
+            } catch (error) {
+              return this.sendError(res, `Tour ${tourId} not found`, 404);
+            }
+          }
+          experienceObj.set('tours', tourPointers);
+        } else {
+          experienceObj.set('tours', []);
+        }
+      }
+
       // Save changes with user context for audit trail
       await experienceObj.save(null, {
         useMasterKey: true,
@@ -487,6 +622,7 @@ class ExperienceController {
           description,
           cost,
           experiences,
+          tours,
           active,
         },
       });

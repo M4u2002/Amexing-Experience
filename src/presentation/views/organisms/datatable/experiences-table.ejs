@@ -48,7 +48,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     <tr>
                         <th>Nombre</th>
                         <th>Descripción</th>
-                        <th>Experiencias</th>
+                        <th>Contenido</th>
+                        <th>Duración</th>
                         <th>Costo</th>
                         <th>Última Act.</th>
                         <th>Estado</th>
@@ -123,6 +124,18 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                             selected: []
                         }) %>
 
+                        <%- include('../../atoms/common/tom-select', {
+                            id: 'tours',
+                            name: 'tours',
+                            multiple: true,
+                            placeholder: 'Buscar y seleccionar tours...',
+                            maxItems: 20,
+                            label: 'Tours Incluidos (Opcional)',
+                            helpText: 'Selecciona los tours que forman parte de este paquete (máximo 20).',
+                            options: [],
+                            selected: []
+                        }) %>
+
                         <!-- Tabla de Costo Sugerido (inicialmente oculta) -->
                         <div id="suggestedCostContainer" style="display: none;" class="mb-3">
                             <div class="card border-info">
@@ -162,6 +175,16 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                     </small>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Duración -->
+                        <div class="mb-3">
+                            <label for="duration" class="form-label">Duración</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="duration" name="duration" min="0" step="0.5" placeholder="2.5">
+                                <span class="input-group-text">horas</span>
+                            </div>
+                            <div class="form-text">Duración estimada en horas (campo opcional)</div>
                         </div>
 
                         <div class="mb-3">
@@ -212,8 +235,9 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         const canEdit = <%= canEdit %>;
         const canDelete = <%= canDelete %>;
 
-        // Variable global para almacenar datos de experiencias con costos
+        // Variables globales para almacenar datos con costos
         let experiencesDataMap = {};
+        let toursDataMap = {};
 
         /**
          * Format money amount with thousands separator and 2 decimals
@@ -225,17 +249,20 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         }
 
         /**
-         * Update suggested cost table based on selected experiences
+         * Update suggested cost table based on selected experiences and tours
          */
         function updateSuggestedCostTable() {
-            const selectElement = document.getElementById('experiences');
-            const tomSelectInstance = selectElement?.tomselect;
-            const selectedIds = tomSelectInstance?.getValue() || [];
+            const experiencesSelectElement = document.getElementById('experiences');
+            const toursSelectElement = document.getElementById('tours');
+            const experiencesTomSelect = experiencesSelectElement?.tomselect;
+            const toursTomSelect = toursSelectElement?.tomselect;
+            const selectedExperienceIds = experiencesTomSelect?.getValue() || [];
+            const selectedTourIds = toursTomSelect?.getValue() || [];
 
             const container = $('#suggestedCostContainer');
             const tbody = $('#suggestedCostBody');
 
-            if (selectedIds.length === 0) {
+            if (selectedExperienceIds.length === 0 && selectedTourIds.length === 0) {
                 // No selections, hide table
                 container.hide();
                 return;
@@ -246,8 +273,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
             let total = 0;
 
-            // Generate rows for each selected item
-            selectedIds.forEach(function(id) {
+            // Generate rows for each selected experience
+            selectedExperienceIds.forEach(function(id) {
                 const item = experiencesDataMap[id];
                 if (item) {
                     const cost = parseFloat(item.cost || 0);
@@ -255,7 +282,24 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
                     const row = `
                         <tr>
-                            <td>${item.name}</td>
+                            <td>${item.name} <span class="badge bg-primary badge-sm">Experiencia</span></td>
+                            <td class="text-end">$${formatMoney(cost)} MXN</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                }
+            });
+
+            // Generate rows for each selected tour
+            selectedTourIds.forEach(function(id) {
+                const item = toursDataMap[id];
+                if (item) {
+                    const cost = parseFloat(item.price || 0);
+                    total += cost;
+
+                    const row = `
+                        <tr>
+                            <td>${item.name} <span class="badge bg-success badge-sm">Tour</span></td>
                             <td class="text-end">$${formatMoney(cost)} MXN</td>
                         </tr>
                     `;
@@ -280,13 +324,25 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 return;
             }
 
-            const selectElement = document.getElementById('experiences');
-            const tomSelectInstance = selectElement?.tomselect;
+            const experiencesSelectElement = document.getElementById('experiences');
+            const experiencesTomSelectInstance = experiencesSelectElement?.tomselect;
+            
+            const toursSelectElement = document.getElementById('tours');
+            const toursTomSelectInstance = toursSelectElement?.tomselect;
 
-            if (tomSelectInstance) {
-                tomSelectInstance.on('change', function() {
+            if (experiencesTomSelectInstance) {
+                experiencesTomSelectInstance.on('change', function() {
                     updateSuggestedCostTable();
                 });
+            }
+
+            if (toursTomSelectInstance) {
+                toursTomSelectInstance.on('change', function() {
+                    updateSuggestedCostTable();
+                });
+            }
+
+            if (experiencesTomSelectInstance || toursTomSelectInstance) {
                 calculatorInitialized = true;
             }
         }
@@ -320,14 +376,33 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     }
                 },
                 {
-                    data: 'experienceCount',
+                    data: null,
                     className: 'text-center',
-                    render: function(data) {
-                        const count = data || 0;
-                        if (count > 0) {
-                            return `<span class="badge bg-info">${count}</span>`;
+                    render: function(data, type, row) {
+                        const experienceCount = row.experienceCount || 0;
+                        const tourCount = row.tourCount || 0;
+                        const totalCount = experienceCount + tourCount;
+                        
+                        if (totalCount === 0) {
+                            return '<span class="text-muted">-</span>';
                         }
-                        return '<span class="text-muted">-</span>';
+                        
+                        let html = '';
+                        if (experienceCount > 0) {
+                            html += `<span class="badge bg-primary me-1" title="Experiencias">${experienceCount} Exp</span>`;
+                        }
+                        if (tourCount > 0) {
+                            html += `<span class="badge bg-success" title="Tours">${tourCount} Tours</span>`;
+                        }
+                        
+                        return html;
+                    }
+                },
+                {
+                    data: 'duration',
+                    render: function(data) {
+                        if (!data) return '<span class="text-muted">No especificado</span>';
+                        return `<span class="text-primary">${data} hrs</span>`;
                     }
                 },
                 {
@@ -506,6 +581,58 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             });
         }
 
+        function loadAvailableTours() {
+            return $.ajax({
+                url: '/api/tours',
+                type: 'GET',
+                data: { length: 1000 }, // Get all for selection
+                success: function(response) {
+                    if (response.data && response.data.tours) {
+                        // Reset tours data map
+                        toursDataMap = {};
+
+                        // Get Tom Select instance
+                        const selectElement = document.getElementById('tours');
+                        const tomSelectInstance = selectElement ? selectElement.tomselect : null;
+
+                        if (tomSelectInstance) {
+                            // Clear existing options
+                            tomSelectInstance.clearOptions();
+
+                            // Add new options with price information
+                            response.data.tours.forEach(function(item) {
+                                if (item.active) {
+                                    // Store complete data for cost calculation
+                                    toursDataMap[item.id] = {
+                                        id: item.id,
+                                        name: `${item.destinationPOI?.name || 'Tour'} (${item.time || 0}min)`,
+                                        price: item.price || 0
+                                    };
+
+                                    // Add option to Tom Select with price in display text
+                                    const priceFormatted = formatMoney(item.price || 0);
+                                    tomSelectInstance.addOption({
+                                        value: item.id,
+                                        text: `${item.destinationPOI?.name || 'Tour'} (${item.time || 0}min) - $${priceFormatted} MXN`
+                                    });
+                                }
+                            });
+
+                            // Refresh the dropdown
+                            tomSelectInstance.refreshOptions(false);
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.warn('No se pudieron cargar los tours disponibles:', xhr.status, xhr.responseText);
+                    // Don't fail the whole operation if tours can't be loaded
+                }
+            }).always(function() {
+                // Always resolve successfully to not break the promise chain
+                return $.Deferred().resolve();
+            });
+        }
+
         function openExperienceModal(isEdit = false) {
             // Clear any previous modal alerts
             const alertsContainer = document.getElementById('experienceModalAlerts');
@@ -517,20 +644,31 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             $('#experienceForm')[0].reset();
             $('#experienceId').val('');
             $('#type').val('Experience');
+            $('#duration').val(''); // Clear duration field
             $('#modalTitle').text(isEdit ? 'Editar Experiencia' : 'Crear Nueva Experiencia');
             $('#saveButtonText').text(isEdit ? 'Guardar Cambios' : 'Crear Experiencia');
 
-            // Clear Tom Select values
-            const selectElement = document.getElementById('experiences');
-            const tomSelectInstance = selectElement ? selectElement.tomselect : null;
-            if (tomSelectInstance) {
-                tomSelectInstance.clear();
+            // Clear Tom Select values for experiences
+            const experiencesSelectElement = document.getElementById('experiences');
+            const experiencesTomSelectInstance = experiencesSelectElement ? experiencesSelectElement.tomselect : null;
+            if (experiencesTomSelectInstance) {
+                experiencesTomSelectInstance.clear();
+            }
+
+            // Clear Tom Select values for tours
+            const toursSelectElement = document.getElementById('tours');
+            const toursTomSelectInstance = toursSelectElement ? toursSelectElement.tomselect : null;
+            if (toursTomSelectInstance) {
+                toursTomSelectInstance.clear();
             }
 
             // Hide suggested cost table
             $('#suggestedCostContainer').hide();
 
-            loadAvailableItems();
+            // Load both experiences and tours
+            $.when(loadAvailableItems(), loadAvailableTours()).done(function() {
+                // Both loaded successfully
+            });
         }
 
         function loadExperienceData(experienceId) {
@@ -548,23 +686,39 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         $('#experienceId').val(experience.id);
                         $('#name').val(experience.name);
                         $('#description').val(experience.description);
+                        $('#duration').val(experience.duration || '');
                         $('#cost').val(experience.cost);
 
                         // Load all items and set selected values
-                        loadAvailableItems(experience.id).done(function() {
+                        Promise.all([
+                            loadAvailableItems(experience.id),
+                            loadAvailableTours()
+                        ]).then(function() {
+                            // Set experiences values
                             if (experience.experiences && experience.experiences.length > 0) {
-                                const selectElement = document.getElementById('experiences');
-                                const tomSelectInstance = selectElement ? selectElement.tomselect : null;
-                                if (tomSelectInstance) {
-                                    tomSelectInstance.setValue(experience.experiences);
-                                    // Update suggested cost table after setting values
-                                    updateSuggestedCostTable();
+                                const experiencesSelectElement = document.getElementById('experiences');
+                                const experiencesTomSelectInstance = experiencesSelectElement ? experiencesSelectElement.tomselect : null;
+                                if (experiencesTomSelectInstance) {
+                                    experiencesTomSelectInstance.setValue(experience.experiences);
                                 }
                             }
 
+                            // Set tours values
+                            if (experience.tours && experience.tours.length > 0) {
+                                const toursSelectElement = document.getElementById('tours');
+                                const toursTomSelectInstance = toursSelectElement ? toursSelectElement.tomselect : null;
+                                if (toursTomSelectInstance) {
+                                    toursTomSelectInstance.setValue(experience.tours);
+                                }
+                            }
+
+                            // Update suggested cost table after setting values
+                            updateSuggestedCostTable();
+
                             // Hide loader after all data is loaded and populated
                             hideModalLoader('experienceModal');
-                        }).fail(function() {
+                        }).catch(function(error) {
+                            console.warn('Error loading data for modal:', error);
                             // Hide loader even if loading items fails
                             hideModalLoader('experienceModal');
                         });
@@ -589,14 +743,28 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             const experienceId = $('#experienceId').val();
             const isEdit = !!experienceId;
 
-            // Get values from Tom Select
-            const selectElement = document.getElementById('experiences');
-            const tomSelectInstance = selectElement ? selectElement.tomselect : null;
-            const selectedItems = tomSelectInstance ? tomSelectInstance.getValue() : [];
+            // Get values from Tom Select for experiences
+            const experiencesSelectElement = document.getElementById('experiences');
+            const experiencesTomSelectInstance = experiencesSelectElement ? experiencesSelectElement.tomselect : null;
+            const selectedExperiences = experiencesTomSelectInstance ? experiencesTomSelectInstance.getValue() : [];
+
+            // Get values from Tom Select for tours
+            const toursSelectElement = document.getElementById('tours');
+            const toursTomSelectInstance = toursSelectElement ? toursSelectElement.tomselect : null;
+            const selectedTours = toursTomSelectInstance ? toursTomSelectInstance.getValue() : [];
 
             // Validation
-            if (selectedItems.length > 20) {
-                showErrorAlert('Máximo 20 elementos permitidos (experiencias y proveedores combinados)');
+            const totalItems = selectedExperiences.length + selectedTours.length;
+            if (selectedExperiences.length > 20) {
+                showErrorAlert('Máximo 20 experiencias permitidas');
+                return;
+            }
+            if (selectedTours.length > 20) {
+                showErrorAlert('Máximo 20 tours permitidos');
+                return;
+            }
+            if (totalItems > 30) {
+                showErrorAlert('Máximo 30 elementos totales permitidos (experiencias + tours combinados)');
                 return;
             }
 
@@ -605,8 +773,15 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 description: $('#description').val(),
                 type: $('#type').val(),
                 cost: parseFloat($('#cost').val()),
-                experiences: selectedItems
+                experiences: selectedExperiences,
+                tours: selectedTours
             };
+
+            // Only include duration if it has a value
+            const durationValue = $('#duration').val();
+            if (durationValue) {
+                experienceData.duration = parseFloat(durationValue);
+            }
 
             const url = isEdit ? `${apiEndpoint}/${experienceId}` : apiEndpoint;
             const method = isEdit ? 'PUT' : 'POST';

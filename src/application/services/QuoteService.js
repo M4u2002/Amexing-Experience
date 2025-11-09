@@ -29,7 +29,7 @@ class QuoteService {
   constructor() {
     this.className = 'Quote';
     this.allowedRoles = ['superadmin', 'admin'];
-    this.validStatuses = ['draft', 'sent', 'accepted', 'rejected'];
+    this.validStatuses = ['requested', 'hold', 'scheduled', 'rejected'];
   }
 
   /**
@@ -37,7 +37,7 @@ class QuoteService {
    *
    * Business Rules:
    * - Only SuperAdmin and Admin can update status
-   * - Status must be one of: draft, sent, accepted, rejected
+   * - Status must be one of: requested, hold, scheduled, rejected
    * - Maintains exists: true
    * - Updates updatedAt timestamp
    * - Logs activity for audit trail.

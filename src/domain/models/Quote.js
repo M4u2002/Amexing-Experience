@@ -185,7 +185,7 @@ class Quote extends BaseModel {
 
   /**
    * Get status.
-   * @returns {string} Quote status (draft, sent, accepted, rejected).
+   * @returns {string} Quote status (requested, hold, scheduled, rejected).
    * @example
    * const status = quote.getStatus();
    */
@@ -197,7 +197,7 @@ class Quote extends BaseModel {
    * Set status.
    * @param {string} status - Quote status.
    * @example
-   * quote.setStatus('sent');
+   * quote.setStatus('scheduled');
    */
   setStatus(status) {
     this.set('status', status);
