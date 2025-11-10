@@ -48,6 +48,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     <tr>
                         <th>Nombre</th>
                         <th>Descripción</th>
+                        <th>Tipo</th>
+                        <th>Duración</th>
                         <th>Costo</th>
                         <th>Última Actualización</th>
                         <th>Estado</th>
@@ -99,6 +101,32 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         </label>
                         <textarea class="form-control" id="description" name="description" rows="4" required maxlength="1000" placeholder="Descripción detallada del proveedor y sus servicios..."></textarea>
                         <div class="form-text">Descripción completa del proveedor (máximo 1000 caracteres)</div>
+                    </div>
+
+                    <!-- Tipo de Proveedor -->
+                    <div class="mb-3">
+                        <label for="providerType" class="form-label">
+                            Tipo de Proveedor
+                        </label>
+                        <select class="form-select" id="providerType" name="providerType">
+                            <option value="">Seleccione el tipo de proveedor (opcional)</option>
+                            <option value="Exclusivo">Exclusivo</option>
+                            <option value="Compartido">Compartido</option>
+                            <option value="Privado">Privado</option>
+                        </select>
+                        <div class="form-text">Tipo de proveedor según su disponibilidad (campo opcional)</div>
+                    </div>
+
+                    <!-- Duración -->
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">
+                            Duración
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="duration" name="duration" min="0" step="0.5" placeholder="2.5">
+                            <span class="input-group-text">horas</span>
+                        </div>
+                        <div class="form-text">Duración estimada en horas (campo opcional)</div>
                     </div>
 
                     <!-- Costo -->
@@ -177,6 +205,25 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         if (!data) return '<span class="text-muted">Sin descripción</span>';
                         const truncated = data.length > 100 ? data.substring(0, 100) + '...' : data;
                         return `<small class="text-muted">${truncated}</small>`;
+                    }
+                },
+                {
+                    data: 'providerType',
+                    render: function(data) {
+                        if (!data) return '<span class="text-muted">No especificado</span>';
+                        const badgeClass = {
+                            'Exclusivo': 'bg-primary',
+                            'Compartido': 'bg-success', 
+                            'Privado': 'bg-warning text-dark'
+                        }[data] || 'bg-secondary';
+                        return `<span class="badge ${badgeClass}">${data}</span>`;
+                    }
+                },
+                {
+                    data: 'duration',
+                    render: function(data) {
+                        if (!data) return '<span class="text-muted">No especificado</span>';
+                        return `<span class="text-primary">${data} hrs</span>`;
                     }
                 },
                 {
@@ -307,6 +354,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             $('#providerForm')[0].reset();
             $('#providerId').val('');
             $('#type').val('Provider');
+            $('#providerType').val(''); // No default value - optional field
+            $('#duration').val(''); // No default value - optional field
             $('#modalTitle').text(isEdit ? 'Editar Proveedor' : 'Crear Nuevo Proveedor');
             $('#saveButtonText').text(isEdit ? 'Guardar Cambios' : 'Crear Proveedor');
         }
@@ -323,6 +372,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         $('#providerId').val(provider.id);
                         $('#name').val(provider.name);
                         $('#description').val(provider.description || '');
+                        $('#providerType').val(provider.providerType || '');
+                        $('#duration').val(provider.duration || '');
                         $('#cost').val(provider.cost || 0);
                     } else {
                         showErrorAlert('Formato de respuesta inválido');
@@ -350,6 +401,18 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 type: 'Provider',
                 cost: parseFloat($('#cost').val()) || 0
             };
+
+            // Only include providerType if it has a value
+            const providerTypeValue = $('#providerType').val();
+            if (providerTypeValue) {
+                providerData.providerType = providerTypeValue;
+            }
+
+            // Only include duration if it has a value
+            const durationValue = $('#duration').val();
+            if (durationValue) {
+                providerData.duration = parseFloat(durationValue);
+            }
 
             const url = isEdit ? `${apiEndpoint}/${providerId}` : apiEndpoint;
             const method = isEdit ? 'PUT' : 'POST';

@@ -67,7 +67,7 @@ class VehicleTypeController {
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Column mapping for sorting (matches frontend columns order - code column removed)
-      const columns = ['name', 'defaultCapacity', 'active'];
+      const columns = ['name', 'defaultCapacity', 'trunkCapacity', 'active'];
       const sortField = columns[sortColumnIndex] || 'name';
 
       // Get total records count (without search filter) - do this first
@@ -123,6 +123,7 @@ class VehicleTypeController {
         description: type.get('description') || '',
         icon: type.get('icon') || 'car',
         defaultCapacity: type.get('defaultCapacity') || 4,
+        trunkCapacity: type.get('trunkCapacity') || 2,
         sortOrder: type.get('sortOrder') || 0,
         active: type.get('active'),
         createdAt: type.createdAt,
@@ -272,7 +273,7 @@ class VehicleTypeController {
       }
 
       const {
-        name, description, icon, defaultCapacity, sortOrder,
+        name, description, icon, defaultCapacity, trunkCapacity, sortOrder,
       } = req.body;
 
       // Validate required fields
@@ -309,6 +310,7 @@ class VehicleTypeController {
       vehicleType.set('description', description || '');
       vehicleType.set('icon', icon || 'car');
       vehicleType.set('defaultCapacity', parseInt(defaultCapacity, 10) || 4);
+      vehicleType.set('trunkCapacity', parseInt(trunkCapacity, 10) || 2);
       vehicleType.set('sortOrder', parseInt(sortOrder, 10) || 0);
       vehicleType.set('active', true);
       vehicleType.set('exists', true);
@@ -387,7 +389,7 @@ class VehicleTypeController {
       }
 
       const {
-        name, description, icon, defaultCapacity, sortOrder, active,
+        name, description, icon, defaultCapacity, trunkCapacity, sortOrder, active,
       } = req.body;
 
       // Check name uniqueness if name is being changed
@@ -419,6 +421,7 @@ class VehicleTypeController {
       if (description !== undefined) vehicleType.set('description', description);
       if (icon) vehicleType.set('icon', icon);
       if (defaultCapacity) vehicleType.set('defaultCapacity', parseInt(defaultCapacity, 10));
+      if (trunkCapacity !== undefined) vehicleType.set('trunkCapacity', parseInt(trunkCapacity, 10));
       if (sortOrder !== undefined) vehicleType.set('sortOrder', parseInt(sortOrder, 10));
       if (active !== undefined) vehicleType.set('active', active);
 

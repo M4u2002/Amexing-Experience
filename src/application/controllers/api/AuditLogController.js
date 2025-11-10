@@ -11,7 +11,7 @@
  * - Export-ready data formatting.
  * @author Amexing Development Team
  * @version 1.0.0
- * @since 2025-10-16
+ * @since 2024-10-16
  * @example
  * // Usage example:
  * const controller = new AuditLogController();
@@ -59,129 +59,19 @@ class AuditLogController {
         return this.sendError(res, 'Authentication required', 401);
       }
 
-      // Only admin and superadmin can view audit logs
-      const { userRole } = req;
-      if (userRole !== 'admin' && userRole !== 'superadmin') {
+      if (!this.validatePermissions(req.userRole)) {
         return this.sendError(res, 'Insufficient permissions', 403);
       }
 
-      // Parse query parameters
-      const {
-        page = 1,
-        limit = this.defaultPageSize,
-        userId,
-        username,
-        action,
-        entityType,
-        entityId,
-        startDate,
-        endDate,
-        sortField = 'timestamp',
-        sortDirection = 'desc',
-      } = req.query;
+      const { pagination, filters } = this.parseAuditLogParams(req.query);
+      const query = this.buildAuditLogQuery(filters);
+      const dateValidation = this.validateDateFilters(filters, res);
+      if (dateValidation) return dateValidation;
 
-      // Validate and sanitize pagination
-      const validatedPage = Math.max(1, parseInt(page, 10) || 1);
-      const validatedLimit = Math.min(this.maxPageSize, Math.max(1, parseInt(limit, 10) || this.defaultPageSize));
-      const skip = (validatedPage - 1) * validatedLimit;
-
-      // Build query
-      const Parse = require('parse/node');
-      const query = new Parse.Query(AuditLog);
-
-      // Apply filters
-      if (userId) {
-        query.equalTo('userId', userId);
-      }
-
-      if (username) {
-        query.contains('username', username);
-      }
-
-      if (action) {
-        query.equalTo('action', action.toUpperCase());
-      }
-
-      if (entityType) {
-        query.equalTo('entityType', entityType);
-      }
-
-      if (entityId) {
-        query.equalTo('entityId', entityId);
-      }
-
-      if (startDate) {
-        try {
-          const start = new Date(startDate);
-          query.greaterThanOrEqualTo('timestamp', start);
-        } catch (error) {
-          return this.sendError(res, 'Invalid startDate format', 400);
-        }
-      }
-
-      if (endDate) {
-        try {
-          const end = new Date(endDate);
-          query.lessThanOrEqualTo('timestamp', end);
-        } catch (error) {
-          return this.sendError(res, 'Invalid endDate format', 400);
-        }
-      }
-
-      // Apply sorting
-      if (sortDirection === 'asc') {
-        query.ascending(sortField);
-      } else {
-        query.descending(sortField);
-      }
-
-      // Apply pagination
-      query.skip(skip);
-      query.limit(validatedLimit);
-
-      // Execute query
-      const [logs, totalCount] = await Promise.all([
-        query.find({ useMasterKey: true }),
-        query.count({ useMasterKey: true }),
-      ]);
-
-      // Format logs for frontend
-      const formattedLogs = logs.map((log) => ({
-        id: log.id,
-        userId: log.get('userId'),
-        username: log.get('username'),
-        action: log.get('action'),
-        entityType: log.get('entityType'),
-        entityId: log.get('entityId'),
-        changes: log.get('changes'),
-        metadata: log.get('metadata'),
-        timestamp: log.get('timestamp'),
-        createdAt: log.get('createdAt'),
-      }));
-
-      // Calculate pagination metadata
-      const totalPages = Math.ceil(totalCount / validatedLimit);
-
-      const response = {
-        data: formattedLogs,
-        pagination: {
-          total: totalCount,
-          page: validatedPage,
-          limit: validatedLimit,
-          totalPages,
-          hasNext: validatedPage < totalPages,
-          hasPrev: validatedPage > 1,
-        },
-        filters: {
-          userId,
-          username,
-          action,
-          entityType,
-          entityId,
-          startDate,
-          endDate,
-        },
-      };
+      this.applySortingAndPagination(query, filters, pagination);
+      const [logs, totalCount] = await this.executeQuery(query);
+      const formattedLogs = this.formatAuditLogs(logs);
+      const response = this.buildResponse(formattedLogs, totalCount, pagination, filters);
 
       this.sendSuccess(res, response, 'Audit logs retrieved successfully');
     } catch (error) {
@@ -390,6 +280,223 @@ class AuditLogController {
     }
   }
 
+  // ===== HELPER METHODS =====
+
+  /**
+   * Validate user permissions for audit log access.
+   * @param {string} userRole - User role to validate.
+   * @returns {boolean} True if user has permissions.
+   * @example
+   * const hasPermissions = this.validatePermissions('admin');
+   */
+  validatePermissions(userRole) {
+    return userRole === 'admin' || userRole === 'superadmin';
+  }
+
+  /**
+   * Parse and validate query parameters for audit logs.
+   * @param {object} query - Request query parameters.
+   * @returns {object} Parsed pagination and filters.
+   * @example
+   * const { pagination, filters } = this.parseAuditLogParams(req.query);
+   */
+  parseAuditLogParams(query) {
+    const {
+      page = 1,
+      limit = this.defaultPageSize,
+      userId,
+      username,
+      action,
+      entityType,
+      entityId,
+      startDate,
+      endDate,
+      sortField = 'timestamp',
+      sortDirection = 'desc',
+    } = query;
+
+    const validatedPage = Math.max(1, parseInt(page, 10) || 1);
+    const validatedLimit = Math.min(this.maxPageSize, Math.max(1, parseInt(limit, 10) || this.defaultPageSize));
+
+    return {
+      pagination: {
+        page: validatedPage,
+        limit: validatedLimit,
+        skip: (validatedPage - 1) * validatedLimit,
+      },
+      filters: {
+        userId,
+        username,
+        action,
+        entityType,
+        entityId,
+        startDate,
+        endDate,
+        sortField,
+        sortDirection,
+      },
+    };
+  }
+
+  /**
+   * Build Parse query with basic setup.
+   * @param {object} filters - Filter parameters.
+   * @returns {object} Parse query object.
+   * @example
+   * const query = this.buildAuditLogQuery(filters);
+   */
+  buildAuditLogQuery(filters) {
+    const Parse = require('parse/node');
+    const query = new Parse.Query(AuditLog);
+
+    if (filters.userId) {
+      query.equalTo('userId', filters.userId);
+    }
+    if (filters.username) {
+      query.contains('username', filters.username);
+    }
+    if (filters.action) {
+      query.equalTo('action', filters.action.toUpperCase());
+    }
+    if (filters.entityType) {
+      query.equalTo('entityType', filters.entityType);
+    }
+    if (filters.entityId) {
+      query.equalTo('entityId', filters.entityId);
+    }
+
+    return query;
+  }
+
+  /**
+   * Validate date filters and apply them to query.
+   * @param {object} filters - Filter parameters.
+   * @param {object} res - Express response object.
+   * @returns {object|null} Error response or null if valid.
+   * @example
+   * const error = this.validateDateFilters(filters, res);
+   */
+  validateDateFilters(filters, res) {
+    if (filters.startDate) {
+      try {
+        const startDate = new Date(filters.startDate);
+        if (Number.isNaN(startDate.getTime())) {
+          return this.sendError(res, 'Invalid startDate format', 400);
+        }
+      } catch {
+        return this.sendError(res, 'Invalid startDate format', 400);
+      }
+    }
+    if (filters.endDate) {
+      try {
+        const endDate = new Date(filters.endDate);
+        if (Number.isNaN(endDate.getTime())) {
+          return this.sendError(res, 'Invalid endDate format', 400);
+        }
+      } catch {
+        return this.sendError(res, 'Invalid endDate format', 400);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Apply sorting and pagination to query.
+   * @param {object} query - Parse query object.
+   * @param {object} filters - Filter parameters.
+   * @param {object} pagination - Pagination parameters.
+   * @example
+   * this.applySortingAndPagination(query, filters, pagination);
+   */
+  applySortingAndPagination(query, filters, pagination) {
+    if (filters.startDate) {
+      query.greaterThanOrEqualTo('timestamp', new Date(filters.startDate));
+    }
+    if (filters.endDate) {
+      query.lessThanOrEqualTo('timestamp', new Date(filters.endDate));
+    }
+
+    if (filters.sortDirection === 'asc') {
+      query.ascending(filters.sortField);
+    } else {
+      query.descending(filters.sortField);
+    }
+
+    query.skip(pagination.skip);
+    query.limit(pagination.limit);
+  }
+
+  /**
+   * Execute query and get results.
+   * @param {object} query - Parse query object.
+   * @returns {Promise<Array>} Array of [logs, totalCount].
+   * @example
+   * const [logs, totalCount] = await this.executeQuery(query);
+   */
+  async executeQuery(query) {
+    return Promise.all([
+      query.find({ useMasterKey: true }),
+      query.count({ useMasterKey: true }),
+    ]);
+  }
+
+  /**
+   * Format audit logs for frontend response.
+   * @param {Array} logs - Raw audit log objects.
+   * @returns {Array} Formatted log objects.
+   * @example
+   * const formatted = this.formatAuditLogs(logs);
+   */
+  formatAuditLogs(logs) {
+    return logs.map((log) => ({
+      id: log.id,
+      userId: log.get('userId'),
+      username: log.get('username'),
+      action: log.get('action'),
+      entityType: log.get('entityType'),
+      entityId: log.get('entityId'),
+      changes: log.get('changes'),
+      metadata: log.get('metadata'),
+      timestamp: log.get('timestamp'),
+      createdAt: log.get('createdAt'),
+    }));
+  }
+
+  /**
+   * Build final response object.
+   * @param {Array} formattedLogs - Formatted log data.
+   * @param {number} totalCount - Total number of logs.
+   * @param {object} pagination - Pagination parameters.
+   * @param {object} filters - Applied filters.
+   * @returns {object} Complete response object.
+   * @example
+   * const response = this.buildResponse(logs, count, pagination, filters);
+   */
+  buildResponse(formattedLogs, totalCount, pagination, filters) {
+    const totalPages = Math.ceil(totalCount / pagination.limit);
+
+    return {
+      data: formattedLogs,
+      pagination: {
+        total: totalCount,
+        page: pagination.page,
+        limit: pagination.limit,
+        totalPages,
+        hasNext: pagination.page < totalPages,
+        hasPrev: pagination.page > 1,
+      },
+      filters: {
+        userId: filters.userId,
+        username: filters.username,
+        action: filters.action,
+        entityType: filters.entityType,
+        entityId: filters.entityId,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      },
+    };
+  }
+
   /**
    * Helper method to send successful response.
    * @param {object} res - Express response object.
@@ -397,6 +504,7 @@ class AuditLogController {
    * @param {string} [message] - Success message.
    * @returns {void}
    * @example
+   * this.sendSuccess(res, { logs: [] }, 'Success');
    */
   sendSuccess(res, data, message = 'Success') {
     res.status(200).json({
@@ -414,6 +522,7 @@ class AuditLogController {
    * @param {number} [statusCode] - HTTP status code.
    * @returns {void}
    * @example
+   * this.sendError(res, 'Error message', 400);
    */
   sendError(res, message, statusCode = 500) {
     res.status(statusCode).json({
