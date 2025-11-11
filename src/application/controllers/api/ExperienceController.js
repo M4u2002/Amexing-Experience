@@ -525,10 +525,11 @@ class ExperienceController {
   }
 
   /**
-   * Validates and updates basic experience fields
-   * @param {Parse.Object} experienceObj - Experience object to update
-   * @param {object} data - Update data
-   * @returns {object|null} Validation error or null if valid
+   * Validates and updates basic experience fields.
+   * @param {Parse.Object} experienceObj - Experience object to update.
+   * @param {object} data - Update data.
+   * @returns {object|null} Validation error or null if valid.
+   * @example
    */
   validateAndUpdateBasicFields(experienceObj, data) {
     const {
@@ -591,11 +592,12 @@ class ExperienceController {
   }
 
   /**
-   * Updates experience relationships (experiences and tours)
-   * @param {Parse.Object} experienceObj - Experience object to update
-   * @param {string} experienceId - Current experience ID (to prevent self-inclusion)
-   * @param {object} data - Update data containing experiences and tours arrays
-   * @returns {object|null} Error object or null if successful
+   * Updates experience relationships (experiences and tours).
+   * @param {Parse.Object} experienceObj - Experience object to update.
+   * @param {string} experienceId - Current experience ID (to prevent self-inclusion).
+   * @param {object} data - Update data containing experiences and tours arrays.
+   * @returns {object|null} Error object or null if successful.
+   * @example
    */
   async updateExperienceRelationships(experienceObj, experienceId, data) {
     const { experiences, tours } = data;
@@ -660,10 +662,11 @@ class ExperienceController {
   }
 
   /**
-   * Updates vehicle type relationship for experience
-   * @param {Parse.Object} experienceObj - Experience object to update
-   * @param {string} vehicleType - Vehicle type ID or empty to clear
-   * @returns {object|null} Error object or null if successful
+   * Updates vehicle type relationship for experience.
+   * @param {Parse.Object} experienceObj - Experience object to update.
+   * @param {string} vehicleType - Vehicle type ID or empty to clear.
+   * @returns {object|null} Error object or null if successful.
+   * @example
    */
   async updateVehicleTypeRelationship(experienceObj, vehicleType) {
     if (vehicleType === undefined) {
