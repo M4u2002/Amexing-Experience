@@ -444,12 +444,12 @@ describe('Tours Availability Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.tours).toBeDefined();
-      expect(Array.isArray(response.body.data.tours)).toBe(true);
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data)).toBe(true);
 
       // Find our test tours
-      const tour1 = response.body.data.tours.find((t) => t.id === testTour1.id);
-      const tour2 = response.body.data.tours.find((t) => t.id === testTour2.id);
+      const tour1 = response.body.data.find((t) => t.id === testTour1.id);
+      const tour2 = response.body.data.find((t) => t.id === testTour2.id);
 
       expect(tour1).toBeDefined();
       expect(tour1.availableDays).toEqual([1, 2, 4]);
