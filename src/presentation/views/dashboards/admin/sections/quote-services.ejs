@@ -756,6 +756,12 @@ tr[data-row-type="subconcept"] {
                             title="Agregar experiencia">
                         <i class="ti ti-plus"></i> Experiencia
                     </button>
+                    <button class="btn btn-sm btn-outline-primary add-subconcept-btn"
+                            data-day-index="${dayIndex}"
+                            data-type="tour"
+                            title="Agregar tour">
+                        <i class="ti ti-plus"></i> Tour
+                    </button>
                 </div>
             </td>
             <td></td>
@@ -868,6 +874,48 @@ tr[data-row-type="subconcept"] {
                     ${subconcept.concept ? `<small class="text-muted mt-1 d-block">${subconcept.concept}</small>` : ''}
                 </td>
             `;
+        } else if (subType === 'tour') {
+            conceptCellHTML = `
+                <td>
+                    <!-- Time Input -->
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="ti ti-clock text-primary"></i>
+                        <input type="text"
+                               class="form-control form-control-sm time-input"
+                               data-day-index="${dayIndex}"
+                               data-subconcept-index="${subconceptIndex}"
+                               data-field="time"
+                               placeholder="HH:MM"
+                               value="${subconcept.time || ''}"
+                               maxlength="5"
+                               style="max-width: 80px; flex-shrink: 0;">
+                    </div>
+
+                    <!-- STEP 1: Rate Selector -->
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">1. Seleccionar Tarifa</label>
+                        <select class="form-select form-select-sm tour-rate-selector"
+                                data-day-index="${dayIndex}"
+                                data-subconcept-index="${subconceptIndex}"
+                                id="tourRateSelector_${dayIndex}_${subconceptIndex}"
+                                ${subconcept.rateId ? '' : 'required'}>
+                            <option value="">Seleccionar tarifa...</option>
+                        </select>
+                    </div>
+
+                    <!-- STEP 2: Destination Selector (depends on rate) -->
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">2. Seleccionar Destino</label>
+                        <select class="form-select form-select-sm tour-destination-selector"
+                                data-day-index="${dayIndex}"
+                                data-subconcept-index="${subconceptIndex}"
+                                id="tourDestinationSelector_${dayIndex}_${subconceptIndex}"
+                                ${subconcept.rateId ? '' : 'disabled'}>
+                            <option value="">Primero seleccione tarifa...</option>
+                        </select>
+                    </div>
+                </td>
+            `;
         } else if (subType === 'experiencia') {
             conceptCellHTML = `
                 <td>
@@ -957,6 +1005,36 @@ tr[data-row-type="subconcept"] {
                     </select>
                 </td>
             `;
+        } else if (subType === 'tour') {
+            // Show badge if vehicle has capacity (either from per-person calc or just has a vehicle selected)
+            const hasVehicle = subconcept.vehicleCapacity || subconcept.vehicleTypeId;
+            const multiplier = subconcept.vehicleMultiplier || 1;
+
+            // Determine the initial message for vehicle selector based on state
+            let vehicleSelectorMessage = 'Primero seleccione un destino';
+            if (subconcept.destinationId) {
+                vehicleSelectorMessage = 'Seleccionar vehículo...';
+            }
+
+            vehicleCellHTML = `
+                <td>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-info vehicle-multiplier"
+                              data-day-index="${dayIndex}"
+                              data-subconcept-index="${subconceptIndex}"
+                              style="display: ${hasVehicle ? 'inline-block' : 'none'}; min-width: 35px; text-align: center;">
+                            ${multiplier}x
+                        </span>
+                    </div>
+                    <select class="form-select form-select-sm tour-vehicle-selector"
+                            data-day-index="${dayIndex}"
+                            data-subconcept-index="${subconceptIndex}"
+                            id="tourVehicleSelector_${dayIndex}_${subconceptIndex}"
+                            ${subconcept.destinationId ? '' : 'disabled'}>
+                        <option value="">${vehicleSelectorMessage}</option>
+                    </select>
+                </td>
+            `;
         } else {
             vehicleCellHTML = `
                 <td>
@@ -988,8 +1066,8 @@ tr[data-row-type="subconcept"] {
                        value="${subconcept.hours !== null && subconcept.hours !== undefined ? subconcept.hours : ''}">
             </td>
             <td>
-                ${subType === 'traslado' ? `
-                    <!-- Traslado: Price + Number of People (no checkbox, always calculates vehicles) -->
+                ${subType === 'traslado' || subType === 'tour' ? `
+                    <!-- Traslado/Tour: Price + Number of People (no checkbox, always calculates vehicles) -->
                     <div class="d-flex flex-column gap-2">
                         <!-- Unit Price Input (top) -->
                         <input type="text"
@@ -1000,7 +1078,7 @@ tr[data-row-type="subconcept"] {
                                placeholder="$0.00"
                                value="${subconcept.unitPrice !== null && subconcept.unitPrice !== undefined ? formatCurrency(subconcept.unitPrice) : ''}">
 
-                        <!-- Number of People Input (bottom) - always enabled for traslados -->
+                        <!-- Number of People Input (bottom) - always enabled for traslados/tours -->
                         <input type="number"
                                class="form-control form-control-sm text-center"
                                data-day-index="${dayIndex}"
@@ -1176,6 +1254,13 @@ tr[data-row-type="subconcept"] {
         if (subType === 'experiencia') {
             setTimeout(() => {
                 initExperienceSelector(dayIndex, subconceptIndex, subconcept);
+            }, 100);
+        }
+
+        // Initialize tour rate selector first, then tour selector for tour type
+        if (subType === 'tour') {
+            setTimeout(() => {
+                initTourRateSelector(dayIndex, subconceptIndex, subconcept);
             }, 100);
         }
 
@@ -1756,6 +1841,455 @@ tr[data-row-type="subconcept"] {
         }
     }
 
+    // ============================================================
+    // TOUR SELECTOR FUNCTIONS (Rate → Destination → Vehicle)
+    // ============================================================
+
+    /**
+     * Initialize tour rate selector with TomSelect and load rates
+     * Step 1 of 3: Rate selection
+     */
+    function initTourRateSelector(dayIndex, subconceptIndex, subconcept) {
+        const selectElement = document.getElementById(`tourRateSelector_${dayIndex}_${subconceptIndex}`);
+        if (!selectElement) {
+            console.error('Tour rate selector not found');
+            return;
+        }
+
+        // Load active rates (exactly like traslados)
+        loadActiveRatesForSelector().then(rates => {
+            if (rates.length === 0) {
+                selectElement.innerHTML = '<option value="">No hay tarifas disponibles</option>';
+                return;
+            }
+
+            // Clear existing options
+            selectElement.innerHTML = '<option value="">Seleccionar tarifa...</option>';
+
+            // Add rate options (using .value and .label like traslados)
+            rates.forEach(rate => {
+                const option = document.createElement('option');
+                option.value = rate.value;  // Use .value like traslados
+                option.textContent = rate.label;  // Use .label like traslados
+
+                // Pre-select if this subconcept has a rateId
+                if (subconcept.rateId === rate.value) {
+                    option.selected = true;
+                }
+
+                selectElement.appendChild(option);
+            });
+
+            // Attach change listener (NO TomSelect, just plain onchange like traslados)
+            selectElement.onchange = function(e) {
+                const rateId = e.target.value;
+                const rateName = e.target.options[e.target.selectedIndex].text;
+
+                if (rateId) {
+                    // Update subconcept with selected rate
+                    const subconcept = serviceItemsData.days[dayIndex]?.subconcepts[subconceptIndex];
+                    if (subconcept) {
+                        subconcept.rateId = rateId;
+                        subconcept.rateName = rateName;
+
+                        // IMPORTANTE: Limpiar selecciones anteriores
+                        subconcept.destinationId = null;
+                        subconcept.destinationPOI = "";
+                        subconcept.tourId = null;
+                        subconcept.vehicleTypeId = null;
+                        subconcept.vehicleType = "";
+                        subconcept.durationMinutes = 0;
+                        subconcept.unitPrice = 0;
+                        subconcept.total = 0;
+
+                        // Limpiar destination selector
+                        const destinationSelector = document.getElementById(`tourDestinationSelector_${dayIndex}_${subconceptIndex}`);
+                        if (destinationSelector) {
+                            if (destinationSelector.tomselect) {
+                                destinationSelector.tomselect.destroy();
+                            }
+                            destinationSelector.innerHTML = '<option value="">Seleccionar destino...</option>';
+                            destinationSelector.disabled = false;
+                        }
+
+                        // Limpiar vehicle selector
+                        const vehicleSelector = document.getElementById(`tourVehicleSelector_${dayIndex}_${subconceptIndex}`);
+                        if (vehicleSelector) {
+                            vehicleSelector.innerHTML = '<option value="">Primero seleccione un destino</option>';
+                            vehicleSelector.disabled = true;
+                        }
+
+                        initTourDestinationSelector(dayIndex, subconceptIndex, subconcept, rateId);
+                        renderDay(dayIndex);
+                        markDirty();
+                        triggerAutoSave();
+                    }
+                } else {
+                    // Rate deselected - clear everything
+                    subconcept.rateId = null;
+                    subconcept.rateName = "";
+                    subconcept.destinationId = null;
+                    subconcept.destinationPOI = "";
+                    subconcept.tourId = null;
+                    subconcept.vehicleTypeId = null;
+                    subconcept.vehicleType = "";
+                    subconcept.durationMinutes = 0;
+                    subconcept.unitPrice = 0;
+                    subconcept.total = 0;
+
+                    const destinationSelector = document.getElementById(`tourDestinationSelector_${dayIndex}_${subconceptIndex}`);
+                    if (destinationSelector) {
+                        if (destinationSelector.tomselect) {
+                            destinationSelector.tomselect.destroy();
+                        }
+                        destinationSelector.innerHTML = '<option value="">Primero seleccione tarifa...</option>';
+                        destinationSelector.disabled = true;
+                    }
+
+                    const vehicleSelector = document.getElementById(`tourVehicleSelector_${dayIndex}_${subconceptIndex}`);
+                    if (vehicleSelector) {
+                        vehicleSelector.innerHTML = '<option value="">Primero seleccione tarifa...</option>';
+                        vehicleSelector.disabled = true;
+                    }
+
+                    renderDay(dayIndex);
+                    markDirty();
+                    triggerAutoSave();
+                }
+            };
+
+            // If rate already selected, enable destination selector
+            if (subconcept.rateId) {
+                const destinationSelector = document.getElementById(`tourDestinationSelector_${dayIndex}_${subconceptIndex}`);
+                if (destinationSelector) {
+                    destinationSelector.disabled = false;
+                }
+                initTourDestinationSelector(dayIndex, subconceptIndex, subconcept, subconcept.rateId);
+            }
+        });
+    }
+
+    /**
+     * Initialize tour destination selector based on selected rate
+     * Step 2 of 3: Destination selection
+     */
+    function initTourDestinationSelector(dayIndex, subconceptIndex, subconcept, rateId) {
+        const destinationSelector = document.getElementById(`tourDestinationSelector_${dayIndex}_${subconceptIndex}`);
+        if (!destinationSelector) {
+            console.error('Tour destination selector not found');
+            return;
+        }
+
+        // Show loading message
+        destinationSelector.innerHTML = '<option value="">Cargando destinos...</option>';
+        destinationSelector.disabled = true;
+
+        // Load destinations for this rate
+        loadTourDestinationsByRate(rateId).then(destinations => {
+            // Destroy existing TomSelect if any
+            if (destinationSelector.tomselect) {
+                destinationSelector.tomselect.destroy();
+            }
+
+            // Clear options
+            destinationSelector.innerHTML = '<option value="">Seleccionar destino...</option>';
+
+            if (destinations.length === 0) {
+                destinationSelector.innerHTML = '<option value="">No hay destinos para esta tarifa</option>';
+                destinationSelector.disabled = true;
+                return;
+            }
+
+            // Enable selector
+            destinationSelector.disabled = false;
+
+            // Add destinations to selector
+            destinations.forEach(dest => {
+                const option = document.createElement('option');
+                option.value = dest.destinationId;
+                option.textContent = dest.destinationName;
+                if (subconcept.destinationId === dest.destinationId) {
+                    option.selected = true;
+                }
+                destinationSelector.appendChild(option);
+            });
+
+            // Initialize TomSelect with search
+            const tomSelectInstance = new TomSelect(destinationSelector, {
+                create: false,
+                sortField: { field: 'text', direction: 'asc' },
+                placeholder: 'Seleccionar destino...',
+                allowEmptyOption: true
+            });
+
+            // If there's a saved destination, load vehicles for it
+            if (subconcept.destinationId) {
+                updateTourVehicleSelector(dayIndex, subconceptIndex, subconcept, rateId, subconcept.destinationId);
+            }
+
+            // Handle destination change
+            destinationSelector.onchange = function(e) {
+                const destinationId = e.target.value;
+
+                if (destinationId) {
+                    // Store destination info
+                    const selectedDestination = destinations.find(d => d.destinationId === destinationId);
+                    subconcept.destinationId = destinationId;
+                    subconcept.destinationPOI = selectedDestination ? selectedDestination.destinationName : '';
+
+                    // Clear vehicle selection
+                    subconcept.tourId = null;
+                    subconcept.vehicleTypeId = null;
+                    subconcept.vehicleType = "";
+                    subconcept.durationMinutes = 0;
+                    subconcept.unitPrice = 0;
+                    subconcept.total = 0;
+
+                    // Clear vehicle selector
+                    const vehicleSelector = document.getElementById(`tourVehicleSelector_${dayIndex}_${subconceptIndex}`);
+                    if (vehicleSelector) {
+                        vehicleSelector.innerHTML = '<option value="">Seleccionar vehículo...</option>';
+                        vehicleSelector.disabled = false;
+                    }
+
+                    updateTourVehicleSelector(dayIndex, subconceptIndex, subconcept, rateId, destinationId);
+                    renderDay(dayIndex);
+                } else {
+                    // Destination deselected
+                    subconcept.destinationId = null;
+                    subconcept.destinationPOI = "";
+                    subconcept.tourId = null;
+                    subconcept.vehicleTypeId = null;
+                    subconcept.vehicleType = "";
+                    subconcept.durationMinutes = 0;
+                    subconcept.unitPrice = 0;
+                    subconcept.total = 0;
+
+                    const vehicleSelector = document.getElementById(`tourVehicleSelector_${dayIndex}_${subconceptIndex}`);
+                    if (vehicleSelector) {
+                        vehicleSelector.innerHTML = '<option value="">Primero seleccione un destino</option>';
+                        vehicleSelector.disabled = true;
+                    }
+
+                    renderDay(dayIndex);
+                }
+            };
+        }).catch(error => {
+            console.error('Error loading tour destinations:', error);
+            destinationSelector.innerHTML = '<option value="">Error al cargar destinos</option>';
+            destinationSelector.disabled = true;
+        });
+    }
+
+    /**
+     * Load tour destinations filtered by rate
+     * Returns unique destinations that have tours for the specified rate
+     */
+    async function loadTourDestinationsByRate(rateId) {
+        try {
+            const response = await fetch(`/api/quotes/tours/destinations-by-rate/${rateId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                console.log(`Loaded ${result.data.length} tour destinations for rate ${rateId}`);
+                return result.data;
+            } else {
+                console.error('Error loading tour destinations:', result.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error loading tour destinations:', error);
+            showAlert('servicesAlerts', 'Error al cargar destinos de tours', 'danger');
+            return [];
+        }
+    }
+
+    /**
+     * Load tour vehicles filtered by rate AND destination
+     * Returns vehicles available for the specified rate + destination combination
+     */
+    async function loadTourVehiclesByRateAndDestination(rateId, destinationId) {
+        try {
+            const response = await fetch(`/api/quotes/tours/vehicles-by-rate-destination/${rateId}/${destinationId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                console.log(`Loaded ${result.data.length} tour vehicles for rate ${rateId} and destination ${destinationId}`);
+                return result.data;
+            } else {
+                console.error('Error loading tour vehicles:', result.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error loading tour vehicles:', error);
+            showAlert('servicesAlerts', 'Error al cargar vehículos de tours', 'danger');
+            return [];
+        }
+    }
+
+    /**
+     * Update tour vehicle selector based on rate and destination
+     * Step 3 of 3: Vehicle selection
+     */
+    function updateTourVehicleSelector(dayIndex, subconceptIndex, subconcept, rateId, destinationId) {
+        const vehicleSelector = document.getElementById(`tourVehicleSelector_${dayIndex}_${subconceptIndex}`);
+        if (!vehicleSelector) {
+            console.error('Tour vehicle selector not found');
+            return;
+        }
+
+        // Show loading message
+        vehicleSelector.innerHTML = '<option value="">Cargando vehículos...</option>';
+        vehicleSelector.disabled = true;
+
+        // Load vehicles for this rate + destination
+        loadTourVehiclesByRateAndDestination(rateId, destinationId).then(vehicles => {
+            if (vehicles.length === 0) {
+                vehicleSelector.innerHTML = '<option value="">No hay vehículos disponibles</option>';
+                vehicleSelector.disabled = true;
+                return;
+            }
+
+            // Clear options
+            vehicleSelector.innerHTML = '<option value="">Seleccionar vehículo...</option>';
+
+            // Enable selector
+            vehicleSelector.disabled = false;
+
+            // Add vehicle options (solo tipo de vehículo, sin TomSelect)
+            vehicles.forEach(vehicle => {
+                const option = document.createElement('option');
+                option.value = vehicle.tourId;  // Use tourId as value
+                option.textContent = vehicle.vehicleType;  // Solo el tipo de vehículo
+
+                // Store all vehicle data as JSON for later use
+                option.dataset.vehicleData = JSON.stringify(vehicle);
+
+                // Pre-select if this matches saved data
+                if (subconcept.tourId === vehicle.tourId && subconcept.vehicleTypeId === vehicle.vehicleTypeId) {
+                    option.selected = true;
+                }
+
+                vehicleSelector.appendChild(option);
+            });
+
+            // Note: Don't auto-populate on init - data is already in subconcept
+            // Repopulation only happens on user selection via onchange event
+
+            // Handle vehicle selection change
+            vehicleSelector.onchange = function(e) {
+                const selectedOption = e.target.selectedOptions[0];
+                if (selectedOption && selectedOption.dataset.vehicleData) {
+                    const vehicleData = JSON.parse(selectedOption.dataset.vehicleData);
+                    populateTourData(dayIndex, subconceptIndex, subconcept, vehicleData);
+                } else {
+                    // Clear vehicle data
+                    subconcept.tourId = null;
+                    subconcept.vehicleTypeId = null;
+                    subconcept.vehicleType = "";
+                    subconcept.durationMinutes = 0;
+                    subconcept.unitPrice = 0;
+                    subconcept.total = 0;
+
+                    renderDay(dayIndex);
+                    markDirty();
+                    triggerAutoSave();
+                }
+            };
+        }).catch(error => {
+            console.error('Error updating tour vehicle selector:', error);
+            vehicleSelector.innerHTML = '<option value="">Error al cargar vehículos</option>';
+            vehicleSelector.disabled = true;
+        });
+    }
+
+    /**
+     * Populate subconcept with selected tour vehicle data
+     */
+    function populateTourData(dayIndex, subconceptIndex, subconcept, vehicleData = null) {
+        // If vehicleData not provided, try to find it from current selection
+        if (!vehicleData && subconcept.tourId && subconcept.vehicleTypeId) {
+            const vehicleSelector = document.getElementById(`tourVehicleSelector_${dayIndex}_${subconceptIndex}`);
+            if (vehicleSelector) {
+                const selectedOption = Array.from(vehicleSelector.options).find(
+                    opt => opt.dataset.vehicleData
+                );
+                if (selectedOption) {
+                    vehicleData = JSON.parse(selectedOption.dataset.vehicleData);
+                }
+            }
+        }
+
+        if (!vehicleData) {
+            console.warn('No vehicle data available to populate');
+            return;
+        }
+
+        // Populate subconcept fields with tour data
+        subconcept.tourId = vehicleData.tourId;
+        subconcept.vehicleTypeId = vehicleData.vehicleTypeId;
+        subconcept.vehicleType = vehicleData.vehicleType;
+        subconcept.vehicleCapacity = vehicleData.capacity;
+        subconcept.durationMinutes = vehicleData.durationMinutes;
+
+        // Precio unitario: usar directamente el precio del tour (ya incluye recargo del backend)
+        subconcept.unitPrice = vehicleData.price;
+        subconcept.basePrice = vehicleData.basePrice;
+        subconcept.surcharge = vehicleData.surcharge;
+        subconcept.surchargePercentage = vehicleData.surchargePercentage;
+
+        // Set hours from duration (convert minutes to hours, rounded to 1 decimal)
+        subconcept.hours = Math.round((vehicleData.durationMinutes / 60) * 10) / 10;
+
+        // Calculate vehicle multiplier based on numberOfPeople and capacity
+        const numberOfPeople = subconcept.numberOfPeople || quoteNumberOfPeople;
+        subconcept.vehicleMultiplier = Math.ceil(numberOfPeople / vehicleData.capacity);
+
+        // Calculate total: hours × unitPrice × vehicleMultiplier
+        subconcept.total = calculateSubconceptTotal(subconcept);
+
+        console.log('Populated tour data:', {
+            tourId: subconcept.tourId,
+            destination: subconcept.destinationPOI,
+            vehicleType: subconcept.vehicleType,
+            capacity: subconcept.vehicleCapacity,
+            durationMinutes: subconcept.durationMinutes,
+            hours: subconcept.hours,
+            basePrice: subconcept.basePrice,
+            surcharge: subconcept.surcharge,
+            unitPrice: subconcept.unitPrice,
+            numberOfPeople,
+            vehicleMultiplier: subconcept.vehicleMultiplier,
+            total: subconcept.total
+        });
+
+        // Re-render day to show updated data
+        renderDay(dayIndex);
+        recalculateDayTotal(dayIndex);
+        recalculateGeneralTotals();
+
+        markDirty();
+        triggerAutoSave();
+    }
+
+    // ============================================================
+    // END TOUR SELECTOR FUNCTIONS
+    // ============================================================
+
     function initExperienceSelector(dayIndex, subconceptIndex, subconcept) {
         const selectElement = document.getElementById(`experienceSelector_${dayIndex}_${subconceptIndex}`);
         if (!selectElement) {
@@ -2059,6 +2593,18 @@ tr[data-row-type="subconcept"] {
             newSubconcept.includedExperiences = [];
         }
 
+        // Additional fields for tours
+        if (type === "tour") {
+            newSubconcept.rateId = null;           // Step 1: Rate must be selected first
+            newSubconcept.rateName = "";           // Rate display name
+            newSubconcept.destinationId = null;    // Step 2: Destination ID (NEW)
+            newSubconcept.destinationPOI = "";     // Step 2: Destination name
+            newSubconcept.tourId = null;           // Step 3: Selected tour ID (specific rate+dest+vehicle combo)
+            newSubconcept.vehicleTypeId = null;    // Step 3: Vehicle type ID
+            newSubconcept.vehicleType = "";        // Step 3: Vehicle type name
+            newSubconcept.durationMinutes = 0;     // Duration in minutes (from tour record)
+        }
+
         serviceItemsData.days[dayIndex].subconcepts.push(newSubconcept);
         renderDay(dayIndex);
         markDirty();
@@ -2083,13 +2629,13 @@ tr[data-row-type="subconcept"] {
             currentMultiplier: subconcept.vehicleMultiplier
         });
 
-        // TRASLADO: Always calculate based on vehicles needed (no checkbox required)
-        if (subconcept.type === 'traslado' && subconcept.vehicleCapacity) {
+        // TRASLADO & TOUR: Always calculate based on vehicles needed (no checkbox required)
+        if ((subconcept.type === 'traslado' || subconcept.type === 'tour') && subconcept.vehicleCapacity) {
             // Calculate vehicle multiplier based on capacity
             // unitPrice is PER VEHICLE, so multiply by number of vehicles needed
             const vehicleMultiplier = Math.ceil(numberOfPeople / subconcept.vehicleCapacity);
             subconcept.vehicleMultiplier = vehicleMultiplier; // Store for UI display
-            console.log('Traslado vehicle calculation:', {
+            console.log(`${subconcept.type} vehicle calculation:`, {
                 numberOfPeople,
                 vehicleCapacity: subconcept.vehicleCapacity,
                 vehicleMultiplier,
@@ -2142,8 +2688,8 @@ tr[data-row-type="subconcept"] {
                 peopleInput.disabled = !subconcept.isPerPerson;
             }
 
-            // Update vehicle multiplier badge visibility for traslados
-            if (subconcept.type === 'traslado') {
+            // Update vehicle multiplier badge visibility for traslados and tours
+            if (subconcept.type === 'traslado' || subconcept.type === 'tour') {
                 const badge = document.querySelector(
                     `.vehicle-multiplier[data-day-index="${dayIndex}"][data-subconcept-index="${subconceptIndex}"]`
                 );
@@ -2161,8 +2707,8 @@ tr[data-row-type="subconcept"] {
         if (['hours', 'unitPrice', 'isPerPerson', 'numberOfPeople'].includes(field)) {
             subconcept.total = calculateSubconceptTotal(subconcept);
 
-            // Update vehicle multiplier badge text if traslado
-            if (subconcept.type === 'traslado') {
+            // Update vehicle multiplier badge text if traslado or tour
+            if (subconcept.type === 'traslado' || subconcept.type === 'tour') {
                 const badge = document.querySelector(
                     `.vehicle-multiplier[data-day-index="${dayIndex}"][data-subconcept-index="${subconceptIndex}"]`
                 );
