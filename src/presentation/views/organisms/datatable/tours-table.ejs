@@ -53,7 +53,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
             <th>Pasajeros</th>
             <th>Precio</th>
             <th>Precio Contado</th>
-            <th>Estado</th>
+            <th>Tarifa</th>
+            <% if (dtUserRole !== 'department_manager') { %><th>Estado</th><% } %>
             <% if (dtShowActions) { %>
             <th class="text-center">Acciones</th>
             <% } %>
@@ -206,6 +207,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 
     function initToursTable() {
       const API = '<%= dtApiEndpoint %>';
+      const userRole = '<%= dtUserRole %>';
       let table;
 
       // Get JWT token from localStorage or cookies
@@ -413,8 +415,16 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
               `;
             }
           },
-          // 7. Estado
+          // 7. Tarifa
           {
+            data: 'rate',
+            render: function(data, type, row) {
+              if (!data) return '-';
+              return data.name || 'Sin tarifa';
+            }
+          },
+          // 8. Estado
+          ...(userRole !== 'department_manager' ? [{
             data: 'active',
             defaultContent: false,
             render: function(data, type, row) {
@@ -424,7 +434,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 return '<span class="badge bg-danger"><i class="ti ti-x me-1"></i>Inactivo</span>';
               }
             }
-          },
+          }] : []),
           <% if (dtShowActions) { %> {
             data: null,
             orderable: false,

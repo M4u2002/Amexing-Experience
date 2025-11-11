@@ -182,19 +182,24 @@ class DepartmentManagerController extends RoleBasedController {
 
   /**
    * Renders the department vehicles page for viewing and managing vehicle fleet.
-   * Department managers can view vehicles assigned to their department.
+   * Department managers can view vehicles assigned to their department and vehicle types.
+   * Supports sections: 'vehicles' (default) and 'types' for vehicle type management.
    * @function vehicles
    * @param {object} req - Express request object containing user session and authentication data.
    * @param {object} res - Express response object for rendering the vehicles view.
    * @returns {Promise<void>} - Renders the department vehicles view or handles errors.
    * @example
    * // GET /dashboard/department_manager/vehicles
+   * // GET /dashboard/department_manager/vehicles?section=types
    * await departmentManagerController.vehicles(req, res);
    */
   async vehicles(req, res) {
     try {
+      const section = req.query.section || 'types'; // Default to types since vehicles is hidden for department_manager
+
       await this.renderRoleView(req, res, 'vehicles', {
         title: 'Vehículos',
+        section,
         breadcrumb: {
           title: 'Vehículos',
           items: [
@@ -221,18 +226,24 @@ class DepartmentManagerController extends RoleBasedController {
   /**
    * Renders the department services page for viewing and managing transport services.
    * Department managers can view services/transfers available for their department.
+   * Supports sections: 'airport' (default), 'p2p' (punto a punto), and 'local' for service type management.
    * @function services
    * @param {object} req - Express request object containing user session and authentication data.
    * @param {object} res - Express response object for rendering the services view.
    * @returns {Promise<void>} - Renders the department services view or handles errors.
    * @example
    * // GET /dashboard/department_manager/services
+   * // GET /dashboard/department_manager/services?section=p2p
+   * // GET /dashboard/department_manager/services?section=local
    * await departmentManagerController.services(req, res);
    */
   async services(req, res) {
     try {
+      const section = req.query.section || 'airport';
+
       await this.renderRoleView(req, res, 'services', {
         title: 'Traslados',
+        section,
         breadcrumb: {
           title: 'Traslados',
           items: [
@@ -258,19 +269,24 @@ class DepartmentManagerController extends RoleBasedController {
 
   /**
    * Renders the department experiences page for viewing and managing experiences.
-   * Department managers can view experiences available for their department events.
+   * Department managers can view experiences available for their department events and providers.
+   * Supports sections: 'experiences' (default) and 'providers' for experience providers management.
    * @function experiences
    * @param {object} req - Express request object containing user session and authentication data.
    * @param {object} res - Express response object for rendering the experiences view.
    * @returns {Promise<void>} - Renders the department experiences view or handles errors.
    * @example
    * // GET /dashboard/department_manager/experiences
+   * // GET /dashboard/department_manager/experiences?section=providers
    * await departmentManagerController.experiences(req, res);
    */
   async experiences(req, res) {
     try {
+      const section = req.query.section || 'experiences'; // Default to experiences since providers is hidden for department_manager
+
       await this.renderRoleView(req, res, 'experiences', {
         title: 'Experiencias',
+        section,
         breadcrumb: {
           title: 'Experiencias',
           items: [

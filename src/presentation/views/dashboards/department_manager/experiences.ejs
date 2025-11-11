@@ -16,10 +16,10 @@
 const currentUserRole = typeof userRole !== 'undefined' ? userRole : 'department_manager';
 const activeSection = typeof section !== 'undefined' ? section : 'experiences';
 
-// Menu items configuration
+// Menu items configuration - Hide providers section for department_manager
 const menuItems = [
     { label: 'Experiencias', icon: 'star', section: 'experiences', href: '/dashboard/department_manager/experiences' },
-    { label: 'Proveedores', icon: 'building-store', section: 'providers', href: '/dashboard/department_manager/experiences?section=providers' }
+    // { label: 'Proveedores', icon: 'building-store', section: 'providers', href: '/dashboard/department_manager/experiences?section=providers' } // Hidden for department_manager
 ];
 %>
 

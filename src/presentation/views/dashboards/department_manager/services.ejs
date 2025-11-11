@@ -20,7 +20,7 @@ const activeSection = typeof section !== 'undefined' ? section : 'airport';
 const menuItems = [
     { label: 'Aeropuerto', icon: 'plane', section: 'airport', href: '/dashboard/department_manager/services?section=airport' },
     { label: 'Punto a Punto', icon: 'route', section: 'p2p', href: '/dashboard/department_manager/services?section=p2p' },
-    { label: 'Local', icon: 'map-pin-filled', section: 'local', href: '/dashboard/department_manager/services?section=local' }
+    { label: 'Local', icon: 'map-pin', section: 'local', href: '/dashboard/department_manager/services?section=local' }
 ];
 %>
 
@@ -74,7 +74,7 @@ const menuItems = [
             <!-- Airport Services Section -->
             <%- include('../../organisms/datatable/airport-services-table', {
                 tableId: 'airport-services-table',
-                apiEndpoint: '/api/services?serviceType=Aeropuerto',
+                apiEndpoint: '/api/services?serviceType=Aeropuerto&active=true',
                 userRole: currentUserRole,
                 showActions: false
             }) %>
@@ -83,7 +83,7 @@ const menuItems = [
             <!-- Point to Point Services Section -->
             <%- include('../../organisms/datatable/p2p-services-table', {
                 tableId: 'p2p-services-table',
-                apiEndpoint: '/api/services?serviceType=Punto a Punto',
+                apiEndpoint: '/api/services?serviceType=Punto a Punto&active=true',
                 userRole: currentUserRole,
                 showActions: false
             }) %>
@@ -92,7 +92,7 @@ const menuItems = [
             <!-- Local Services Section -->
             <%- include('../../organisms/datatable/local-services-table', {
                 tableId: 'local-services-table',
-                apiEndpoint: '/api/services?serviceType=Local',
+                apiEndpoint: '/api/services?serviceType=Local&active=true',
                 userRole: currentUserRole,
                 showActions: false
             }) %>
