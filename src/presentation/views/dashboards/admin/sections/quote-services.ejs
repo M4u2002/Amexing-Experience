@@ -101,6 +101,14 @@
                                         <td class="text-end border-0 pt-2"><strong>TOTAL:</strong></td>
                                         <td class="text-end border-0 fs-5 fw-bold text-primary pt-2" id="totalDisplay">$0.00 MXN</td>
                                     </tr>
+                                    <tr class="border-top">
+                                        <td class="text-end border-0 pt-2">
+                                            <strong>Costo por Persona:</strong>
+                                            <br>
+                                            <small class="text-muted" id="perPersonLabelDisplay">(0 personas)</small>
+                                        </td>
+                                        <td class="text-end border-0 fs-6 fw-bold text-info pt-2" id="perPersonDisplay">$0.00 MXN</td>
+                                    </tr>
                                 </table>
                             </div>
                         </div>
@@ -767,11 +775,20 @@ tr[data-row-type="subconcept"] {
             <td></td>
             <td></td>
             <td></td>
-            <td rowspan="${rowspan}" class="text-end align-middle bg-light">
+            <td rowspan="${rowspan}" class="text-center align-middle bg-light">
                 <div class="day-total-container">
                     <small class="text-muted d-block mb-1">Total Día ${day.dayNumber}</small>
-                    <span class="day-total-display" data-day-index="${dayIndex}">
+                    <span class="day-total-display fw-bold fs-5" data-day-index="${dayIndex}">
                         ${currencyFormatter.format(day.dayTotal || 0)}
+                    </span>
+                    <small class="text-muted d-block mt-1">MXN</small>
+
+                    <hr class="my-2">
+
+                    <small class="text-muted d-block mb-1">Costo por Persona</small>
+                    <small class="text-muted d-block" style="font-size: 0.7rem;">(${quoteNumberOfPeople} ${quoteNumberOfPeople === 1 ? 'persona' : 'personas'})</small>
+                    <span class="day-per-person-display fw-bold fs-5" data-day-index="${dayIndex}">
+                        ${currencyFormatter.format(quoteNumberOfPeople > 0 ? (day.dayTotal || 0) / quoteNumberOfPeople : 0)}
                     </span>
                     <small class="text-muted d-block mt-1">MXN</small>
                 </div>
@@ -1035,7 +1052,22 @@ tr[data-row-type="subconcept"] {
                     </select>
                 </td>
             `;
+        } else if (subType === 'experiencia') {
+            // Experiencia: mostrar tipo de vehículo asignado (solo lectura)
+            vehicleCellHTML = `
+                <td>
+                    ${subconcept.vehicleType ? `
+                        <div class="form-control form-control-sm bg-light" style="cursor: not-allowed;">
+                            <i class="ti ti-car me-1 text-muted"></i>
+                            <span>${subconcept.vehicleType}</span>
+                        </div>
+                    ` : `
+                        <span class="badge bg-secondary">N/A</span>
+                    `}
+                </td>
+            `;
         } else {
+            // Regular: no aplica vehículo
             vehicleCellHTML = `
                 <td>
                     <span class="badge bg-secondary">N/A</span>
@@ -1300,10 +1332,19 @@ tr[data-row-type="subconcept"] {
         const subtotalEl = document.getElementById('subtotalDisplay');
         const ivaEl = document.getElementById('ivaDisplay');
         const totalEl = document.getElementById('totalDisplay');
+        const perPersonEl = document.getElementById('perPersonDisplay');
+        const perPersonLabelEl = document.getElementById('perPersonLabelDisplay');
 
         if (subtotalEl) subtotalEl.textContent = currencyFormatter.format(serviceItemsData.subtotal);
         if (ivaEl) ivaEl.textContent = currencyFormatter.format(serviceItemsData.iva);
         if (totalEl) totalEl.textContent = currencyFormatter.format(serviceItemsData.total);
+
+        // Calculate and display per person cost
+        const perPersonCost = quoteNumberOfPeople > 0 ? serviceItemsData.total / quoteNumberOfPeople : 0;
+        if (perPersonEl) perPersonEl.textContent = currencyFormatter.format(perPersonCost);
+        if (perPersonLabelEl) {
+            perPersonLabelEl.textContent = `(${quoteNumberOfPeople} ${quoteNumberOfPeople === 1 ? 'persona' : 'personas'})`;
+        }
     }
 
     // ==================
@@ -2335,10 +2376,8 @@ tr[data-row-type="subconcept"] {
                 }
             });
 
-            // If already has an experience selected, load its details
-            if (subconcept.experienceId) {
-                populateExperienceData(dayIndex, subconceptIndex, subconcept.experienceId);
-            }
+            // Note: Don't auto-populate on init - data is already in subconcept
+            // Repopulation only happens on user selection via onChange event
         });
     }
 
@@ -2369,17 +2408,43 @@ tr[data-row-type="subconcept"] {
                 subconcept.unitPrice = experience.cost || 0;
                 subconcept.total = subconcept.hours * subconcept.unitPrice;
 
+                // Save vehicle type if available
+                if (experience.vehicleType) {
+                    subconcept.vehicleType = experience.vehicleType.name;
+                    subconcept.vehicleTypeId = experience.vehicleType.id;
+                    subconcept.vehicleCapacity = experience.vehicleType.defaultCapacity;
+                } else {
+                    subconcept.vehicleType = null;
+                    subconcept.vehicleTypeId = null;
+                    subconcept.vehicleCapacity = null;
+                }
+
                 // Check if it's a package (has nested experiences)
                 const hasIncluded = experience.experienceDetails && experience.experienceDetails.length > 0;
                 subconcept.isPackage = hasIncluded;
                 subconcept.includedExperiences = hasIncluded ? experience.experienceDetails : [];
 
-                // Update the UI fields without full re-render
+                // Update UI fields directly without full re-render to avoid infinite loop
                 const hoursInput = document.querySelector(`input[data-day-index="${dayIndex}"][data-subconcept-index="${subconceptIndex}"][data-field="hours"]`);
                 const priceInput = document.querySelector(`input[data-day-index="${dayIndex}"][data-subconcept-index="${subconceptIndex}"][data-field="unitPrice"]`);
 
                 if (hoursInput) hoursInput.value = subconcept.hours;
                 if (priceInput) priceInput.value = formatCurrency(subconcept.unitPrice);
+
+                // Update vehicle type display if exists
+                const vehicleCell = document.querySelector(`tr[data-day-index="${dayIndex}"][data-subconcept-index="${subconceptIndex}"] td:nth-child(3)`);
+                if (vehicleCell) {
+                    if (subconcept.vehicleType) {
+                        vehicleCell.innerHTML = `
+                            <div class="form-control form-control-sm bg-light" style="cursor: not-allowed;">
+                                <i class="ti ti-car me-1 text-muted"></i>
+                                <span>${subconcept.vehicleType}</span>
+                            </div>
+                        `;
+                    } else {
+                        vehicleCell.innerHTML = '<span class="badge bg-secondary">N/A</span>';
+                    }
+                }
 
                 // Show/hide package table
                 if (hasIncluded) {
@@ -2629,40 +2694,73 @@ tr[data-row-type="subconcept"] {
             currentMultiplier: subconcept.vehicleMultiplier
         });
 
-        // TRASLADO & TOUR: Always calculate based on vehicles needed (no checkbox required)
-        if ((subconcept.type === 'traslado' || subconcept.type === 'tour') && subconcept.vehicleCapacity) {
+        // TRASLADO: Direct unit price multiplied by vehicle multiplier (no hours)
+        if (subconcept.type === 'traslado' && subconcept.vehicleCapacity) {
             // Calculate vehicle multiplier based on capacity
             // unitPrice is PER VEHICLE, so multiply by number of vehicles needed
             const vehicleMultiplier = Math.ceil(numberOfPeople / subconcept.vehicleCapacity);
             subconcept.vehicleMultiplier = vehicleMultiplier; // Store for UI display
-            console.log(`${subconcept.type} vehicle calculation:`, {
+            console.log('Traslado vehicle calculation:', {
                 numberOfPeople,
                 vehicleCapacity: subconcept.vehicleCapacity,
                 vehicleMultiplier,
-                calculation: `${hours} hrs × $${unitPrice} × ${vehicleMultiplier} vehicles = $${hours * unitPrice * vehicleMultiplier}`
+                calculation: `$${unitPrice} × ${vehicleMultiplier} vehicles = $${unitPrice * vehicleMultiplier}`
             });
-            return Math.round(hours * unitPrice * vehicleMultiplier * 100) / 100;
+            return Math.round(unitPrice * vehicleMultiplier * 100) / 100;
         }
 
-        // REGULAR & EXPERIENCIA: Use checkbox to enable per-person pricing
-        if (subconcept.type === 'regular' || subconcept.type === 'experiencia') {
+        // TOUR: Direct unit price multiplied by vehicle multiplier (no hours)
+        if (subconcept.type === 'tour' && subconcept.vehicleCapacity) {
+            // Calculate vehicle multiplier based on capacity
+            // unitPrice is PER VEHICLE, so multiply by number of vehicles needed
+            const vehicleMultiplier = Math.ceil(numberOfPeople / subconcept.vehicleCapacity);
+            subconcept.vehicleMultiplier = vehicleMultiplier; // Store for UI display
+            console.log('Tour vehicle calculation:', {
+                numberOfPeople,
+                vehicleCapacity: subconcept.vehicleCapacity,
+                vehicleMultiplier,
+                calculation: `$${unitPrice} × ${vehicleMultiplier} vehicles = $${unitPrice * vehicleMultiplier}`
+            });
+            return Math.round(unitPrice * vehicleMultiplier * 100) / 100;
+        }
+
+        // EXPERIENCIA: Direct unit price, no hours multiplication
+        if (subconcept.type === 'experiencia') {
             if (subconcept.isPerPerson) {
                 // Per-person pricing: unitPrice is per person, multiply by numberOfPeople
-                console.log('Regular/Experiencia per-person calculation:', {
-                    hours,
+                console.log('Experiencia per-person calculation:', {
                     unitPrice,
                     numberOfPeople,
-                    calculation: `${hours} hrs × $${unitPrice} × ${numberOfPeople} people = $${hours * unitPrice * numberOfPeople}`
+                    calculation: `$${unitPrice} × ${numberOfPeople} people = $${unitPrice * numberOfPeople}`
                 });
-                return Math.round(hours * unitPrice * numberOfPeople * 100) / 100;
+                return Math.round(unitPrice * numberOfPeople * 100) / 100;
             } else {
-                // Standard pricing: just hours × unitPrice
-                console.log('Regular/Experiencia standard calculation:', {
-                    hours,
+                // Standard pricing: just unitPrice (no hours)
+                console.log('Experiencia standard calculation:', {
                     unitPrice,
-                    calculation: `${hours} hrs × $${unitPrice} = $${hours * unitPrice}`
+                    calculation: `$${unitPrice}`
                 });
-                return Math.round(hours * unitPrice * 100) / 100;
+                return Math.round(unitPrice * 100) / 100;
+            }
+        }
+
+        // REGULAR: Direct unit price, no hours multiplication (same as experiencia)
+        if (subconcept.type === 'regular') {
+            if (subconcept.isPerPerson) {
+                // Per-person pricing: unitPrice is per person, multiply by numberOfPeople
+                console.log('Regular per-person calculation:', {
+                    unitPrice,
+                    numberOfPeople,
+                    calculation: `$${unitPrice} × ${numberOfPeople} people = $${unitPrice * numberOfPeople}`
+                });
+                return Math.round(unitPrice * numberOfPeople * 100) / 100;
+            } else {
+                // Standard pricing: just unitPrice (no hours)
+                console.log('Regular standard calculation:', {
+                    unitPrice,
+                    calculation: `$${unitPrice}`
+                });
+                return Math.round(unitPrice * 100) / 100;
             }
         }
 
@@ -2748,7 +2846,10 @@ tr[data-row-type="subconcept"] {
 
         day.dayTotal = Math.round(dayTotal * 100) / 100;
 
-        // Update display
+        // Calculate per person cost
+        const perPersonCost = quoteNumberOfPeople > 0 ? day.dayTotal / quoteNumberOfPeople : 0;
+
+        // Update total display
         const totalDisplay = document.querySelector(`.day-total-display[data-day-index="${dayIndex}"]`);
         if (totalDisplay) {
             totalDisplay.textContent = currencyFormatter.format(day.dayTotal);
@@ -2757,6 +2858,12 @@ tr[data-row-type="subconcept"] {
             setTimeout(() => {
                 totalDisplay.classList.remove('text-success');
             }, 1000);
+        }
+
+        // Update per person display
+        const perPersonDisplay = document.querySelector(`.day-per-person-display[data-day-index="${dayIndex}"]`);
+        if (perPersonDisplay) {
+            perPersonDisplay.textContent = currencyFormatter.format(perPersonCost);
         }
 
         // DO NOT recalculate general totals yet (as requested)
