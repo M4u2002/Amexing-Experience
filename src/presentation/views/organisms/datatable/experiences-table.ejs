@@ -20,6 +20,7 @@ const dtUserRole = typeof userRole !== 'undefined' ? userRole : 'admin';
 const canEdit = ['superadmin', 'admin'].includes(dtUserRole);
 const canDelete = ['superadmin', 'admin'].includes(dtUserRole);
 const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
+const canViewImages = ['superadmin', 'admin', 'department_manager'].includes(dtUserRole);
 %>
 
 <div class="card border-0 shadow-sm">
@@ -52,9 +53,9 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         <th>Duración</th>
                         <th>Precio</th>
                         <th>Precio Contado</th>
-                        <th>Última Act.</th>
-                        <th>Estado</th>
-                        <% if (dtShowActions) { %>
+                        <% if (dtUserRole !== 'department_manager') { %><th>Última Act.</th><% } %>
+                        <% if (dtUserRole !== 'department_manager') { %><th>Estado</th><% } %>
+                        <% if (dtShowActions || canViewImages) { %>
                             <th class="text-center">Acciones</th>
                         <% } %>
                     </tr>
@@ -244,6 +245,8 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         const showActions = <%= dtShowActions %>;
         const canEdit = <%= canEdit %>;
         const canDelete = <%= canDelete %>;
+        const canViewImages = <%= canViewImages %>;
+        const userRole = '<%= dtUserRole %>';
 
         // Variables globales para almacenar datos con costos
         let experiencesDataMap = {};
@@ -504,31 +507,32 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     }
                 },
                 // 7. Última Actualización
-                {
+                ...(userRole !== 'department_manager' ? [{
                     data: 'updatedAt',
                     render: function(data) {
                         const date = new Date(data);
                         return `<small>${date.toLocaleDateString('es-MX')}</small>`;
                     }
-                },
+                }] : []),
                 // 8. Estado
-                {
+                ...(userRole !== 'department_manager' ? [{
                     data: 'active',
                     render: function(data) {
                         return data
                             ? '<span class="badge bg-success">Activa</span>'
                             : '<span class="badge bg-secondary">Inactiva</span>';
                     }
-                },
-                ...(showActions ? [{
+                }] : []),
+                ...((showActions || canViewImages) ? [{
                     data: null,
                     orderable: false,
                     searchable: false,
                     className: 'text-center',
                     render: function(data) {
                         let actions = '<div class="btn-group btn-group-sm" role="group">';
+                        
                         if (canEdit) {
-                            // Edit button
+                            // Edit button (only for admin/superadmin)
                             actions += `<button type="button"
                                             class="btn btn-primary edit-experience-btn"
                                             data-id="${data.objectId || data.id}"
@@ -538,7 +542,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                             <i class="ti ti-edit"></i>
                                         </button>`;
 
-                            // Manage images button (preparado, no funcional)
+                            // Manage images button (admin/superadmin can manage)
                             actions += `<button type="button"
                                             class="btn btn-info manage-images-btn"
                                             data-id="${data.objectId || data.id}"
@@ -548,7 +552,20 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                                             title="Gestionar Imágenes">
                                             <i class="ti ti-photo"></i>
                                         </button>`;
+                        } else if (canViewImages && !canEdit) {
+                            // View gallery button (department_manager can only view)
+                            actions += `<button type="button"
+                                            class="btn btn-info view-gallery-btn"
+                                            data-id="${data.objectId || data.id}"
+                                            data-name="${data.name}"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Ver Galería de Imágenes">
+                                            <i class="ti ti-photo"></i>
+                                        </button>`;
+                        }
 
+                        if (canEdit) {
                             // Toggle status button
                             const statusIcon = data.active ? 'ti-archive' : 'ti-archive-off';
                             const statusTitle = data.active ? 'Desactivar Experiencia' : 'Activar Experiencia';
@@ -586,7 +603,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                 url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json',
                 processing: '<i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando experiencias...'
             },
-            order: [[6, 'desc']], // Sort by updatedAt (Última Act.)
+            order: userRole !== 'department_manager' ? [[6, 'desc']] : [[0, 'asc']], // Sort by updatedAt (Última Act.) or Name
             pageLength: 10,
             searchDelay: 300,
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
@@ -603,7 +620,12 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         $(`#${tableId}`).on('click', '.manage-images-btn', function() {
             const experienceId = $(this).data('id');
             const name = $(this).data('name');
-            window.openExperienceImagesModal(experienceId, name);
+            window.openExperienceImagesModal(experienceId, name, false); // false for manage mode (admin)
+        });
+        $(`#${tableId}`).on('click', '.view-gallery-btn', function() {
+            const experienceId = $(this).data('id');
+            const name = $(this).data('name');
+            window.openExperienceImagesModal(experienceId, name, true); // true for view-only mode
         });
         $(`#${tableId}`).on('click', '.toggle-experience-status-btn', function() {
             toggleExperienceStatus($(this).data('id'), $(this).data('current-status'), $(this).data('name'));

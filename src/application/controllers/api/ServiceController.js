@@ -16,10 +16,11 @@
  * @since 1.0.0
  * @example
  * GET /api/services - List all services with pagination
+ * GET /api/services?active=true - List only active services
+ * GET /api/services?serviceType=Aeropuerto&active=true - List active airport services
  * POST /api/services - Create new service
  * PUT /api/services/:id - Update service
  * DELETE /api/services/:id - Soft delete service
- * GET /api/services/active - Get active services for dropdowns
  */
 
 const Parse = require('parse/node');
@@ -45,7 +46,9 @@ class ServiceController {
    * - length: Number of records to return
    * - search[value]: Search term
    * - order[0][column]: Column index to sort
-   * - order[0][dir]: Sort direction (asc/desc).
+   * - order[0][dir]: Sort direction (asc/desc)
+   * - serviceType: Filter by service type (Aeropuerto, Punto a Punto, Local)
+   * - active: Filter by active status (true/false).
    * @param {object} req - Express request object.
    * @param {object} res - Express response object.
    * @returns {Promise<void>}
@@ -70,6 +73,9 @@ class ServiceController {
       // Optional serviceType filter (e.g., 'Aeropuerto', 'Punto a Punto', 'Local')
       const serviceTypeFilter = req.query.serviceType || null;
 
+      // Optional active filter (true/false)
+      const activeFilter = req.query.active;
+
       // Column mapping for sorting (matches frontend columns order)
       const columns = [
         'rate.name', // 0. Tarifa
@@ -82,9 +88,16 @@ class ServiceController {
       ];
       const sortField = columns[sortColumnIndex] || 'rate.name';
 
-      // Get total records count (without search filter, but with serviceType filter if provided)
+      // Get total records count (without search filter, but with serviceType and active filters if provided)
       const totalRecordsQuery = new Parse.Query('Service');
       totalRecordsQuery.equalTo('exists', true);
+
+      // Apply active filter if provided
+      if (activeFilter === 'true') {
+        totalRecordsQuery.equalTo('active', true);
+      } else if (activeFilter === 'false') {
+        totalRecordsQuery.equalTo('active', false);
+      }
 
       // Apply serviceType filter if provided
       if (serviceTypeFilter) {
@@ -111,6 +124,13 @@ class ServiceController {
       baseQuery.include('destinationPOI.serviceType');
       baseQuery.include('vehicleType');
       baseQuery.include('rate');
+
+      // Apply active filter to base query
+      if (activeFilter === 'true') {
+        baseQuery.equalTo('active', true);
+      } else if (activeFilter === 'false') {
+        baseQuery.equalTo('active', false);
+      }
 
       // Apply serviceType filter to base query
       if (serviceTypeFilter) {

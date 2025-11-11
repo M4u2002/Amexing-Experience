@@ -67,7 +67,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                         <th>Precio</th>
                         <th>Precio Contado</th>
                         <th>Notas</th>
-                        <th>Estado</th>
+                        <% if (dtUserRole !== 'department_manager') { %><th>Estado</th><% } %>
                         <% if (dtShowActions) { %>
                             <th class="text-center">Acciones</th>
                         <% } %>
@@ -254,6 +254,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
         const showActions = <%= dtShowActions %>;
         const canEdit = <%= canEdit %>;
         const canDelete = <%= canDelete %>;
+        const userRole = '<%= dtUserRole %>';
 
         // Extract serviceType from apiEndpoint
         const serviceTypeMatch = apiEndpoint.match(/serviceType=([^&]+)/);
@@ -444,14 +445,14 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
                     }
                 },
                 // 6. Estado
-                {
+                ...(userRole !== 'department_manager' ? [{
                     data: 'active',
                     render: function(data) {
                         return data
                             ? '<span class="badge bg-success">Activo</span>'
                             : '<span class="badge bg-secondary">Inactivo</span>';
                     }
-                },
+                }] : []),
                 ...(showActions ? [{
                     data: null,
                     orderable: false,
