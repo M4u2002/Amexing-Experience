@@ -22,6 +22,12 @@
 
 const Parse = require('parse/node');
 const logger = require('../../../infrastructure/logger');
+const {
+  validateAvailability,
+  sortDayCodesChronological,
+  validateDaySchedules,
+  sortDaySchedulesChronological,
+} = require('../../../infrastructure/utils/availabilityUtils');
 
 /**
  * ToursController class implementing RESTful API.
@@ -150,6 +156,11 @@ class ToursController {
         minPassengers: tour.get('minPassengers') || null,
         maxPassengers: tour.get('maxPassengers') || null,
         notes: tour.get('notes') || null,
+        availability: tour.get('availability') || null,
+        // Legacy fields for backward compatibility
+        availableDays: tour.get('availableDays') || null,
+        startTime: tour.get('startTime') || null,
+        endTime: tour.get('endTime') || null,
         active: tour.get('active') || false,
         exists: tour.get('exists') || true,
         createdAt: tour.get('createdAt'),
@@ -230,6 +241,11 @@ class ToursController {
         minPassengers: tour.get('minPassengers'),
         maxPassengers: tour.get('maxPassengers'),
         notes: tour.get('notes'),
+        availability: tour.get('availability'),
+        // Legacy fields for backward compatibility
+        availableDays: tour.get('availableDays'),
+        startTime: tour.get('startTime'),
+        endTime: tour.get('endTime'),
         active: tour.get('active'),
         exists: tour.get('exists'),
         createdAt: tour.get('createdAt'),
@@ -268,12 +284,68 @@ class ToursController {
       // Role checking is handled by jwtMiddleware.requireRoleLevel(6) in routes
 
       const {
-        destinationPOI, time, vehicleType, price, rate, minPassengers, maxPassengers, notes,
+        destinationPOI,
+        time,
+        vehicleType,
+        price,
+        rate,
+        minPassengers,
+        maxPassengers,
+        notes,
+        availability,
+        // Legacy fields for backward compatibility
+        availableDays,
+        startTime,
+        endTime,
       } = req.body;
 
       // Validate required fields
       if (!destinationPOI || !time || !vehicleType || !price || !rate) {
         return this.sendError(res, 'Todos los campos son requeridos', 400);
+      }
+
+      // Validate new availability format (array of day schedules)
+      if (availability && Array.isArray(availability)) {
+        if (availability.length === 0) {
+          return this.sendError(
+            res,
+            'Datos de disponibilidad inválidos: At least one day schedule must be provided',
+            400
+          );
+        }
+
+        const availabilityValidation = validateDaySchedules(availability);
+
+        if (!availabilityValidation.valid) {
+          return this.sendError(
+            res,
+            `Datos de disponibilidad inválidos: ${availabilityValidation.errors.join(', ')}`,
+            400
+          );
+        }
+      } else if (availableDays || startTime || endTime) {
+        // Legacy format validation (backward compatibility)
+        if (!availableDays || !startTime || !endTime) {
+          return this.sendError(
+            res,
+            'Para configurar disponibilidad, debe proporcionar días disponibles, hora de inicio y hora de fin',
+            400
+          );
+        }
+
+        const availabilityValidation = validateAvailability({
+          availableDays,
+          startTime,
+          endTime,
+        });
+
+        if (!availabilityValidation.valid) {
+          return this.sendError(
+            res,
+            `Datos de disponibilidad inválidos: ${availabilityValidation.errors.join(', ')}`,
+            400
+          );
+        }
       }
 
       if (time <= 0) {
@@ -335,6 +407,19 @@ class ToursController {
         tour.set('notes', notes.trim());
       }
 
+      // Set new availability format (array of day schedules)
+      if (availability && Array.isArray(availability) && availability.length > 0) {
+        const sortedSchedules = sortDaySchedulesChronological(availability);
+        tour.set('availability', sortedSchedules);
+      } else if (availableDays && startTime && endTime) {
+        // Legacy format support (backward compatibility)
+        // Sort day codes chronologically for consistency
+        const sortedDays = sortDayCodesChronological(availableDays);
+        tour.set('availableDays', sortedDays);
+        tour.set('startTime', startTime);
+        tour.set('endTime', endTime);
+      }
+
       tour.set('active', true);
       tour.set('exists', true);
 
@@ -383,7 +468,19 @@ class ToursController {
 
       const tourId = req.params.id;
       const {
-        destinationPOI, time, vehicleType, price, rate, minPassengers, maxPassengers, notes,
+        destinationPOI,
+        time,
+        vehicleType,
+        price,
+        rate,
+        minPassengers,
+        maxPassengers,
+        notes,
+        availability,
+        // Legacy fields for backward compatibility
+        availableDays,
+        startTime,
+        endTime,
       } = req.body;
 
       if (!tourId) {
@@ -393,6 +490,50 @@ class ToursController {
       // Validate required fields
       if (!destinationPOI || !time || !vehicleType || !price || !rate) {
         return this.sendError(res, 'Todos los campos son requeridos', 400);
+      }
+
+      // Validate new availability format (array of day schedules)
+      if (availability && Array.isArray(availability)) {
+        if (availability.length === 0) {
+          return this.sendError(
+            res,
+            'Datos de disponibilidad inválidos: At least one day schedule must be provided',
+            400
+          );
+        }
+
+        const availabilityValidation = validateDaySchedules(availability);
+
+        if (!availabilityValidation.valid) {
+          return this.sendError(
+            res,
+            `Datos de disponibilidad inválidos: ${availabilityValidation.errors.join(', ')}`,
+            400
+          );
+        }
+      } else if (availableDays || startTime || endTime) {
+        // Legacy format validation (backward compatibility)
+        if (!availableDays || !startTime || !endTime) {
+          return this.sendError(
+            res,
+            'Para configurar disponibilidad, debe proporcionar días disponibles, hora de inicio y hora de fin',
+            400
+          );
+        }
+
+        const availabilityValidation = validateAvailability({
+          availableDays,
+          startTime,
+          endTime,
+        });
+
+        if (!availabilityValidation.valid) {
+          return this.sendError(
+            res,
+            `Datos de disponibilidad inválidos: ${availabilityValidation.errors.join(', ')}`,
+            400
+          );
+        }
       }
 
       if (time <= 0) {
@@ -464,6 +605,33 @@ class ToursController {
         tour.set('notes', notes.trim());
       } else {
         tour.unset('notes');
+      }
+
+      // Update new availability format (array of day schedules)
+      if (availability && Array.isArray(availability) && availability.length > 0) {
+        const sortedSchedules = sortDaySchedulesChronological(availability);
+        tour.set('availability', sortedSchedules);
+        // Clear legacy fields when using new format
+        tour.unset('availableDays');
+        tour.unset('startTime');
+        tour.unset('endTime');
+      } else if (availability === null) {
+        // If explicitly set to null, remove all availability fields
+        tour.unset('availability');
+        tour.unset('availableDays');
+        tour.unset('startTime');
+        tour.unset('endTime');
+      } else if (availableDays && startTime && endTime) {
+        // Legacy format support (backward compatibility)
+        const sortedDays = sortDayCodesChronological(availableDays);
+        tour.set('availableDays', sortedDays);
+        tour.set('startTime', startTime);
+        tour.set('endTime', endTime);
+      } else if (availableDays === null || startTime === null || endTime === null) {
+        // If legacy fields explicitly set to null, remove them
+        tour.unset('availableDays');
+        tour.unset('startTime');
+        tour.unset('endTime');
       }
 
       await tour.save(null, { useMasterKey: true });
