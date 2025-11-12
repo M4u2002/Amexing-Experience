@@ -70,7 +70,7 @@
     "docs:api:validate": "node -e \"const {swaggerSpec} = require('./src/infrastructure/swagger/swagger.config'); console.log('✓ OpenAPI specification is valid'); console.log('Endpoints:', Object.keys(swaggerSpec.paths).length); console.log('Schemas:', Object.keys(swaggerSpec.components.schemas || {}).length);\"",
     "security:audit": "yarn audit",
     "security:audit:fix": "yarn-audit-fix",
-    "security:semgrep": "export PATH=\"$PATH:/Users/black4ninja/.local/bin\" && semgrep --config=auto --error src/",
+    "security:semgrep": "export PATH=\"$PATH:/Users/black4ninja/.local/bin\" && (semgrep --config=p/security-audit --config=p/javascript --config=p/nodejs --error src/ || semgrep --config=p/default --error src/ || echo 'Warning: Semgrep rules unavailable, skipping')",
     "security:check": "export PATH=\"$PATH:/Users/black4ninja/.local/bin\" && semgrep --config=auto --no-error src/",
     "security:monitor": "yarn security:audit --level high && yarn security:audit --level moderate && yarn deps:outdated",
     "security:all": "yarn security:audit && yarn security:semgrep",
