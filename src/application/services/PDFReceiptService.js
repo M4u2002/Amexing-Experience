@@ -49,6 +49,7 @@ class PDFReceiptService {
    * @param {object} quoteData.client - Client information.
    * @param {Array} quoteData.serviceItems - Array of service items/days.
    * @param {object} quoteData.totals - Subtotal, taxes, total amounts.
+   * @param {boolean} quoteData.includePaymentInfo - Whether to include payment info (default: true).
    * @returns {Promise<Buffer>} PDF buffer.
    * @throws {Error} If PDF generation fails.
    * @example
@@ -56,13 +57,14 @@ class PDFReceiptService {
    *   quote: { folio: 'QTE-2025-0001', validUntil: new Date() },
    *   client: { fullName: 'John Doe', email: 'john@example.com', phone: '+1234567890' },
    *   serviceItems: [{ concept: 'Transfer', vehicleType: 'Sprinter', total: 9000 }],
-   *   totals: { subtotal: 15500, iva: 2480, total: 17980 }
+   *   totals: { subtotal: 15500, iva: 2480, total: 17980 },
+   *   includePaymentInfo: true
    * });
    */
   async generateReceipt(quoteData) {
     try {
       const {
-        quote, client, serviceItems, totals,
+        quote, client, serviceItems, totals, includePaymentInfo = true,
       } = quoteData;
 
       // Create PDF document with smaller margins
@@ -80,7 +82,12 @@ class PDFReceiptService {
       this.addInvoiceAndClientInfo(doc, quote, client);
       this.addServiceItems(doc, serviceItems || []);
       this.addTotals(doc, totals);
-      this.addPaymentInfo(doc);
+
+      // Only include payment info if requested (admin/superadmin roles)
+      if (includePaymentInfo) {
+        this.addPaymentInfo(doc);
+      }
+
       this.addFooter(doc);
 
       // Convert to buffer

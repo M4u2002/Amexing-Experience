@@ -153,13 +153,27 @@ const baseDashboardPath = dtUserRole === 'department_manager'
             </div>
             <div class="modal-body">
                 <p>¿Desea generar el recibo para la cotización <strong id="receiptQuoteFolio"></strong>?</p>
+                
+                <% if (dtUserRole === 'admin') { %>
+                <!-- Payment Info Option for Admin Only -->
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="includePaymentInfo" checked>
+                        <label class="form-check-label" for="includePaymentInfo">
+                            <strong>Incluir información de pago</strong>
+                            <small class="d-block text-muted">Incluye datos bancarios y métodos de pago en el recibo</small>
+                        </label>
+                    </div>
+                </div>
+                <% } %>
+                
                 <div class="alert alert-info d-flex align-items-start" role="alert">
                     <i class="ti ti-info-circle me-2 fs-5 mt-1"></i>
                     <div>
                         <strong>Información:</strong>
                         <ul class="mb-0 mt-1 ps-3">
                             <li>Se generará un recibo oficial</li>
-                            <li>La cotización debe estar en estado "AGENDADO"</li>
+                            <li>La cotización debe estar en estado "<%= dtUserRole === 'admin' ? 'APROBADO' : 'AGENDADO' %>"</li>
                             <li>El recibo se enviará por correo electrónico</li>
                         </ul>
                     </div>
@@ -195,7 +209,7 @@ const baseDashboardPath = dtUserRole === 'department_manager'
                         <strong>Información:</strong>
                         <ul class="mb-0 mt-1 ps-3">
                             <li>Se enviará una solicitud al departamento de facturación</li>
-                            <li>La cotización debe estar en estado "AGENDADO"</li>
+                            <li>La cotización debe estar en estado "<%= dtUserRole === 'admin' ? 'APROBADO' : 'AGENDADO' %>"</li>
                             <li>Recibirá confirmación por correo electrónico</li>
                         </ul>
                     </div>
@@ -392,23 +406,24 @@ const baseDashboardPath = dtUserRole === 'department_manager'
                     data: 'status',
                     className: 'text-center',
                     render: function(data, type, row) {
+                        const userRole = '<%= dtUserRole %>';
+                        
+                        // Define statuses based on user role
+                        const scheduledText = userRole === 'admin' ? 'APROBADO' : 'AGENDADO';
                         const statuses = [
                             { value: 'requested', text: 'SOLICITADO', class: 'bg-primary' },
                             { value: 'hold', text: 'BLOQUEADO', class: 'bg-warning' },
-                            { value: 'scheduled', text: 'AGENDADO', class: 'bg-success' },
+                            { value: 'scheduled', text: scheduledText, class: 'bg-success' },
                             { value: 'rejected', text: 'RECHAZADO', class: 'bg-danger' }
                         ];
 
                         // If status is 'scheduled', show a non-editable badge instead of dropdown
                         if (data === 'scheduled') {
-                            return `<span class="badge bg-success px-3 py-2" style="font-size: 0.75rem;">AGENDADO</span>`;
+                            return `<span class="badge bg-success px-3 py-2" style="font-size: 0.75rem;">${scheduledText}</span>`;
                         }
 
                         let select = `<select class="form-select form-select-sm status-selector" data-id="${row.id}" data-folio="${row.folio}" style="font-size: 0.75rem; cursor: pointer;">`;
                         statuses.forEach(status => {
-                            // Include 'scheduled' in dropdown only for quotes that are not already scheduled
-                            // (once scheduled, they can't change status via dropdown, only via special actions)
-                            if (status.value === 'scheduled' && data !== 'scheduled') return;
                             const selected = status.value === data ? 'selected' : '';
                             select += `<option value="${status.value}" ${selected}>${status.text}</option>`;
                         });
@@ -468,8 +483,8 @@ const baseDashboardPath = dtUserRole === 'department_manager'
                         if (data.status === 'scheduled') {
                             let actions = '<div class="btn-group btn-group-sm" role="group">';
                             
-                            // Ver Resumen button for department_manager role (first button for scheduled quotes)
-                            <% if (canViewSummary) { %>
+                            // Ver Resumen button for both admin and department_manager roles
+                            <% if (dtUserRole === 'admin' || canViewSummary) { %>
                             actions += `<button type="button"
                                             class="btn btn-outline-primary view-summary-btn"
                                             data-id="${data.objectId || data.id}"
@@ -611,7 +626,7 @@ const baseDashboardPath = dtUserRole === 'department_manager'
             openCopyModal(quoteId, quoteFolio);
         });
 
-        // Ver Resumen button click (for department_manager)
+        // Ver Resumen button click (for both admin and department_manager)
         $(`#${tableId}`).on('click', '.view-summary-btn', function() {
             const quoteId = $(this).data('id');
             const quoteFolio = $(this).data('folio');
@@ -979,6 +994,15 @@ const baseDashboardPath = dtUserRole === 'department_manager'
             const originalText = confirmButton.html();
             confirmButton.prop('disabled', true).html('<i class="ti ti-loader ti-spin me-1"></i>Generando...');
 
+            // Get payment info checkbox value (admin only)
+            const userRole = '<%= dtUserRole %>';
+            let includePaymentInfo = true; // Default for non-admin roles
+            
+            if (userRole === 'admin') {
+                const checkbox = document.getElementById('includePaymentInfo');
+                includePaymentInfo = checkbox ? checkbox.checked : true;
+            }
+
             // Create a form and submit it to trigger download
             const token = getAccessToken();
             const form = $('<form>', {
@@ -997,7 +1021,7 @@ const baseDashboardPath = dtUserRole === 'department_manager'
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({ includePaymentInfo })
             })
             .then(response => {
                 console.log('PDF generation response status:', response.status);

@@ -347,12 +347,13 @@ class QuoteService {
    * @param {object} currentUser - User performing the action.
    * @param {string} quoteId - Quote ID to generate receipt for.
    * @param {string} userRole - User role (optional).
+   * @param includePaymentInfoOverride
    * @returns {Promise<object>} Result with success status and receipt data.
    * @throws {Error} If validation fails or quote is not in scheduled status.
    * @example
    * const result = await service.generateReceipt(currentUser, 'abc123', 'department_manager');
    */
-  async generateReceipt(currentUser, quoteId, userRole = null) {
+  async generateReceipt(currentUser, quoteId, userRole = null, includePaymentInfoOverride = null) {
     try {
       // Validate user authentication
       if (!currentUser) {
@@ -413,6 +414,19 @@ class QuoteService {
       const iva = serviceItemsRaw.iva || 0;
       const total = serviceItemsRaw.total || 0;
 
+      // Determine whether to include payment info
+      // For admin role: use the override if provided, otherwise default to true
+      // For other roles: follow the standard rule
+      let includePaymentInfo;
+
+      if (role === 'admin' && includePaymentInfoOverride !== null && includePaymentInfoOverride !== undefined) {
+        // Admin can override the payment info inclusion
+        includePaymentInfo = includePaymentInfoOverride;
+      } else {
+        // Default behavior: only admin and superadmin roles should see payment info
+        includePaymentInfo = role === 'admin' || role === 'superadmin';
+      }
+
       // Prepare quote data for PDF generation
       const quoteData = {
         quote: {
@@ -440,6 +454,7 @@ class QuoteService {
           iva,
           total,
         },
+        includePaymentInfo, // Pass the flag to PDF service
       };
 
       // Generate PDF receipt

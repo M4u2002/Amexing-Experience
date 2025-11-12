@@ -154,7 +154,11 @@
                     <select class="form-select" id="status" name="status">
                         <option value="requested">Solicitado</option>
                         <option value="hold">Bloqueado</option>
-                        <option value="scheduled">Agendado</option>
+                        <% 
+                        // Show different text based on user role
+                        const scheduledText = (typeof userRole !== 'undefined' && userRole === 'admin') ? 'Aprobado' : 'Agendado';
+                        %>
+                        <option value="scheduled"><%= scheduledText %></option>
                         <option value="rejected">Rechazado</option>
                     </select>
                     <div class="form-text">El estado actual de la cotización</div>

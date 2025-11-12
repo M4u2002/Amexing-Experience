@@ -2060,10 +2060,14 @@ class QuoteController {
 
       const quoteId = req.params.id;
 
+      // Get includePaymentInfo from request body (for admin role)
+      const { includePaymentInfo } = req.body;
+
       const result = await this.quoteService.generateReceipt(
         currentUser,
         quoteId,
-        req.userRole // Pass userRole from JWT middleware
+        req.userRole, // Pass userRole from JWT middleware
+        includePaymentInfo // Pass the flag from request
       );
 
       // If PDF buffer is returned, send it as a downloadable file
