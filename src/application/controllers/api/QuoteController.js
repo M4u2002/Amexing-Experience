@@ -269,11 +269,19 @@ class QuoteController {
       // Execute query
       const quotes = await filteredQuery.find({ useMasterKey: true });
 
-      // Format data for DataTables
-      const data = quotes.map((quote) => {
+      // Format data for DataTables and check for pending invoice requests
+      const data = await Promise.all(quotes.map(async (quote) => {
         const client = quote.get('client');
         const rate = quote.get('rate');
         const createdBy = quote.get('createdBy');
+
+        // Check if quote has pending invoice request
+        let hasPendingInvoiceRequest = false;
+        try {
+          hasPendingInvoiceRequest = await this.quoteService.hasPendingInvoiceRequest(quote.id);
+        } catch (error) {
+          logger.warn('Error checking pending invoice request', { quoteId: quote.id, error: error.message });
+        }
 
         return {
           id: quote.id,
@@ -313,13 +321,15 @@ class QuoteController {
           notes: quote.get('notes') || '',
           validUntil: quote.get('validUntil'),
           active: quote.get('active'),
+          hasPendingInvoiceRequest, // Add invoice status
           createdAt: quote.createdAt,
           updatedAt: quote.updatedAt,
         };
-      });
+      }));
 
       // DataTables response format
       const response = {
+        success: true,
         draw,
         recordsTotal,
         recordsFiltered,
@@ -2030,6 +2040,156 @@ class QuoteController {
         className: 'AmexingUser',
         objectId: currentUser.id,
       });
+    }
+  }
+
+  /**
+   * Generate receipt for reserved quote.
+   * POST /api/quotes/:id/generate-receipt.
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>}
+   * @example
+   */
+  async generateReceipt(req, res) {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        return this.sendError(res, 'Autenticación requerida', 401);
+      }
+
+      const quoteId = req.params.id;
+
+      const result = await this.quoteService.generateReceipt(
+        currentUser,
+        quoteId,
+        req.userRole // Pass userRole from JWT middleware
+      );
+
+      // If PDF buffer is returned, send it as a downloadable file
+      if (result.success && result.data.pdfBuffer) {
+        const { pdfBuffer, filename } = result.data;
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        return res.send(pdfBuffer);
+      }
+
+      return res.json(result);
+    } catch (error) {
+      logger.error('Error in QuoteController.generateReceipt', {
+        error: error.message,
+        stack: error.stack,
+        quoteId: req.params.id,
+        userId: req.user?.id,
+      });
+
+      return this.sendError(
+        res,
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Error al generar el recibo',
+        500
+      );
+    }
+  }
+
+  /**
+   * Request invoice for reserved quote.
+   * POST /api/quotes/:id/request-invoice.
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>}
+   * @example
+   */
+  async requestInvoice(req, res) {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        return this.sendError(res, 'Autenticación requerida', 401);
+      }
+
+      const quoteId = req.params.id;
+
+      const result = await this.quoteService.requestInvoice(
+        currentUser,
+        quoteId,
+        req.userRole // Pass userRole from JWT middleware
+      );
+
+      return res.json(result);
+    } catch (error) {
+      logger.error('Error in QuoteController.requestInvoice', {
+        error: error.message,
+        stack: error.stack,
+        quoteId: req.params.id,
+        userId: req.user?.id,
+      });
+
+      // Check for specific business rule errors that should return 400
+      const businessRuleErrors = [
+        'There is already a pending invoice request for this quote',
+        'Quote must be in scheduled status to request invoice',
+        'Quote not found',
+        'Unauthorized: Role',
+      ];
+
+      const isBusinessRuleError = businessRuleErrors.some((errorText) => error.message.includes(errorText));
+
+      const statusCode = isBusinessRuleError ? 400 : 500;
+      let errorMessage;
+      if (isBusinessRuleError) {
+        errorMessage = error.message;
+      } else if (process.env.NODE_ENV === 'development') {
+        errorMessage = `Error: ${error.message}`;
+      } else {
+        errorMessage = 'Error al solicitar la factura';
+      }
+
+      return this.sendError(res, errorMessage, statusCode);
+    }
+  }
+
+  /**
+   * Cancel reservation for reserved quote.
+   * POST /api/quotes/:id/cancel-reservation.
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>}
+   * @example
+   */
+  async cancelReservation(req, res) {
+    try {
+      const currentUser = req.user;
+      if (!currentUser) {
+        return this.sendError(res, 'Autenticación requerida', 401);
+      }
+
+      const quoteId = req.params.id;
+      const { reason } = req.body;
+
+      const result = await this.quoteService.cancelReservation(
+        currentUser,
+        quoteId,
+        reason || '',
+        req.userRole // Pass userRole from JWT middleware
+      );
+
+      return res.json(result);
+    } catch (error) {
+      logger.error('Error in QuoteController.cancelReservation', {
+        error: error.message,
+        stack: error.stack,
+        quoteId: req.params.id,
+        userId: req.user?.id,
+        reason: req.body?.reason,
+      });
+
+      return this.sendError(
+        res,
+        process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Error al cancelar la reserva',
+        500
+      );
     }
   }
 

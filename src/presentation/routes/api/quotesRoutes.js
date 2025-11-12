@@ -403,6 +403,96 @@ router.post(
 );
 
 /**
+ * POST /api/quotes/:id/generate-receipt - Generate receipt for scheduled quote.
+ * Private access (Department Manager, Admin and SuperAdmin).
+ *
+ * Generates a receipt for a quote in 'scheduled' status.
+ * Only available for quotes with status 'scheduled'.
+ * @returns {object} Response with receipt generation status.
+ * @example
+ * // Response structure:
+ * {
+ *   success: true,
+ *   message: 'Recibo generado exitosamente',
+ *   data: {
+ *     quoteId: 'abc123',
+ *     folio: 'QTE-2025-0001',
+ *     receiptId: 'REC-1234567890',
+ *     timestamp: '2025-01-01T12:00:00.000Z'
+ *   }
+ * }
+ */
+router.post(
+  '/:id/generate-receipt',
+  writeOperationsLimiter,
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager (4), Admin (6) and SuperAdmin (7)
+  (req, res) => QuoteController.generateReceipt(req, res)
+);
+
+/**
+ * POST /api/quotes/:id/request-invoice - Request invoice for scheduled quote.
+ * Private access (Department Manager, Admin and SuperAdmin).
+ *
+ * Requests an invoice for a quote in 'scheduled' status.
+ * Only available for quotes with status 'scheduled'.
+ * @returns {object} Response with invoice request status.
+ * @example
+ * // Response structure:
+ * {
+ *   success: true,
+ *   message: 'Solicitud de factura enviada exitosamente',
+ *   data: {
+ *     quoteId: 'abc123',
+ *     folio: 'QTE-2025-0001',
+ *     invoiceRequestId: 'INV-REQ-1234567890',
+ *     timestamp: '2025-01-01T12:00:00.000Z'
+ *   }
+ * }
+ */
+router.post(
+  '/:id/request-invoice',
+  writeOperationsLimiter,
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager (4), Admin (6) and SuperAdmin (7)
+  (req, res) => QuoteController.requestInvoice(req, res)
+);
+
+/**
+ * POST /api/quotes/:id/cancel-reservation - Cancel reservation for scheduled quote.
+ * Private access (Department Manager, Admin and SuperAdmin).
+ *
+ * Cancels the reservation for a quote in 'scheduled' status.
+ * Changes the quote status to 'rejected'.
+ * Request body:
+ * - reason: string (optional) - Reason for cancellation.
+ * @returns {object} Response with cancellation status.
+ * @example
+ * // Request body:
+ * {
+ *   reason: 'Cliente solicitó cancelación'
+ * }
+ * // Response structure:
+ * {
+ *   success: true,
+ *   message: 'Reserva cancelada exitosamente',
+ *   data: {
+ *     id: 'abc123',
+ *     folio: 'QTE-2025-0001',
+ *     status: 'rejected',
+ *     updatedAt: '2025-01-01T12:00:00.000Z'
+ *   }
+ * }
+ */
+router.post(
+  '/:id/cancel-reservation',
+  writeOperationsLimiter,
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager (4), Admin (6) and SuperAdmin (7)
+  (req, res) => QuoteController.cancelReservation(req, res)
+);
+
+/**
  * DELETE /api/quotes/:id - Soft delete quote.
  * Private access (Department Manager, Admin and SuperAdmin).
  *
