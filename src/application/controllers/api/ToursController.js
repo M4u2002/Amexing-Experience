@@ -72,7 +72,7 @@ class ToursController {
       const sortDirection = req.query.order?.[0]?.dir || 'asc';
 
       // Extract additional filters (if provided)
-      const rateId = req.query.rateId;
+      const { rateId } = req.query;
 
       // Column mapping for sorting (matches frontend columns order)
       const columns = ['destinationPOI', 'time', 'vehicleType', 'price', 'rate', 'active'];
