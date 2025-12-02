@@ -110,6 +110,45 @@ router.post(
 );
 
 /**
+ * GET /api/quotes/with-invoices - Get quotes with completed invoices for download.
+ * Private access (Department Manager, Admin and SuperAdmin).
+ *
+ * DataTables server-side processing for quotes that have completed invoices with XML/PDF files.
+ * Department managers only see quotes from their department.
+ * @returns {object} DataTables response with quotes containing invoice download information.
+ * @example
+ * // Response structure:
+ * {
+ *   draw: 1,
+ *   recordsTotal: 50,
+ *   recordsFiltered: 10,
+ *   data: [{
+ *     id: 'quote123',
+ *     folio: 'QTE-2025-0001',
+ *     client: { fullName: 'John Doe', companyName: 'ABC Corp' },
+ *     eventType: 'Wedding Reception',
+ *     numberOfPeople: 150,
+ *     invoice: {
+ *       objectId: 'inv456',
+ *       invoiceNumber: 'FAC-001',
+ *       processDate: '2025-01-15T10:30:00.000Z',
+ *       xmlFileUrl: 'https://s3.../invoice.xml',
+ *       pdfFileUrl: 'https://s3.../invoice.pdf',
+ *       xmlFileS3Key: 'invoices/xml/invoice.xml',
+ *       pdfFileS3Key: 'invoices/pdf/invoice.pdf'
+ *     }
+ *   }]
+ * }
+ */
+router.get(
+  '/with-invoices',
+  readOperationsLimiter,
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager (4), Admin (6) and SuperAdmin (7)
+  (req, res) => QuoteController.getQuotesWithInvoices(req, res)
+);
+
+/**
  * GET /api/quotes/:id - Get quote by ID.
  * Private access (Department Manager, Admin and SuperAdmin).
  *

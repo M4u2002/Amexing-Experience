@@ -312,6 +312,7 @@ const cancellationRequestsRoutes = require('./api/cancellationRequestsRoutes');
 const invoicesRoutes = require('./api/invoicesRoutes');
 // Payment Info Management API routes
 const paymentInfoRoutes = require('./api/paymentInfoRoutes');
+const billingRoutes = require('./api/billingRoutes');
 // Notifications API controller
 const NotificationsController = require('../../application/controllers/api/NotificationsController');
 
@@ -336,6 +337,7 @@ router.use('/quotes', quotesRoutes); // Quote management endpoints
 router.use('/cancellation-requests', cancellationRequestsRoutes); // Cancellation requests management endpoints
 router.use('/invoices', invoicesRoutes); // Invoice management endpoints
 router.use('/payment-info', paymentInfoRoutes); // Payment info management endpoints
+router.use('/billing', billingRoutes); // Billing info management endpoints
 
 /**
  * @swagger

@@ -93,6 +93,7 @@ router.get('/department_manager/budgets', dashboardAuth.requireRole('department_
 router.get('/department_manager/allocations', dashboardAuth.requireRole('department_manager'), (req, res) => departmentManagerController.budgets(req, res));
 router.get('/department_manager/quotes', dashboardAuth.requireRole('department_manager'), (req, res) => departmentManagerController.quotes(req, res));
 router.get('/department_manager/quotes/:id', dashboardAuth.requireRole('department_manager'), (req, res) => departmentManagerController.quoteDetail(req, res));
+router.get('/department_manager/invoices', dashboardAuth.requireRole('department_manager'), (req, res) => departmentManagerController.invoices(req, res));
 router.get('/department_manager/vehicles', dashboardAuth.requireRole('department_manager'), (req, res) => departmentManagerController.vehicles(req, res));
 router.get('/department_manager/services', dashboardAuth.requireRole('department_manager'), (req, res) => departmentManagerController.services(req, res));
 router.get('/department_manager/experiences', dashboardAuth.requireRole('department_manager'), (req, res) => departmentManagerController.experiences(req, res));
