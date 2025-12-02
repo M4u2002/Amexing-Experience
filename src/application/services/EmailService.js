@@ -176,14 +176,29 @@ class EmailService {
       // Log error (without sensitive data)
       logger.error('Failed to send email', {
         error: error.message,
+        errorBody: error.body || null,
+        errorResponse: error.response?.data || null,
+        statusCode: error.statusCode || error.response?.status || null,
         to: emailData.to ? this.maskEmail(emailData.to) : 'unknown',
         subject: emailData.subject || 'unknown',
         timestamp: new Date().toISOString(),
       });
 
+      // Extract detailed error message
+      let errorMessage = error.message || 'Unknown error';
+
+      // Check if error has response data from MailerSend
+      if (error.body?.errors) {
+        errorMessage = JSON.stringify(error.body.errors);
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.body?.message) {
+        errorMessage = error.body.message;
+      }
+
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }

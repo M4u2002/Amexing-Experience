@@ -333,6 +333,92 @@ router.use('/invoices', invoicesRoutes); // Invoice management endpoints
 router.use('/payment-info', paymentInfoRoutes); // Payment info management endpoints
 
 /**
+ * Email Test Endpoint - SuperAdmin Only
+ * Sends a test email to verify MailerSend configuration.
+ */
+router.post('/emails/send-test', jwtMiddleware.requireRoleLevel(7), async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validate email format - Simple and safe email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== 'string' || !emailPattern.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Dirección de email inválida',
+      });
+    }
+
+    // Import email service
+    const emailService = require('../../application/services/EmailService');
+
+    // Check if email service is available
+    if (!emailService.isAvailable()) {
+      return res.status(503).json({
+        success: false,
+        error: 'El servicio de email no está configurado. Por favor verifica las variables de entorno MAILERSEND_API_TOKEN y EMAIL_FROM.',
+      });
+    }
+
+    // Send test email
+    const result = await emailService.sendEmail({
+      to: email,
+      subject: 'Email de Prueba - Amexing Experience',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #5D87FF;">Email de Prueba</h1>
+          <p>Este es un email de prueba del sistema Amexing Experience.</p>
+          <p>Si recibiste este email, significa que la configuración de MailerSend está funcionando correctamente.</p>
+          <hr style="border: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #666; font-size: 12px;">
+            Enviado desde el panel de SuperAdmin por ${req.user.email}<br>
+            ${new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
+          </p>
+        </div>
+      `,
+      text: `Email de Prueba - Amexing Experience\n\nEste es un email de prueba del sistema Amexing Experience.\n\nSi recibiste este email, significa que la configuración de MailerSend está funcionando correctamente.\n\nEnviado por ${req.user.email} el ${new Date().toLocaleString('es-MX')}`,
+      tags: ['test', 'manual', 'superadmin'],
+      notificationType: 'test',
+      metadata: {
+        sentBy: req.user.id,
+        sentByEmail: req.user.email,
+        sentAt: new Date().toISOString(),
+      },
+    });
+
+    // Log the test email send
+    logger.info('Test email sent from SuperAdmin dashboard', {
+      sentBy: req.user.email,
+      recipient: emailService.maskEmail(email),
+      success: result.success,
+      messageId: result.messageId,
+      error: result.error || null,
+    });
+
+    // Return result (include error details if failed)
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error desconocido al enviar el email',
+      });
+    }
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Error sending test email:', {
+      error: error.message,
+      stack: error.stack,
+      user: req.user?.email,
+    });
+
+    res.status(500).json({
+      success: false,
+      error: `Error al enviar el email de prueba: ${error.message}`,
+    });
+  }
+});
+
+/**
  * @swagger
  * /api/notifications:
  *   get:
