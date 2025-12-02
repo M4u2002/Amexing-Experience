@@ -54,6 +54,7 @@ const baseDashboardPath = dtUserRole === 'department_manager'
             <table id="<%= dtTableId %>" class="table table-hover" style="width:100%">
                 <thead class="table-light">
                     <tr>
+                        <th>Folio</th>
                         <th>Cliente</th>
                         <th>Tipo de Evento</th>
                         <th class="text-center">No. Personas</th>
@@ -370,6 +371,12 @@ const baseDashboardPath = dtUserRole === 'department_manager'
             },
             columns: [
                 {
+                    data: 'folio',
+                    render: function(data) {
+                        return `<span class="fw-semibold text-primary">${data || 'N/A'}</span>`;
+                    }
+                },
+                {
                     data: 'client',
                     render: function(data) {
                         if (!data) return '<em class="text-muted">Sin cliente</em>';
@@ -593,7 +600,7 @@ const baseDashboardPath = dtUserRole === 'department_manager'
                 url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json',
                 processing: '<i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando Cotizaciones...'
             },
-            order: [[7, 'desc']], // Sort by updatedAt column by default (most recent first)
+            order: [[8, 'desc']], // Sort by updatedAt column by default (most recent first)
             pageLength: 10,
             searchDelay: 300,
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +

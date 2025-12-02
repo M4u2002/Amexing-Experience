@@ -12,11 +12,11 @@ const router = express.Router();
 
 /**
  * Rate limiter for read operations (GET)
- * 100 requests per 15 minutes per IP.
+ * 400 requests per 15 minutes per IP - increased for tour workflows with multiple API calls.
  */
 const readOperationsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 400, // Limit each IP to 400 requests per windowMs - increased from 200 for tour workflows
   message: {
     success: false,
     error: 'Demasiadas solicitudes, por favor intente nuevamente más tarde',
@@ -27,11 +27,11 @@ const readOperationsLimiter = rateLimit({
 
 /**
  * Rate limiter for write operations (POST, PUT, DELETE)
- * 30 requests per 15 minutes per IP.
+ * 200 requests per 15 minutes per IP - increased for tour workflows with multiple updates.
  */
 const writeOperationsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 requests per windowMs
+  max: 200, // Limit each IP to 200 requests per windowMs - increased from 120 for tour workflows
   message: {
     success: false,
     error: 'Demasiadas solicitudes, por favor intente nuevamente más tarde',

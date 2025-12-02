@@ -1655,9 +1655,11 @@ class QuoteController {
         return this.sendError(res, 'Autenticación requerida', 401);
       }
 
-      // 2. Get rate ID, destination ID from params, and optional numberOfPeople from query
+      // 2. Get rate ID, destination ID from params, and optional numberOfPeople and dayDate from query
       const { rateId, destinationId } = req.params;
       const quoteNumberOfPeople = parseInt(req.query.numberOfPeople) || 0;
+      // TODO: Implement day-of-week filtering if needed
+      // const { dayDate } = req.query;
 
       if (!rateId || !destinationId) {
         return this.sendError(res, 'El ID de la tarifa y destino son requeridos', 400);
@@ -1690,43 +1692,49 @@ class QuoteController {
 
       const tours = await toursQuery.find({ useMasterKey: true });
 
+      if (tours.length === 0) {
+        return this.sendResponse(res, []);
+      }
+
       // 6. Build vehicle list with pricing
       const vehicles = [];
 
       for (const tour of tours) {
         const vehicleType = tour.get('vehicleType');
 
-        // Get vehicle capacity
-        const vehicleCapacity = vehicleType ? vehicleType.get('defaultCapacity') || 4 : 4;
-        const trunkCapacity = vehicleType ? vehicleType.get('trunkCapacity') || 0 : 0;
+        if (vehicleType) {
+          // Get vehicle capacity
+          const vehicleCapacity = vehicleType ? vehicleType.get('defaultCapacity') || 4 : 4;
+          const trunkCapacity = vehicleType ? vehicleType.get('trunkCapacity') || 0 : 0;
 
-        // Filter by capacity if quoteNumberOfPeople is provided
-        // Only add vehicle if it meets capacity requirements
-        if (!(quoteNumberOfPeople > 0 && vehicleCapacity < quoteNumberOfPeople)) {
-          // Get price breakdown with surcharge
-          const basePrice = tour.get('price') || 0;
-          const priceBreakdown = await pricingHelper.getPriceBreakdown(basePrice);
+          // Filter by capacity if quoteNumberOfPeople is provided
+          // Only add vehicle if it meets capacity requirements
+          if (!(quoteNumberOfPeople > 0 && vehicleCapacity < quoteNumberOfPeople)) {
+            // Get price breakdown with surcharge
+            const basePrice = tour.get('price') || 0;
+            const priceBreakdown = await pricingHelper.getPriceBreakdown(basePrice);
 
-          // Get duration in minutes and convert to hours
-          const durationMinutes = tour.get('time') || 0;
-          const durationHours = Math.round((durationMinutes / 60) * 10) / 10;
+            // Get duration in minutes and convert to hours
+            const durationMinutes = tour.get('time') || 0;
+            const durationHours = Math.round((durationMinutes / 60) * 10) / 10;
 
-          vehicles.push({
-            tourId: tour.id,
-            vehicleType: vehicleType ? vehicleType.get('name') : '',
-            vehicleTypeId: vehicleType ? vehicleType.id : null,
-            capacity: vehicleCapacity,
-            trunkCapacity,
-            basePrice: priceBreakdown.basePrice,
-            price: priceBreakdown.totalPrice,
-            surcharge: priceBreakdown.surcharge,
-            surchargePercentage: priceBreakdown.surchargePercentage,
-            durationMinutes,
-            durationHours,
-            minPassengers: tour.get('minPassengers') || null,
-            maxPassengers: tour.get('maxPassengers') || null,
-            note: tour.get('notes') || '',
-          });
+            vehicles.push({
+              tourId: tour.id,
+              vehicleType: vehicleType ? vehicleType.get('name') : '',
+              vehicleTypeId: vehicleType ? vehicleType.id : null,
+              capacity: vehicleCapacity,
+              trunkCapacity,
+              basePrice: priceBreakdown.basePrice,
+              price: priceBreakdown.totalPrice,
+              surcharge: priceBreakdown.surcharge,
+              surchargePercentage: priceBreakdown.surchargePercentage,
+              durationMinutes,
+              durationHours,
+              minPassengers: tour.get('minPassengers') || null,
+              maxPassengers: tour.get('maxPassengers') || null,
+              note: tour.get('notes') || '',
+            });
+          }
         }
       }
 
