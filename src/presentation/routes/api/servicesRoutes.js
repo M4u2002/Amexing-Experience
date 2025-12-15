@@ -20,7 +20,7 @@
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const ServiceController = require('../../../application/controllers/api/ServiceController');
+const ServicesController = require('../../../application/controllers/api/ServicesController');
 const jwtMiddleware = require('../../../application/middleware/jwtMiddleware');
 
 const router = express.Router();
@@ -68,7 +68,7 @@ router.get(
   '/',
   jwtMiddleware.authenticateToken,
   jwtMiddleware.requireRoleLevel(4), // Department Manager and above
-  (req, res) => ServiceController.getServices(req, res)
+  (req, res) => ServicesController.getServices(req, res)
 );
 
 /**
@@ -80,7 +80,34 @@ router.get(
  * This endpoint is optimized for dropdown/select elements and returns
  * only active services in a simplified format.
  */
-router.get('/active', jwtMiddleware.authenticateToken, (req, res) => ServiceController.getActiveServices(req, res));
+router.get('/active', jwtMiddleware.authenticateToken, (req, res) => ServicesController.getActiveServices(req, res));
+
+/**
+ * GET /api/services/with-rate-prices - Get services with prices for a specific rate.
+ *
+ * Access: Authenticated users (department manager and above)
+ * Query: rateId (required)
+ * Returns: Services with their prices for the specified rate.
+ */
+router.get(
+  '/with-rate-prices',
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager and above
+  (req, res) => ServicesController.getServicesWithRatePrices(req, res)
+);
+
+/**
+ * GET /api/services/:id/all-rate-prices - Get all rate prices for a specific service.
+ *
+ * Access: Authenticated users (department manager and above)
+ * Returns: All rate prices for the service.
+ */
+router.get(
+  '/:id/all-rate-prices',
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager and above
+  (req, res) => ServicesController.getAllRatePricesForService(req, res)
+);
 
 /**
  * GET /api/services/:id - Get single service by ID.
@@ -92,7 +119,7 @@ router.get(
   '/:id',
   jwtMiddleware.authenticateToken,
   jwtMiddleware.requireRoleLevel(4), // Department Manager and above
-  (req, res) => ServiceController.getServiceById(req, res)
+  (req, res) => ServicesController.getServiceById(req, res)
 );
 
 // =================
@@ -111,7 +138,7 @@ router.post(
   writeOperationsLimiter,
   jwtMiddleware.authenticateToken,
   jwtMiddleware.requireRoleLevel(6), // Admin and above
-  (req, res) => ServiceController.createService(req, res)
+  (req, res) => ServicesController.createService(req, res)
 );
 
 /**
@@ -126,7 +153,7 @@ router.patch(
   writeOperationsLimiter,
   jwtMiddleware.authenticateToken,
   jwtMiddleware.requireRoleLevel(6), // Admin and above
-  (req, res) => ServiceController.toggleServiceStatus(req, res)
+  (req, res) => ServicesController.toggleServiceStatus(req, res)
 );
 
 /**
@@ -141,7 +168,7 @@ router.put(
   writeOperationsLimiter,
   jwtMiddleware.authenticateToken,
   jwtMiddleware.requireRoleLevel(6), // Admin and above
-  (req, res) => ServiceController.updateService(req, res)
+  (req, res) => ServicesController.updateService(req, res)
 );
 
 /**
@@ -155,7 +182,7 @@ router.delete(
   writeOperationsLimiter,
   jwtMiddleware.authenticateToken,
   jwtMiddleware.requireRoleLevel(6), // Admin and above
-  (req, res) => ServiceController.deleteService(req, res)
+  (req, res) => ServicesController.deleteService(req, res)
 );
 
 module.exports = router;

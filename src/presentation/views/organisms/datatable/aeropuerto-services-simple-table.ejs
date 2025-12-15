@@ -1,7 +1,8 @@
 <%
 /**
- * Service DataTable Organism
- * DataTable component for transportation service management
+ * Simple Aeropuerto Services DataTable Organism
+ * Simplified DataTable component for aeropuerto transportation services from Services table
+ * Shows only: Ruta, Tipo de Vehículo, Notas, Estado y Acciones
  *
  * Atomic Design Level: Organism
  * Category: Dashboard Data Tables
@@ -12,8 +13,8 @@
  * @param {boolean} showActions - Whether to show action buttons
  */
 
-const dtTableId = typeof tableId !== 'undefined' ? tableId : 'services-table';
-const dtApiEndpoint = typeof apiEndpoint !== 'undefined' ? apiEndpoint : '/api/services';
+const dtTableId = typeof tableId !== 'undefined' ? tableId : 'aeropuerto-services-simple-table';
+const dtApiEndpoint = typeof apiEndpoint !== 'undefined' ? apiEndpoint : '/api/services-new?filterAeropuerto=true';
 const dtShowActions = typeof showActions !== 'undefined' ? showActions : true;
 const dtUserRole = typeof userRole !== 'undefined' ? userRole : 'admin';
 
@@ -23,7 +24,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
 %>
 
 <style>
-/* Hide default DataTables sorting icons */
+/* Hide default DataTables sorting icons for the price column */
 .dt-control::before,
 .dt-control::after {
     display: none !important;
@@ -34,7 +35,7 @@ const canCreate = ['superadmin', 'admin'].includes(dtUserRole);
     text-align: left;
 }
 
-/* Hide any default sorting indicators */
+/* Hide any default sorting indicators on the price column */
 table.dataTable thead .sorting::before,
 table.dataTable thead .sorting::after,
 table.dataTable thead .sorting_asc::before,
@@ -93,20 +94,6 @@ table.dataTable tbody tr.hover {
     background-color: #10b981;
     color: white;
 }
-
-/* Price column styling */
-.price-container {
-    text-align: left;
-}
-
-.price-container .badge {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.4rem;
-}
-
-.price-container .small {
-    margin-bottom: 0.2rem;
-}
 </style>
 
 <div class="card border-0 shadow-sm">
@@ -133,17 +120,17 @@ table.dataTable tbody tr.hover {
             <!-- Leading Pills (Segmented Control) -->
             <ul class="nav nav-pills" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active filter-pill" data-filter="airport" type="button" role="tab">
+                    <button class="nav-link active" id="aeropuerto-tab" data-bs-toggle="pill" data-bs-target="#aeropuerto" type="button" role="tab" aria-controls="aeropuerto" aria-selected="true">
                         Aeropuerto
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link filter-pill" data-filter="p2p" type="button" role="tab">
+                    <button class="nav-link" id="punto-a-punto-tab" data-bs-toggle="pill" data-bs-target="#punto-a-punto" type="button" role="tab" aria-controls="punto-a-punto" aria-selected="false">
                         Punto a Punto
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link filter-pill" data-filter="local" type="button" role="tab">
+                    <button class="nav-link" id="local-tab" data-bs-toggle="pill" data-bs-target="#local" type="button" role="tab" aria-controls="local" aria-selected="false">
                         Local
                     </button>
                 </li>
@@ -151,10 +138,9 @@ table.dataTable tbody tr.hover {
 
             <!-- Trailing Dropdowns -->
             <div class="d-flex gap-2 align-items-center">
-
                 <!-- Currency Dropdown -->
                 <div class="d-flex align-items-center gap-1">
-                    <label for="currencyFilter" class="form-label mb-0 text-muted">Moneda:</label>
+                    <label for="currencyFilter" class="form-label mb-0 text-muted">Precio:</label>
                     <select class="form-select" id="currencyFilter" style="min-width: 100px;">
                         <option value="MXN" selected>MXN</option>
                         <option value="USD">USD</option>
@@ -176,16 +162,17 @@ table.dataTable tbody tr.hover {
             <table id="<%= dtTableId %>" class="table table-hover" style="width:100%">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 30%;">Ruta (One-way trip)</th>
+                        <th style="width: 25%;">Ruta</th>
+                        <th style="width: 15%;">Tipo de Vehículo</th>
                         <th style="width: 20%;">
-                            <select class="form-select" id="headerRateFilter" style="min-width: 120px; width: 100%;">
-                                <option value="">Seleccionar tarifa...</option>
+                            <select class="form-select" id="headerRateFilter" style="min-width: 180px; width: 100%;">
+                                <option value="">Seleccionar categoría...</option>
                             </select>
                         </th>
-                        <th style="width: 35%;">Notas</th>
-                        <th style="width: 15%;">Estado</th>
+                        <th style="width: 20%;">Notas</th>
+                        <th style="width: 10%;">Estado</th>
                         <% if (dtShowActions) { %>
-                            <th class="text-center" style="width: 15%;">Acciones</th>
+                            <th class="text-center" style="width: 10%;">Acciones</th>
                         <% } %>
                     </tr>
                 </thead>
@@ -226,10 +213,10 @@ table.dataTable tbody tr.hover {
                                     id: 'originPOI',
                                     name: 'originPOI',
                                     multiple: false,
-                                    placeholder: 'Sin origen (traslado local)',
+                                    placeholder: 'Seleccionar origen',
                                     label: 'Origen',
-                                    required: false,
-                                    helpText: 'Punto de inicio (opcional para traslados locales)',
+                                    required: true,
+                                    helpText: 'Aeropuerto de origen (requerido)',
                                     options: [],
                                     selected: []
                                 }) %>
@@ -251,11 +238,11 @@ table.dataTable tbody tr.hover {
                         </div>
                     </div>
 
-                    <!-- Sección: Información del Vehículo y Tarifa -->
+                    <!-- Sección: Información del Vehículo -->
                     <div class="mb-4">
                         <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
                             <i class="ti ti-car me-1"></i>
-                            Información del Vehículo y Tarifa
+                            Información del Vehículo
                         </h6>
 
                         <div class="row">
@@ -272,11 +259,10 @@ table.dataTable tbody tr.hover {
                                 <select class="form-select" id="rate" name="rate" required>
                                     <option value="">Seleccionar tarifa</option>
                                 </select>
-                                <div class="form-text">Tarifa aplicable a este traslado</div>
+                                <div class="form-text">Tarifa aplicable para esta ruta</div>
                             </div>
                         </div>
                     </div>
-
 
                     <!-- Sección: Notas Adicionales -->
                     <div class="mb-4">
@@ -296,8 +282,8 @@ table.dataTable tbody tr.hover {
                     <div class="alert alert-info d-flex align-items-start" role="alert">
                         <i class="ti ti-info-circle me-2 fs-5 mt-1"></i>
                         <div>
-                            <strong>Traslado:</strong>
-                            <p class="mb-0 mt-1">Define una ruta específica con origen, destino, tipo de vehículo y precio. Este traslado estará disponible para reservaciones una vez activado.</p>
+                            <strong>Traslado Simplificado:</strong>
+                            <p class="mb-0 mt-1">Define una ruta específica con origen, destino y tipo de vehículo. Los precios se manejan por separado en el sistema de tarifas.</p>
                         </div>
                     </div>
                 </form>
@@ -311,11 +297,19 @@ table.dataTable tbody tr.hover {
                     <i class="ti ti-check me-1"></i><span id="saveButtonText">Crear Traslado</span>
                 </button>
             </div>
+
+            <%- include('../../atoms/common/modal-loader', { text: 'Cargando datos del traslado...' }) %>
         </div>
     </div>
 </div>
 
 <script>
+/* Cache buster and debug marker - timestamp: <%= Date.now() %> */
+console.log('=== SERVICES DATATABLE SCRIPT LOADED ===');
+console.log('Timestamp:', new Date().toISOString());
+console.log('Cache buster active to force browser refresh');
+console.log('==========================================');
+
 (function() {
     // Wait for DOM and all dependencies to be ready
     function initWhenReady() {
@@ -338,20 +332,13 @@ table.dataTable tbody tr.hover {
     function initServicesTable() {
         const tableId = '<%= dtTableId %>';
         const apiEndpoint = '<%= dtApiEndpoint %>';
-        const showActions = <%= dtShowActions %>;
-        const canEdit = <%= canEdit %>;
-        const canDelete = <%= canDelete %>;
+        const showActions = <%= dtShowActions || false %>;
+        const jsCanEdit = <%= canEdit || false %>;
+        const jsCanDelete = <%= canDelete || false %>;
         const userRole = '<%= dtUserRole %>';
 
-        // Get JWT token from localStorage or cookies
+        // Get JWT token from cookies
         function getAccessToken() {
-            // First try localStorage (used by other parts of the app)
-            const tokenFromStorage = localStorage.getItem('accessToken');
-            if (tokenFromStorage) {
-                return tokenFromStorage;
-            }
-            
-            // Fallback to cookies (httpOnly cookies won't work, but try anyway)
             const cookies = document.cookie.split(';');
             for (let cookie of cookies) {
                 const [name, value] = cookie.trim().split('=');
@@ -377,236 +364,152 @@ table.dataTable tbody tr.hover {
         let vehicleTypesData = [];
         let ratesData = [];
 
-        // Color contrast functions for rate badges (from rates-table.ejs)
-        function getLuminance(hex) {
-            // WCAG 2.0 luminance calculation
-            const rgb = parseInt(hex.slice(1), 16);
-            const r = (rgb >> 16) & 0xff;
-            const g = (rgb >> 8) & 0xff;
-            const b = (rgb >> 0) & 0xff;
-
-            const [rsRGB, gsRGB, bsRGB] = [r/255, g/255, b/255].map(val => {
-                return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
-            });
-
-            return 0.2126 * rsRGB + 0.7152 * gsRGB + 0.0722 * bsRGB;
-        }
-
-        function getContrastTextColor(backgroundColor) {
-            const luminance = getLuminance(backgroundColor);
-            return luminance > 0.5 ? '#1F2937' : '#FFFFFF';
-        }
-
-        // Load all data once
-        let allServicesData = [];
-        let filteredData = [];
-
-        // Load data from API
-        function loadAllServices() {
-            return new Promise((resolve, reject) => {
-                $.ajax({
-                    url: apiEndpoint,
-                    type: 'GET',
-                    success: function(response) {
-                        if (response.success && response.data) {
-                            allServicesData = response.data;
-                            
-                            // Debug: Log all service types
-                            console.log('All services loaded:', allServicesData.length);
-                            
-                            const serviceTypeCounts = {};
-                            allServicesData.forEach(service => {
-                                const type = service.destinationPOI?.serviceType?.name || 'Unknown';
-                                serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
-                            });
-                            console.log('Service type counts:', serviceTypeCounts);
-                            
-                            // Filter to show airport services by default
-                            filteredData = filterServicesByType('airport');
-                            resolve(allServicesData);
-                        } else {
-                            reject('Invalid response format');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error loading services:', error);
-                        reject('Error loading services');
-                    }
-                });
-            });
-        }
-
-        // Filter services by type based on destination POI service type
-        function filterServicesByType(type) {
-            // Filter services by type
-            
-            if (type === 'all') {
-                return allServicesData;
-            }
-            
-            const filtered = allServicesData.filter(service => {
-                // Get service type from destination POI
-                const destinationPOI = service.destinationPOI;
-                if (!destinationPOI) {
-                    console.log(`❌ Service ${service.id} has no destinationPOI`);
-                    return false;
-                }
-                
-                const serviceType = destinationPOI.serviceType?.name;
-                
-                // Check service type match
-                
-                let matches = false;
-                switch(type) {
-                    case 'airport':
-                        matches = serviceType === 'Aeropuerto';
-                        break;
-                    case 'p2p':
-                        matches = serviceType === 'Punto a Punto';
-                        break;
-                    case 'local':
-                        matches = serviceType === 'Local';
-                        break;
-                    default:
-                        matches = true;
-                }
-                
-                // Log result if needed for debugging
-                return matches;
-            });
-            
-            // Return filtered results
-            return filtered;
-        }
-
-        // DataTable Configuration (Client-side)
+        // DataTable Configuration
         const dataTable = $(`#${tableId}`).DataTable({
             processing: true,
-            serverSide: false, // Changed to client-side
-            data: [], // Will be populated after data loads
+            serverSide: true,
+            ajax: {
+                url: apiEndpoint,
+                type: 'GET',
+                dataSrc: function(json) {
+                    return json.data || [];
+                },
+                error: function(xhr, error, thrown) {
+                    console.error('Error in getServices - Full Details:', {
+                        xhr: xhr,
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        responseJSON: xhr.responseJSON,
+                        error: error,
+                        thrown: thrown,
+                        url: apiEndpoint
+                    });
+                    showErrorAlert('Error al cargar los traslados: ' + (xhr.responseJSON?.error || error || 'Unknown error'));
+                }
+            },
             columns: [
-                // 1. Ruta (Origin → Destination)
+                // 1. Ruta (Origen → Destino)
                 {
                     data: null,
                     render: function(data, type, row) {
-                        const origin = row.originPOI?.name || null;
-                        const destination = row.destinationPOI?.name || 'Destino';
-                        
+                        const origin = row.originPOI?.name || '-';
+                        const destination = row.destinationPOI?.name || '-';
+
+                        // Para búsqueda y ordenamiento, retornar texto plano
                         if (type === 'filter' || type === 'sort') {
-                            return `${origin || 'Local'} ${destination}`;
+                            return `${origin} ${destination}`;
                         }
-                        
-                        // Check if this is a local service (no origin or origin is null/empty)
-                        if (!origin || origin === 'Sin origen') {
-                            // For services without specific origin (like local services)
-                            return `
-                                <div class="d-flex flex-column">
-                                    <div class="fw-semibold text-center" style="font-size: 0.85rem;">
-                                        ${destination}
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        
-                        // Show bidirectional route for services with both origin and destination
+
+                        // Para display, retornar HTML visual
                         return `
-                            <div class="d-flex flex-column">
-                                <div class="fw-semibold text-center" style="font-size: 0.85rem;">
-                                    ${origin}
+                            <div class="d-flex flex-column align-items-start gap-1" style="min-width: 200px;">
+                                <span class="fw-medium text-success" style="font-size: 0.875rem;">
+                                    <i class="ti ti-plane me-1"></i>${origin}
+                                </span>
+                                <div class="text-center w-100">
+                                    <i class="ti ti-arrow-down text-primary" style="font-size: 1.25rem;"></i>
                                 </div>
-                                <div class="text-center my-1">
-                                    <span class="text-muted" style="font-size: 1.2rem;" title="Ruta bidireccional">↔</span>
-                                </div>
-                                <div class="fw-semibold text-center" style="font-size: 0.85rem;">
-                                    ${destination}
-                                </div>
+                                <span class="fw-medium text-info" style="font-size: 0.875rem;">
+                                    <i class="ti ti-map-pin me-1"></i>${destination}
+                                </span>
                             </div>
                         `;
                     }
                 },
-                // 2. Precio (based on selected rate from header dropdown)
+                // 2. Tipo de Vehículo
                 {
-                    data: null,
-                    render: function(data, type, row) {
-                        const selectedRate = $('#headerRateFilter').val();
-                        const selectedRateText = $('#headerRateFilter option:selected').text();
-                        
-                        // Check if we have price data for the selected rate
-                        if (row.priceData && row.priceData.length > 0) {
-                            // Show ALL vehicle types for selected rate (no limit) with enhanced card design
-                            // Sort prices from low to high
-                            const sortedPrices = [...row.priceData].sort((a, b) => (a.price || 0) - (b.price || 0));
-                            let pricesHtml = sortedPrices.map(p => {
-                                // Get capacity info from price data
-                                const defaultCapacity = p.vehicleType?.defaultCapacity || 4;
-                                const trunkCapacity = p.vehicleType?.trunkCapacity || 2;
-                                const vehicleName = p.vehicleType?.name || p.vehicleCode;
-                                const price = p.formattedPrice;
-                                
-                                return `
-                                    <div class="price-item-card p-2 mb-2 border rounded bg-white" style="border-left: 3px solid #6c757d;">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small text-dark">${vehicleName}</div>
-                                                <div class="text-muted d-flex align-items-center gap-2" style="font-size: 0.7rem;">
-                                                    <span>${defaultCapacity} <i class="ti ti-user"></i></span>
-                                                    <span>${trunkCapacity} <i class="ti ti-briefcase"></i></span>
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="fw-bold text-primary small">${price}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('');
-                            
-                            // Always show "Ver todas las tarifas" button to see other rates
-                            const expandButton = `
-                                <button class="btn btn-link btn-sm p-0 mt-1 expand-prices-btn" 
-                                        data-row-id="${row.id || row.objectId}"
-                                        style="font-size: 0.75rem; text-decoration: none;">
-                                    <i class="ti ti-chevron-down me-1"></i>
-                                    Ver todas las tarifas
-                                </button>`;
-                            
-                            return `<div class="price-container" data-row-id="${row.id || row.objectId}">
-                                        <div class="small text-primary fw-semibold mb-1">${selectedRateText}</div>
-                                        <div class="prices-list">
-                                            ${pricesHtml}
-                                        </div>
-                                        ${expandButton}
-                                    </div>`;
-                        } else if (selectedRate) {
-                            // Selected rate but no prices for this service
-                            const expandButton = `
-                                <button class="btn btn-link btn-sm p-0 mt-1 expand-prices-btn" 
-                                        data-row-id="${row.id || row.objectId}"
-                                        style="font-size: 0.75rem; text-decoration: none;">
-                                    <i class="ti ti-chevron-down me-1"></i>
-                                    Ver todas las tarifas
-                                </button>`;
-                                
-                            return `<div class="price-container" data-row-id="${row.id || row.objectId}">
-                                        <div class="small text-muted mb-1">Sin precios para ${selectedRateText}</div>
-                                        ${expandButton}
-                                    </div>`;
-                        } else {
-                            return '<span class="text-muted">Seleccionar tarifa</span>';
-                        }
-                    },
-                    className: 'price-column'
+                    data: 'vehicleType.name',
+                    render: function(data) {
+                        return `<span class="badge bg-dark">${data || '-'}</span>`;
+                    }
                 },
-                // 3. Notas
+                // 3. Precio con botón expandir
+                {
+                    className: 'dt-control text-center',
+                    data: 'rate.id',
+                    orderable: false,
+                    render: function(data, type, row) {
+                        // For search functionality, return the rate ID
+                        if (type === 'filter' || type === 'sort') {
+                            return row.rate ? row.rate.id : '';
+                        }
+
+                        // For display, show price and expand button below
+                        // Use a unique ID based on service ID to update later
+                        // Try multiple ways to get the service ID from the row
+                        let serviceId = row.id || row.objectId;
+                        
+                        // If still undefined, try other possible paths
+                        if (!serviceId || serviceId === 'undefined') {
+                            // Check if row is nested inside DT_RowData
+                            serviceId = row.DT_RowId || 
+                                       (row.DT_RowData && row.DT_RowData.id) ||
+                                       (row._id) ||
+                                       (row.originPOI && row.originPOI.id) || // Fallback to POI ID
+                                       'unknown';
+                        }
+                        
+                        const priceId = `price-${serviceId}`;
+                        const timestamp = Date.now(); // Cache buster for debugging
+                        
+                        // Enhanced debug logging - now conditional
+                        if (!serviceId || serviceId === 'undefined' || serviceId === 'unknown') {
+                            console.error(`=== DataTable Row Debug - SERVICE ID ERROR @ ${timestamp} ===`);
+                            console.error('Full row object:', row);
+                            console.error('Available keys:', Object.keys(row));
+                            console.error('row.id:', row.id);
+                            console.error('row.objectId:', row.objectId);
+                            console.error('row.DT_RowId:', row.DT_RowId);
+                            console.error('row.DT_RowData:', row.DT_RowData);
+                            console.error('row._id:', row._id);
+                            console.error('Final computed serviceId:', serviceId);
+                            console.error('===================================================');
+                        } else {
+                            // Always log successful ID extraction for now to debug what's working
+                            console.log(`✅ Service ID extracted successfully @ ${timestamp}:`, serviceId);
+                        }
+                        
+                        // Set up the price display container
+                        const priceContainer = `
+                            <div class="price-expand-container">
+                                <div class="fw-bold text-primary fs-5 mb-1" id="${priceId}">
+                                    <small class="text-muted">Cargando...</small>
+                                </div>
+                                <button class="btn btn-sm expand-btn d-flex align-items-center gap-1" style="border: none; background: transparent; padding: 2px 6px;">
+                                    <i class="ti ti-chevron-down text-muted"></i>
+                                    <small class="text-muted">Ver todas</small>
+                                </button>
+                            </div>
+                        `;
+
+                        // Fetch pricing data asynchronously - only if we have a valid ID
+                        if (serviceId && serviceId !== 'undefined' && serviceId !== 'unknown') {
+                            setTimeout(() => fetchServicePrice(serviceId, priceId), 0);
+                        } else {
+                            // Set error state immediately for invalid IDs
+                            setTimeout(() => {
+                                const element = $(`#${priceId}`);
+                                if (element.length) {
+                                    element.html('<span class="text-danger small">ID Error</span>');
+                                }
+                            }, 100);
+                        }
+                        
+                        return priceContainer;
+                    }
+                },
+                // 4. Notas
                 {
                     data: 'note',
                     render: function(data) {
                         if (!data) return '<span class="text-muted">-</span>';
+                        // Truncar si es muy largo
                         const truncated = data.length > 50 ? data.substring(0, 50) + '...' : data;
                         return `<div class="small" title="${data}">${truncated}</div>`;
                     }
                 },
-                // 4. Estado
+                // 5. Estado
                 {
                     data: 'active',
                     render: function(data) {
@@ -615,6 +518,7 @@ table.dataTable tbody tr.hover {
                             : '<span class="badge bg-secondary">Inactivo</span>';
                     }
                 },
+                // 6. Acciones
                 ...(showActions ? [{
                     data: null,
                     orderable: false,
@@ -623,7 +527,7 @@ table.dataTable tbody tr.hover {
                     render: function(data) {
                         let actions = '<div class="btn-group btn-group-sm" role="group">';
 
-                        if (canEdit) {
+                        if (jsCanEdit) {
                             // Edit button
                             actions += `<button type="button"
                                             class="btn btn-primary edit-service-btn"
@@ -634,7 +538,7 @@ table.dataTable tbody tr.hover {
                                             <i class="ti ti-edit"></i>
                                         </button>`;
 
-                            // Toggle status button - usar iconos más descriptivos
+                            // Toggle status button
                             const statusIcon = data.active ? 'ti-archive' : 'ti-archive-off';
                             const statusTitle = data.active ? 'Desactivar Traslado' : 'Activar Traslado';
                             const statusClass = data.active ? 'btn-warning' : 'btn-success';
@@ -652,7 +556,7 @@ table.dataTable tbody tr.hover {
                                         </button>`;
                         }
 
-                        if (canDelete) {
+                        if (jsCanDelete) {
                             // Delete button
                             actions += `<button type="button"
                                             class="btn btn-danger delete-service-btn"
@@ -676,8 +580,8 @@ table.dataTable tbody tr.hover {
                 processing: '<i class="fas fa-spinner fa-spin fa-2x"></i><br>Cargando traslados...'
             },
             order: [
-                [1, 'asc'],  // 1. Categoría/Tarifa
-                [0, 'asc'],  // 2. Ruta
+                [0, 'asc'],  // Ruta
+                [1, 'asc']   // Tipo de Vehículo
             ],
             pageLength: 10,
             searchDelay: 300,
@@ -690,359 +594,106 @@ table.dataTable tbody tr.hover {
                 tooltipTriggerList.map(function (tooltipTriggerEl) {
                     return new bootstrap.Tooltip(tooltipTriggerEl);
                 });
+
+                // Populate rate dropdowns in each row
+                populateRateDropdowns();
             }
         });
-
-        // Initialize data and table
-        async function initializeTable() {
-            try {
-                await loadAllServices();
-                // Data loaded and filtered successfully
-                
-                // Clear existing data and add filtered data
-                dataTable.clear();
-                dataTable.rows.add(filteredData);
-                dataTable.draw();
-                
-                console.log('✅ DataTable updated with', filteredData.length, 'rows');
-            } catch (error) {
-                console.error('Error initializing table:', error);
-                showErrorAlert('Error al cargar los traslados');
-            }
-        }
-
-        // Function to apply rate prices to data
-        function applyRatePricesToData(data) {
-            return data.map(service => {
-                const serviceId = service.id;
-                const vehicleTypes = ['SEDAN', 'SUBURBAN', 'SPRINTER', 'VAN', 'MODEL 3', 'MODEL Y'];
-                const foundPrices = [];
-                
-                vehicleTypes.forEach(vehicleCode => {
-                    const key = `${serviceId}_${vehicleCode}`;
-                    const priceData = servicePricesMap.get(key);
-                    if (priceData) {
-                        foundPrices.push({
-                            vehicleType: priceData.vehicleType,
-                            vehicleCode: vehicleCode,
-                            price: priceData.price,
-                            formattedPrice: priceData.formattedPrice
-                        });
-                    }
-                });
-                
-                // Create a copy with price data
-                return {
-                    ...service,
-                    priceData: foundPrices
-                };
-            });
-        }
-
-        // Filter pill click handlers (nav-pills style)
-        $('.filter-pill').on('click', function() {
-            const filterType = $(this).data('filter');
-            
-            // Update active pill (nav-pills style)
-            $('.filter-pill').removeClass('active');
-            $(this).addClass('active');
-            
-            // Filter data
-            filteredData = filterServicesByType(filterType);
-            
-            // Apply current rate prices to filtered data (if any rate is selected)
-            const selectedRate = $('#headerRateFilter').val();
-            if (selectedRate && servicePricesMap.size > 0) {
-                filteredData = applyRatePricesToData(filteredData);
-            }
-            
-            // Update DataTable
-            dataTable.clear();
-            dataTable.rows.add(filteredData);
-            dataTable.draw();
-        });
-
-        // Load rates for header filter dropdown
-        function loadRatesForFilter() {
-            $.ajax({
-                url: '/api/rates/active',
-                type: 'GET',
-                success: function(response) {
-                    if (response.success && response.data) {
-                        const select = $('#headerRateFilter');
-                        select.find('option:not(:first)').remove();
-                        response.data.forEach(function(rate) {
-                            const option = $('<option></option>')
-                                .attr('value', rate.value)
-                                .text(rate.label);
-                            select.append(option);
-                        });
-                        
-                        // Auto-select first available option if data exists
-                        if (response.data.length > 0) {
-                            select.val(response.data[0].value);
-                            // Trigger change after a short delay to ensure table is ready
-                            setTimeout(() => {
-                                select.trigger('change');
-                            }, 500);
-                        }
-                    }
-                },
-                beforeSend: function(xhr) {
-                    const token = getAccessToken();
-                    if (token) {
-                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error loading rates for header filter:', error);
-                }
-            });
-        }
-
-        // Store rate prices data globally
-        let servicePricesMap = new Map();
-
-        // Header rate filter change handler
-        $('#headerRateFilter').on('change', async function() {
-            const selectedRate = $(this).val();
-            const selectedRateText = $(this).find('option:selected').text();
-            
-            console.log('Rate filter changed:', { selectedRate, selectedRateText });
-            
-            if (selectedRate) {
-                // Load rate prices for the selected rate
-                try {
-                    console.log('Making API request to /api/services/with-rate-prices with rateId:', selectedRate);
-                    
-                    const response = await $.ajax({
-                        url: '/api/services/with-rate-prices',
-                        type: 'GET',
-                        data: { rateId: selectedRate },
-                        beforeSend: function(xhr) {
-                            const token = getAccessToken();
-                            console.log('Access token found:', token ? 'yes' : 'no');
-                            if (token) {
-                                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                            }
-                        }
-                    });
-                    
-                    console.log('API response received:', response);
-
-                    if (response.success && response.data) {
-                        // Create a map of service ID + vehicle type -> price
-                        servicePricesMap.clear();
-                        response.data.forEach(item => {
-                            if (item.service?.id && item.vehicleType?.code) {
-                                const key = `${item.service.id}_${item.vehicleType.code}`;
-                                servicePricesMap.set(key, item);
-                            }
-                        });
-
-                        // Update each row in filteredData with price information
-                        const updatedData = filteredData.map(service => {
-                            const serviceId = service.id;
-                            const vehicleTypes = ['SEDAN', 'SUBURBAN', 'SPRINTER', 'VAN', 'MODEL 3', 'MODEL Y'];
-                            const foundPrices = [];
-                            
-                            vehicleTypes.forEach(vehicleCode => {
-                                const key = `${serviceId}_${vehicleCode}`;
-                                const priceData = servicePricesMap.get(key);
-                                if (priceData) {
-                                    foundPrices.push({
-                                        vehicleType: priceData.vehicleType.name,
-                                        vehicleCode: vehicleCode,
-                                        price: priceData.price,
-                                        formattedPrice: priceData.formattedPrice
-                                    });
-                                }
-                            });
-
-                            // Create a copy with price data
-                            return {
-                                ...service,
-                                priceData: foundPrices
-                            };
-                        });
-
-                        // Update the table with the new data
-                        dataTable.clear();
-                        dataTable.rows.add(updatedData);
-                        dataTable.draw();
-                        
-                    } else {
-                        console.error('Error loading rate prices - response not successful:', response);
-                        showErrorAlert('Error al cargar precios');
-                    }
-                } catch (error) {
-                    console.error('Error loading rate prices - AJAX error:', error);
-                    console.error('Error status:', error.status);
-                    console.error('Error responseText:', error.responseText);
-                    showErrorAlert('Error al cargar precios de la tarifa: ' + (error.responseText || error.message));
-                }
-            } else {
-                // Reset to show without prices
-                const resetData = filteredData.map(service => ({
-                    ...service,
-                    priceData: []
-                }));
-                servicePricesMap.clear();
-                dataTable.clear();
-                dataTable.rows.add(resetData);
-                dataTable.draw();
-            }
-        });
-
-        // Handle expand/collapse prices functionality
-        $(document).on('click', '.expand-prices-btn', function(e) {
-            e.preventDefault();
-            const button = $(this);
-            const rowId = button.data('row-id');
-            const isExpanded = button.hasClass('expanded');
-            
-            // Find the DataTable row
-            const row = dataTable.rows().nodes().to$().filter(function() {
-                return $(this).find('[data-row-id="' + rowId + '"]').length > 0;
-            }).first();
-            
-            const dtRow = dataTable.row(row);
-            
-            if (!isExpanded) {
-                // Expand - load and show all rates for this service
-                button.prop('disabled', true).html('<i class="ti ti-spinner ti-spin me-1"></i>Cargando...');
-                
-                // Make API call to get prices for all rates for this service
-                $.ajax({
-                    url: '/api/services/' + rowId + '/all-rate-prices',
-                    type: 'GET',
-                    beforeSend: function(xhr) {
-                        const token = getAccessToken();
-                        if (token) {
-                            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                        }
-                    },
-                    success: function(response) {
-                        if (response.success && response.data) {
-                            // Group prices by rate
-                            const pricesByRate = {};
-                            response.data.forEach(item => {
-                                const rateName = item.rate?.name || 'Sin tarifa';
-                                if (!pricesByRate[rateName]) {
-                                    pricesByRate[rateName] = [];
-                                }
-                                pricesByRate[rateName].push(item);
-                            });
-                            
-                            // Generate card-based HTML for all rates
-                            let allRatesHtml = '<div class="row g-3 mt-2">';
-                            
-                            Object.keys(pricesByRate).forEach(rateName => {
-                                const prices = pricesByRate[rateName];
-                                
-                                // Get rate color from the first price item (all items have same rate)
-                                const rateColor = prices[0]?.rate?.color || '#6c757d';
-                                
-                                // Generate light background color from rate color
-                                const bgColor = rateColor + '15'; // Add alpha transparency
-                                
-                                // Calculate base price (lowest price)
-                                const basePrice = Math.min(...prices.map(p => p.price || 0));
-                                
-                                // Generate vehicle options (sorted by price low to high)
-                                const sortedPrices = [...prices].sort((a, b) => (a.price || 0) - (b.price || 0));
-                                const vehicleOptionsHtml = sortedPrices.map(p => {
-                                    const vehicleCode = p.vehicleType?.code || 'N/A';
-                                    const vehicleName = p.vehicleType?.name || 'Vehículo';
-                                    const price = p.formattedPrice || `$${p.price || 0}`;
-                                    
-                                    // Get capacity info from database
-                                    const defaultCapacity = p.vehicleType?.defaultCapacity || 4;
-                                    const trunkCapacity = p.vehicleType?.trunkCapacity || 2;
-                                    const capacityInfo = `${defaultCapacity} <i class="ti ti-user"></i> ${trunkCapacity} <i class="ti ti-briefcase"></i>`;
-                                    
-                                    return `
-                                        <div class="vehicle-option p-2 mb-1 border rounded bg-white">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="rate-color-indicator me-2" style="background-color: ${rateColor}; width: 3px; height: 30px; border-radius: 2px;"></div>
-                                                    <div>
-                                                        <div class="fw-semibold small">${vehicleName}</div>
-                                                        <div class="text-muted" style="font-size: 0.75rem;">${capacityInfo}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="fw-bold small" style="color: ${rateColor}">${price}</div>
-                                            </div>
-                                        </div>
-                                    `;
-                                }).join('');
-                                
-                                allRatesHtml += `
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
-                                        <div class="rate-card p-3 rounded-3 h-100" style="background-color: ${bgColor}; border-left: 4px solid ${rateColor};">
-                                            <div class="d-flex align-items-center mb-2">
-                                                <div class="rate-color-circle me-2" style="background-color: ${rateColor}; width: 12px; height: 12px; border-radius: 50%;"></div>
-                                                <h6 class="mb-0 fw-bold" style="color: ${rateColor}">${rateName}</h6>
-                                            </div>
-                                            
-                                            ${vehicleOptionsHtml}
-                                        </div>
-                                    </div>
-                                `;
-                            });
-                            
-                            allRatesHtml += '</div>';
-                            
-                            // Create child row with full width content
-                            const childRowContent = `
-                                <div class="p-4 bg-light border-top">
-                                    <div class="container-fluid">
-                                        <div class="mb-3">
-                                            <h6 class="mb-0 text-muted">
-                                                <i class="ti ti-list me-2"></i>
-                                                Comparar todas las tarifas disponibles
-                                            </h6>
-                                        </div>
-                                        ${allRatesHtml}
-                                    </div>
-                                </div>
-                            `;
-                            
-                            // Add child row to DataTable
-                            dtRow.child(childRowContent).show();
-                            
-                            button.html('<i class="ti ti-chevron-up me-1"></i>Ver menos')
-                                  .addClass('expanded')
-                                  .prop('disabled', false);
-                        } else {
-                            button.html('<i class="ti ti-chevron-down me-1"></i>Error al cargar')
-                                  .prop('disabled', false);
-                        }
-                    },
-                    error: function() {
-                        button.html('<i class="ti ti-chevron-down me-1"></i>Ver todas las tarifas')
-                              .prop('disabled', false);
-                        showErrorAlert('Error al cargar precios de todas las tarifas');
-                    }
-                });
-                
-            } else {
-                // Collapse - hide child row and restore original state
-                dtRow.child.hide();
-                
-                button.html('<i class="ti ti-chevron-down me-1"></i>Ver todas las tarifas')
-                      .removeClass('expanded');
-            }
-        });
-
-        // Load rates for the header filter
-        loadRatesForFilter();
-
-        // Initialize table with data
-        initializeTable();
 
         // Load POIs and VehicleTypes for dropdowns
         loadDropdownData();
+
+        // Add expand/collapse functionality for rows
+        $(`#${tableId} tbody`).on('click', 'td.dt-control', function () {
+            const tr = $(this).closest('tr');
+            const row = dataTable.row(tr);
+            const button = $(this).find('button');
+            const icon = button.find('i');
+            const text = button.find('small');
+
+            if (row.child.isShown()) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+                icon.removeClass('ti-chevron-up').addClass('ti-chevron-down');
+                text.text('Ver todas');
+            } else {
+                // Open this row
+                row.child(formatExpandedRow(row.data())).show();
+                tr.addClass('shown');
+                icon.removeClass('ti-chevron-down').addClass('ti-chevron-up');
+                text.text('Ocultar');
+            }
+        });
+
+        // Function to format the expanded row content with real pricing data
+        function formatExpandedRow(data) {
+            const serviceId = data.id || data.objectId;
+            const rowElement = $(`#${tableId}`).find(`tr[data-service-id="${serviceId}"]`);
+            let pricingData = rowElement.data('pricingData') || [];
+
+            // If we don't have pricing data yet, show loading state and fetch it
+            if (!pricingData || pricingData.length === 0) {
+                // Show loading state initially
+                setTimeout(() => {
+                    fetchServicePricingForExpandedRow(serviceId);
+                }, 100);
+
+                return `
+                    <div class="p-3 bg-light" id="expanded-${serviceId}">
+                        <h6 class="mb-3">Precios por Categoría:</h6>
+                        <div class="text-center p-4">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Cargando precios...</span>
+                            </div>
+                            <p class="text-muted small mt-2 mb-0">Cargando precios...</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Generate cards for each rate with real pricing
+            let rateCards = '';
+            const cardColors = ['primary', 'info', 'warning', 'success', 'dark', 'secondary'];
+
+            pricingData.forEach((priceData, index) => {
+                const colorClass = cardColors[index % cardColors.length];
+                const rateName = priceData.rate?.name || 'Sin categoría';
+                const price = priceData.formattedPrice || '$0.00';
+
+                rateCards += `
+                    <div class="col-md-3 mb-2">
+                        <div class="card border-${colorClass}">
+                            <div class="card-body p-2">
+                                <small class="text-muted">${rateName}</small>
+                                <h5 class="text-${colorClass} mb-0">${price}</h5>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // If no pricing data available
+            if (pricingData.length === 0) {
+                rateCards = `
+                    <div class="col-12">
+                        <div class="alert alert-warning text-center mb-0">
+                            <i class="ti ti-exclamation-triangle me-2"></i>
+                            No hay precios configurados para este servicio
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="p-3 bg-light" id="expanded-${serviceId}">
+                    <h6 class="mb-3">Precios por Categoría:</h6>
+                    <div class="row">
+                        ${rateCards}
+                    </div>
+                </div>
+            `;
+        }
 
         // Event Handlers
         $('#createServiceBtn').on('click', function() {
@@ -1077,7 +728,234 @@ table.dataTable tbody tr.hover {
             saveService();
         });
 
+        // Header rate filter
+        $('#headerRateFilter').on('change', function() {
+            const selectedRateId = $(this).val();
+            
+            if (selectedRateId) {
+                // Filter table to show only services with the selected rate
+                dataTable.column(2).search(selectedRateId).draw();
+            } else {
+                // Clear filter to show all services
+                dataTable.column(2).search('').draw();
+            }
+        });
+
+        // Filter pills (segmented control)
+        $('.nav-pills .nav-link').on('click', function() {
+            const filterValue = $(this).attr('id');
+            
+            switch(filterValue) {
+                case 'aeropuerto-tab':
+                    // Filter for airport services
+                    dataTable.column(0).search('Aeropuerto').draw();
+                    break;
+                case 'punto-a-punto-tab':
+                    // Filter for point-to-point services
+                    dataTable.column(0).search('Punto a Punto').draw();
+                    break;
+                case 'local-tab':
+                    // Filter for local services
+                    dataTable.column(0).search('Local').draw();
+                    break;
+            }
+        });
+
+        // Currency filter (for future functionality)
+        $('#currencyFilter').on('change', function() {
+            const selectedCurrency = $(this).val();
+            console.log('Currency changed to:', selectedCurrency);
+            // Future: Update pricing display based on currency
+            // This could trigger API calls to get converted prices
+        });
+
+        // Payment type filter (for future functionality)
+        $('#paymentTypeFilter').on('change', function() {
+            const selectedPaymentType = $(this).val();
+            console.log('Payment type changed to:', selectedPaymentType);
+            // Future: Filter services by available payment methods
+            // or update pricing based on payment type surcharges
+        });
+
         // Functions
+
+        function populateRateDropdowns() {
+            if (ratesData.length === 0) return;
+
+            // Find all rate dropdowns in the current table
+            $('.rate-dropdown').each(function() {
+                const dropdown = $(this);
+                const serviceId = dropdown.data('service-id');
+                const currentRateId = dropdown.data('current-rate');
+
+                // Clear existing options except the first one
+                dropdown.find('option:not(:first)').remove();
+
+                // Add rate options
+                ratesData.forEach(rate => {
+                    const isSelected = currentRateId === rate.value ? 'selected' : '';
+                    const option = `<option value="${rate.value}" ${isSelected}>${rate.label} (${rate.formattedPercentage || rate.percentage + '%'})</option>`;
+                    dropdown.append(option);
+                });
+
+                // Add change event handler for saving rate selection
+                dropdown.off('change.rateChange').on('change.rateChange', function() {
+                    const selectedRateId = $(this).val();
+                    if (selectedRateId && serviceId) {
+                        saveServiceRate(serviceId, selectedRateId);
+                    }
+                });
+            });
+        }
+
+        // Function to fetch real service pricing data from the API
+        function fetchServicePrice(serviceId, priceElementId) {
+            const baseUrl = apiEndpoint.split('?')[0];
+            const priceElement = $(`#${priceElementId}`);
+            
+            // Enhanced debug logging with cache buster
+            const debugTimestamp = Date.now();
+            console.log(`=== fetchServicePrice Debug @ ${debugTimestamp} ===`);
+            console.log('Called with serviceId:', serviceId, '(type:', typeof serviceId, ')');
+            console.log('Called with priceElementId:', priceElementId);
+            console.log('Base URL:', baseUrl);
+            console.log('Price element found:', priceElement.length > 0);
+            console.log('Full API endpoint will be:', `${baseUrl}/${serviceId}/prices`);
+            console.log('===============================');
+            
+            if (!serviceId || serviceId === 'undefined' || serviceId === undefined || serviceId === 'unknown') {
+                console.error('=== SERVICE ID ERROR ===');
+                console.error('Invalid service ID detected:', serviceId);
+                console.error('Type of serviceId:', typeof serviceId);
+                console.error('serviceId === undefined:', serviceId === undefined);
+                console.error('serviceId === "undefined":', serviceId === "undefined");
+                console.error('serviceId === "unknown":', serviceId === "unknown");
+                console.error('========================');
+                priceElement.html('<span class="text-danger small">ID Error</span>');
+                return;
+            }
+            
+            if (!priceElement.length) {
+                console.warn(`Price element ${priceElementId} not found`);
+                return;
+            }
+
+            $.ajax({
+                url: `${baseUrl}/${serviceId}/prices`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data && response.data.length > 0) {
+                        // Get the first rate's pricing (or could be default rate)
+                        const firstRatePrice = response.data[0];
+                        priceElement.html(firstRatePrice.formattedPrice || '$0.00');
+                        
+                        // Store pricing data for expandable row
+                        priceElement.closest('tr').data('pricingData', response.data);
+                    } else {
+                        // No pricing data available
+                        priceElement.html('<span class="text-muted">Sin precio</span>');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error fetching service prices:', xhr);
+                    priceElement.html('<span class="text-danger small">Error</span>');
+                }
+            });
+        }
+
+        // Function to fetch pricing data specifically for expanded row display
+        function fetchServicePricingForExpandedRow(serviceId) {
+            const baseUrl = apiEndpoint.split('?')[0];
+            const expandedElement = $(`#expanded-${serviceId}`);
+            
+            if (!expandedElement.length) {
+                console.warn(`Expanded element for service ${serviceId} not found`);
+                return;
+            }
+
+            $.ajax({
+                url: `${baseUrl}/${serviceId}/prices`,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data && response.data.length > 0) {
+                        // Generate cards for each rate with real pricing
+                        let rateCards = '';
+                        const cardColors = ['primary', 'info', 'warning', 'success', 'dark', 'secondary'];
+
+                        response.data.forEach((priceData, index) => {
+                            const colorClass = cardColors[index % cardColors.length];
+                            const rateName = priceData.rate?.name || 'Sin categoría';
+                            const price = priceData.formattedPrice || '$0.00';
+
+                            rateCards += `
+                                <div class="col-md-3 mb-2">
+                                    <div class="card border-${colorClass}">
+                                        <div class="card-body p-2">
+                                            <small class="text-muted">${rateName}</small>
+                                            <h5 class="text-${colorClass} mb-0">${price}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        // Update the expanded row content
+                        expandedElement.html(`
+                            <h6 class="mb-3">Precios por Categoría:</h6>
+                            <div class="row">
+                                ${rateCards}
+                            </div>
+                        `);
+                    } else {
+                        // No pricing data available
+                        expandedElement.html(`
+                            <h6 class="mb-3">Precios por Categoría:</h6>
+                            <div class="alert alert-warning text-center mb-0">
+                                <i class="ti ti-exclamation-triangle me-2"></i>
+                                No hay precios configurados para este servicio
+                            </div>
+                        `);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error fetching expanded row prices:', xhr);
+                    expandedElement.html(`
+                        <h6 class="mb-3">Precios por Categoría:</h6>
+                        <div class="alert alert-danger text-center mb-0">
+                            <i class="ti ti-exclamation-circle me-2"></i>
+                            Error al cargar los precios
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function saveServiceRate(serviceId, rateId) {
+            const baseUrl = apiEndpoint.split('?')[0];
+
+            $.ajax({
+                url: `${baseUrl}/${serviceId}/rate`,
+                type: 'PATCH',
+                contentType: 'application/json',
+                data: JSON.stringify({ rateId: rateId }),
+                success: function(response) {
+                    if (response.success) {
+                        showSuccessAlert('Tarifa asignada exitosamente');
+                    } else {
+                        showErrorAlert(response.error || 'Error al asignar tarifa');
+                        // Reload the table to reset the dropdown
+                        dataTable.ajax.reload(null, false);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error saving rate:', xhr);
+                    const error = xhr.responseJSON?.error || 'Error al asignar tarifa';
+                    showErrorAlert(error);
+                    // Reload the table to reset the dropdown
+                    dataTable.ajax.reload(null, false);
+                }
+            });
+        }
 
         // Helper function to wait for Tom Select to be initialized
         function waitForTomSelect(elementId, maxAttempts = 50) {
@@ -1100,7 +978,7 @@ table.dataTable tbody tr.hover {
         }
 
         function loadDropdownData() {
-            // Load POIs
+            // Load POIs (all types for flexibility)
             $.ajax({
                 url: '/api/pois/active',
                 type: 'GET',
@@ -1162,10 +1040,30 @@ table.dataTable tbody tr.hover {
                 success: function(response) {
                     if (response.success && response.data) {
                         ratesData = response.data;
-                        const options = response.data.map(rate =>
+                        const modalOptions = response.data.map(rate =>
+                            `<option value="${rate.value}">${rate.label} (${rate.formattedPercentage || rate.percentage + '%'})</option>`
+                        ).join('');
+                        
+                        const headerOptions = response.data.map(rate =>
                             `<option value="${rate.value}">${rate.label}</option>`
                         ).join('');
-                        $('#rate').append(options);
+                        
+                        // Populate modal form dropdown (with percentage)
+                        $('#rate').append(modalOptions);
+
+                        // Populate header filter dropdown (without percentage)
+                        $('#headerRateFilter').append(headerOptions);
+
+                        // Set default selection to the first rate option
+                        if (response.data && response.data.length > 0) {
+                            const firstRate = response.data[0];
+                            $('#headerRateFilter').val(firstRate.value);
+                            // Trigger the filter to show only services with the first rate
+                            $('#headerRateFilter').trigger('change');
+                        }
+
+                        // Also populate table dropdowns if they exist
+                        populateRateDropdowns();
                     }
                 },
                 error: function(xhr) {
@@ -1203,8 +1101,11 @@ table.dataTable tbody tr.hover {
             // Open modal first in edit mode (this will reset the form)
             await openServiceModal(true);
 
+            // Show loader to prevent user interaction during data loading
+            showModalLoader('serviceModal');
+
             $.ajax({
-                url: `${apiEndpoint}/${serviceId}`,
+                url: `${apiEndpoint.split('?')[0]}/${serviceId}`,
                 type: 'GET',
                 success: async function(response) {
                     if (response.success && response.data) {
@@ -1229,15 +1130,21 @@ table.dataTable tbody tr.hover {
                             $('#vehicleType').val(service.vehicleType?.id);
                             $('#rate').val(service.rate?.id);
                             $('#note').val(service.note || '');
+
+                            // Hide loader after all data is loaded and populated
+                            hideModalLoader('serviceModal');
                         } catch (error) {
                             console.error('Error setting Tom Select values:', error);
+                            hideModalLoader('serviceModal');
                         }
                     } else {
+                        hideModalLoader('serviceModal');
                         showErrorAlert('Formato de respuesta inválido');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', { xhr, status, error });
+                    hideModalLoader('serviceModal');
                     const errorMessage = xhr.responseJSON?.error || 'Error al cargar el traslado';
                     showModalError(errorMessage);
                 }
@@ -1274,10 +1181,10 @@ table.dataTable tbody tr.hover {
                     destinationPOI: destinationPOI,
                     vehicleType: $('#vehicleType').val(),
                     rate: $('#rate').val(),
-                    note: $('#note').val().trim(),
+                    note: $('#note').val().trim()
                 };
 
-                const url = isEdit ? `${apiEndpoint}/${serviceId}` : apiEndpoint;
+                const url = isEdit ? `${apiEndpoint.split('?')[0]}/${serviceId}` : apiEndpoint.split('?')[0];
                 const method = isEdit ? 'PUT' : 'POST';
 
                 $.ajax({
@@ -1288,8 +1195,7 @@ table.dataTable tbody tr.hover {
                     success: function(response) {
                         if (response.success) {
                             $('#serviceModal').modal('hide');
-                            // Reload all data and refresh current filter
-                            initializeTable();
+                            dataTable.ajax.reload();
                             showSuccessAlert(isEdit ? 'Traslado actualizado exitosamente' : 'Traslado creado exitosamente');
                         }
                     },
@@ -1299,7 +1205,7 @@ table.dataTable tbody tr.hover {
                         if (xhr.responseJSON?.error) {
                             const error = xhr.responseJSON.error;
                             if (error.includes('already exists') || error.includes('ya existe')) {
-                                errorMessage = 'Ya existe un traslado con esta ruta, tipo de vehículo y tarifa.';
+                                errorMessage = 'Ya existe un traslado con esta ruta y tipo de vehículo.';
                             } else if (error.includes('required')) {
                                 errorMessage = 'Todos los campos requeridos deben ser completados.';
                             } else if (error.includes('different') || error.includes('diferentes')) {
@@ -1357,16 +1263,17 @@ table.dataTable tbody tr.hover {
 
             // Handle confirmation
             $('#confirmToggleServiceBtn').on('click', function() {
+                const baseUrl = apiEndpoint.split('?')[0];
+
                 $.ajax({
-                    url: `${apiEndpoint}/${serviceId}/toggle-status`,
+                    url: `${baseUrl}/${serviceId}/toggle-status`,
                     type: 'PATCH',
                     contentType: 'application/json',
                     data: JSON.stringify({ active: newStatus }),
                     success: function(response) {
                         if (response.success) {
                             modal.hide();
-                            // Reload all data and refresh current filter
-                            initializeTable();
+                            dataTable.ajax.reload(function() {}, false);
                             showAlert('success', `Traslado ${newStatus ? 'activado' : 'desactivado'} exitosamente`);
                         } else {
                             modal.hide();
@@ -1418,14 +1325,15 @@ table.dataTable tbody tr.hover {
 
             // Handle confirmation
             $('#confirmDeleteServiceBtn').on('click', function() {
+                const baseUrl = apiEndpoint.split('?')[0];
+
                 $.ajax({
-                    url: `${apiEndpoint}/${serviceId}`,
+                    url: `${baseUrl}/${serviceId}`,
                     type: 'DELETE',
                     success: function(response) {
                         if (response.success) {
                             modal.hide();
-                            // Reload all data and refresh current filter
-                            initializeTable();
+                            dataTable.ajax.reload(null, false);
                             showAlert('success', 'Traslado eliminado exitosamente');
                         }
                     },
@@ -1530,177 +1438,3 @@ table.dataTable tbody tr.hover {
     }
 })();
 </script>
-
-<!-- Custom CSS for expandable prices -->
-<style>
-/* Price container styling */
-.price-container {
-    min-height: 60px;
-}
-
-.prices-list {
-    margin-bottom: 4px;
-}
-
-.price-item {
-    margin-bottom: 2px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.price-item:last-child {
-    margin-bottom: 0;
-}
-
-/* Expand button styling */
-.expand-prices-btn {
-    color: #6c757d !important;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-    border: none !important;
-    background: none !important;
-}
-
-.expand-prices-btn:hover {
-    color: #495057 !important;
-    text-decoration: none !important;
-}
-
-.expand-prices-btn:focus {
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-.expand-prices-btn i {
-    transition: transform 0.2s ease-in-out;
-}
-
-.expand-prices-btn.expanded i {
-    transform: rotate(180deg);
-}
-
-/* Badge styling for vehicle types */
-.price-item .badge {
-    font-size: 0.7rem;
-    min-width: 50px;
-    text-align: center;
-}
-
-/* Price column specific styling */
-.price-column {
-    vertical-align: top !important;
-    max-width: 200px;
-}
-
-/* Animation for expanding/collapsing */
-.prices-list {
-    transition: all 0.3s ease-in-out;
-}
-
-/* Enhanced card styling for expanded rates */
-.rate-card {
-    border: 1px solid rgba(0,0,0,0.1);
-    transition: all 0.2s ease-in-out;
-}
-
-.rate-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.vehicle-option {
-    transition: all 0.2s ease-in-out;
-    border: 1px solid #e9ecef !important;
-}
-
-.vehicle-option:hover {
-    border-color: #007bff !important;
-    box-shadow: 0 2px 8px rgba(0,123,255,0.15);
-}
-
-/* Rate-specific styling */
-.rate-card .h5 {
-    font-weight: 700;
-}
-
-.rate-card .fw-semibold {
-    color: #495057;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .rate-card {
-        margin-bottom: 0.75rem;
-    }
-    
-    .vehicle-option {
-        padding: 0.5rem !important;
-    }
-    
-    .dataTables_wrapper table.dataTable tbody tr.child .container-fluid {
-        padding: 0 1rem;
-    }
-}
-
-/* Icon styling */
-.rate-card i[class*="ti-"] {
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
-}
-
-/* Price styling in vehicle options */
-.vehicle-option .fw-bold {
-    font-size: 1.1rem;
-}
-
-/* DataTables child row styling */
-.dataTables_wrapper table.dataTable tbody tr.child {
-    background-color: transparent;
-}
-
-.dataTables_wrapper table.dataTable tbody tr.child td {
-    padding: 0 !important;
-    border: none !important;
-}
-
-.dataTables_wrapper table.dataTable tbody tr.child td div {
-    border-left: 3px solid #007bff;
-    animation: fadeInUp 0.3s ease-in-out;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Expanded row styling */
-.dataTables_wrapper table.dataTable tbody tr.child .container-fluid {
-    max-width: 100%;
-    padding: 0 2rem;
-}
-
-/* Rate color indicators */
-.rate-color-indicator {
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.rate-color-circle {
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.vehicle-option:hover .rate-color-indicator {
-    transform: scaleY(1.1);
-}
-
-.rate-card:hover .rate-color-circle {
-    transform: scale(1.2);
-}
-</style>
