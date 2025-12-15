@@ -313,6 +313,13 @@ const invoicesRoutes = require('./api/invoicesRoutes');
 // Payment Info Management API routes
 const paymentInfoRoutes = require('./api/paymentInfoRoutes');
 const billingRoutes = require('./api/billingRoutes');
+// Price Adjustments API routes
+const priceAdjustmentsRoutes = require('./api/priceAdjustmentsRoutes');
+// Exchange Rate API routes
+const exchangeRateRoutes = require('./api/exchangeRateRoutes');
+const inflationRateRoutes = require('./api/inflationRateRoutes');
+const agencyRateRoutes = require('./api/agencyRateRoutes');
+const transferRateRoutes = require('./api/transferRateRoutes');
 // Notifications API controller
 const NotificationsController = require('../../application/controllers/api/NotificationsController');
 
@@ -338,6 +345,11 @@ router.use('/cancellation-requests', cancellationRequestsRoutes); // Cancellatio
 router.use('/invoices', invoicesRoutes); // Invoice management endpoints
 router.use('/payment-info', paymentInfoRoutes); // Payment info management endpoints
 router.use('/billing', billingRoutes); // Billing info management endpoints
+router.use('/price-adjustments', priceAdjustmentsRoutes); // Price adjustments management endpoints
+router.use('/exchange-rate', exchangeRateRoutes); // Exchange rate management endpoints
+router.use('/inflation-rate', inflationRateRoutes); // Inflation rate management endpoints
+router.use('/agency-rate', agencyRateRoutes); // Agency rate management endpoints
+router.use('/transfer-rate', transferRateRoutes); // Transfer rate management endpoints
 
 /**
  * @swagger
