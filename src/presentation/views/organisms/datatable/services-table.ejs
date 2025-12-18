@@ -367,8 +367,8 @@ table.dataTable thead th:nth-child(2) select {
         const apiEndpoint = '<%= dtApiEndpoint %>';
         const showActions = <%= dtShowActions %>;
         const showClientPricing = <%= dtShowClientPricing %>;
-        const canEdit = <%= canEdit %>;
-        const canDelete = <%= canDelete %>;
+        const canEditServices = <%= canEdit ? 'true' : 'false' %>;
+        const canDeleteServices = <%= canDelete ? 'true' : 'false' %>;
         const userRole = '<%= dtUserRole %>';
 
         // Get JWT token from localStorage or cookies
