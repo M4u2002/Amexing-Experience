@@ -110,6 +110,47 @@ router.get(
 );
 
 /**
+ * GET /api/services/:id/all-rate-prices-with-client-prices?clientId=xxx - Get rate prices with client overrides.
+ *
+ * Access: Authenticated users (department manager and above)
+ * Returns: Complete rate pricing structure with client-specific price overrides.
+ */
+router.get(
+  '/:id/all-rate-prices-with-client-prices',
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager and above
+  (req, res) => ServicesController.getAllRatePricesForServiceWithClientPrices(req, res)
+);
+
+/**
+ * GET /api/services/debug-rate-prices - Debug endpoint to examine RatePrices data.
+ *
+ * Access: Authenticated users (department manager and above)
+ * Query: clientId?, serviceId? (optional filters)
+ * Returns: Detailed RatePrices data with statistics for debugging.
+ */
+router.get(
+  '/debug-rate-prices',
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager and above
+  (req, res) => ServicesController.debugRatePrices(req, res)
+);
+
+/**
+ * GET /api/services/debug-client-prices - Debug endpoint to examine ClientPrices data.
+ *
+ * Access: Authenticated users (department manager and above)
+ * Query: clientId?, serviceId? (optional filters)
+ * Returns: Detailed ClientPrices data comparing Parse SDK vs HTTP approaches.
+ */
+router.get(
+  '/debug-client-prices',
+  jwtMiddleware.authenticateToken,
+  jwtMiddleware.requireRoleLevel(4), // Department Manager and above
+  (req, res) => ServicesController.debugClientPrices(req, res)
+);
+
+/**
  * GET /api/services/:id - Get single service by ID.
  *
  * Access: Authenticated users (admin, superadmin)

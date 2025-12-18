@@ -432,15 +432,52 @@ table.dataTable thead th:nth-child(2) select {
         // Load data from API
         function loadAllServices() {
             return new Promise((resolve, reject) => {
+                // Include the selected rate in the API call if one is selected
+                const selectedRate = $(`#headerRateFilter-${tableId}`).val();
+                let url = apiEndpoint;
+                
+                // Add rateId parameter if a rate is selected
+                if (selectedRate) {
+                    const separator = url.includes('?') ? '&' : '?';
+                    url += `${separator}rateId=${selectedRate}`;
+                    console.log('📡 Loading services with rate:', selectedRate);
+                    console.log('📡 Full URL:', url);
+                } else {
+                    console.log('📡 Loading services without rate filter');
+                }
+                
                 $.ajax({
-                    url: apiEndpoint,
+                    url: url,
                     type: 'GET',
+                    beforeSend: function(xhr) {
+                        const token = getAccessToken();
+                        if (token) {
+                            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                        }
+                    },
                     success: function(response) {
+                        console.log('📡 AJAX success response:', response);
                         if (response.success && response.data) {
                             allServicesData = response.data;
                             
                             // Debug: Log all service types
-                            console.log('All services loaded:', allServicesData.length);
+                            console.log('✅ All services loaded:', allServicesData.length);
+                            
+                            // Debug: Log a sample service to see its structure, especially priceData
+                            if (allServicesData.length > 0) {
+                                console.log('🔍 Sample service structure:', JSON.stringify(allServicesData[0], null, 2));
+                                
+                                // Check specifically for Queretaro services with priceData
+                                const queretaroServices = allServicesData.filter(service => 
+                                    service.originPOI?.name?.includes('Querétaro') || 
+                                    service.destinationPOI?.name?.includes('Querétaro')
+                                );
+                                
+                                if (queretaroServices.length > 0) {
+                                    console.log('🎯 Queretaro services found:', queretaroServices.length);
+                                    console.log('🎯 First Queretaro service priceData:', queretaroServices[0].priceData);
+                                }
+                            }
                             
                             const serviceTypeCounts = {};
                             allServicesData.forEach(service => {
@@ -457,7 +494,9 @@ table.dataTable thead th:nth-child(2) select {
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('Error loading services:', error);
+                        console.error('❌ Error loading services:', error);
+                        console.error('❌ Status:', status);
+                        console.error('❌ XHR:', xhr);
                         reject('Error loading services');
                     }
                 });
@@ -559,7 +598,19 @@ table.dataTable thead th:nth-child(2) select {
                         const selectedRate = $(`#headerRateFilter-${tableId}`).val();
                         const selectedRateText = $(`#headerRateFilter-${tableId} option:selected`).text();
                         
-                        // Check if we have price data for the selected rate
+                        // Debug: Log price rendering details
+                        if (row.originPOI?.name?.includes('Querétaro') || row.destinationPOI?.name?.includes('Querétaro')) {
+                            console.log('💰 Rendering price for Queretaro service:', {
+                                serviceId: row.id || row.objectId,
+                                selectedRate,
+                                selectedRateText,
+                                hasPriceData: !!row.priceData,
+                                priceDataLength: row.priceData ? row.priceData.length : 0,
+                                priceData: row.priceData
+                            });
+                        }
+                        
+                        // Check if we have expanded price data for the selected rate
                         if (row.priceData && row.priceData.length > 0) {
                             // Show ALL vehicle types for selected rate (no limit) with enhanced card design
                             // Sort prices from low to high
@@ -569,7 +620,10 @@ table.dataTable thead th:nth-child(2) select {
                                 const defaultCapacity = p.vehicleType?.defaultCapacity || 4;
                                 const trunkCapacity = p.vehicleType?.trunkCapacity || 2;
                                 const vehicleName = p.vehicleType?.name || p.vehicleCode;
-                                const price = p.formattedPrice;
+                                
+                                // Display single price (client price if available, otherwise base price)
+                                const priceFormatted = `$${p.price.toLocaleString()} MXN`;
+                                const priceHtml = `<div class="fw-bold text-primary small" data-price="${priceFormatted}">${priceFormatted}</div>`;
                                 
                                 return `
                                     <div class="price-item-card p-2 mb-2 border rounded bg-white" style="border-left: 3px solid #6c757d;">
@@ -582,7 +636,7 @@ table.dataTable thead th:nth-child(2) select {
                                                 </div>
                                             </div>
                                             <div class="text-end">
-                                                <div class="fw-bold text-primary small" data-original-price="${price}">${price}</div>
+                                                ${priceHtml}
                                             </div>
                                         </div>
                                     </div>
@@ -591,7 +645,7 @@ table.dataTable thead th:nth-child(2) select {
                             
                             // Always show "Ver todos" button to see other rates
                             const expandButton = `
-                                <button class="btn btn-link btn-sm p-0 mt-1 expand-prices-btn" 
+                                <button class="btn btn-link btn-sm p-0 mt-1 expand-services-prices-btn" 
                                         data-row-id="${row.id || row.objectId}"
                                         style="font-size: 0.75rem; text-decoration: none;">
                                     <i class="ti ti-chevron-down me-1"></i>
@@ -605,10 +659,31 @@ table.dataTable thead th:nth-child(2) select {
                                         </div>
                                         ${expandButton}
                                     </div>`;
+                        } else if (selectedRate && row.priceData && row.priceData.length > 0) {
+                            // Main table view: Show service-level price
+                            const firstPrice = row.priceData[0];
+                            const priceFormatted = `$${firstPrice.price.toLocaleString()} MXN`;
+                            const mainPriceHtml = `<div class="fw-bold text-primary small">${priceFormatted}</div>`;
+                            
+                            const expandButton = `
+                                <button class="btn btn-link btn-sm p-0 mt-1 expand-services-prices-btn" 
+                                        data-row-id="${row.id || row.objectId}"
+                                        style="font-size: 0.75rem; text-decoration: none;">
+                                    <i class="ti ti-chevron-down me-1"></i>
+                                    Ver todos
+                                </button>`;
+                                
+                            return `<div class="price-container" data-row-id="${row.id || row.objectId}">
+                                        <div class="small text-primary fw-semibold mb-1">${selectedRateText}</div>
+                                        <div class="text-center py-2">
+                                            ${mainPriceHtml}
+                                        </div>
+                                        ${expandButton}
+                                    </div>`;
                         } else if (selectedRate) {
                             // Selected rate but no prices for this service
                             const expandButton = `
-                                <button class="btn btn-link btn-sm p-0 mt-1 expand-prices-btn" 
+                                <button class="btn btn-link btn-sm p-0 mt-1 expand-services-prices-btn" 
                                         data-row-id="${row.id || row.objectId}"
                                         style="font-size: 0.75rem; text-decoration: none;">
                                     <i class="ti ti-chevron-down me-1"></i>
@@ -705,33 +780,15 @@ table.dataTable thead th:nth-child(2) select {
                 className: 'text-center',
                 render: function(data) {
                     const serviceId = data.objectId || data.id;
-                    const clientPrice = data.clientPrice || null; // This would come from a client-specific pricing table
                     
-                    if (clientPrice) {
-                        const formatMXN = (amount) => new Intl.NumberFormat('es-MX', {
-                            style: 'currency',
-                            currency: 'MXN'
-                        }).format(amount);
-                        
-                        return `
-                            <div class="text-center">
-                                <div class="fw-bold text-info mb-1">
-                                    ${formatMXN(clientPrice)}
-                                </div>
-                                <button class="btn btn-sm btn-outline-primary configure-client-price-btn" data-service-id="${serviceId}">
-                                    <i class="ti ti-settings"></i> Editar
-                                </button>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="text-center">
-                                <button class="btn btn-sm btn-primary configure-client-price-btn" data-service-id="${serviceId}">
-                                    <i class="ti ti-plus"></i> Configurar
-                                </button>
-                            </div>
-                        `;
-                    }
+                    // Show configuration button for client pricing
+                    return `
+                        <div class="text-center">
+                            <button class="btn btn-sm btn-primary configure-client-price-btn" data-service-id="${serviceId}">
+                                <i class="ti ti-plus"></i> Configurar
+                            </button>
+                        </div>
+                    `;
                 }
             }] : []),
             language: {
@@ -764,6 +821,9 @@ table.dataTable thead th:nth-child(2) select {
             }
         });
 
+        // Store DataTable instance globally for refresh functionality
+        window.servicesDataTable = dataTable;
+        
         // Initialize data and table
         async function initializeTable() {
             try {
@@ -795,6 +855,9 @@ table.dataTable thead th:nth-child(2) select {
             }
         }
 
+        // Store initializeTable function globally for refresh functionality
+        window.initializeTable = initializeTable;
+
         // Function to apply rate prices to data
         function applyRatePricesToData(data) {
             return data.map(service => {
@@ -824,26 +887,52 @@ table.dataTable thead th:nth-child(2) select {
         }
 
         // Filter pill click handlers (nav-pills style)
-        $('.filter-pill').on('click', function() {
+        $('.filter-pill').on('click', async function() {
             const filterType = $(this).data('filter');
             
             // Update active pill (nav-pills style)
             $('.filter-pill').removeClass('active');
             $(this).addClass('active');
             
-            // Filter data
-            filteredData = filterServicesByType(filterType);
+            console.log('Filter pill clicked:', filterType);
             
-            // Apply current rate prices to filtered data (if any rate is selected)
+            // Get the current selected rate to ensure we load data with proper pricing
             const selectedRate = $(`#headerRateFilter-${tableId}`).val();
-            if (selectedRate && servicePricesMap.size > 0) {
-                filteredData = applyRatePricesToData(filteredData);
+            
+            if (selectedRate) {
+                // If a rate is selected, reload all data to ensure fresh pricing
+                console.log('🔄 Reloading services data for filter with rate:', selectedRate);
+                await loadAllServices();
+                
+                // Apply the new filter to the fresh data
+                filteredData = filterServicesByType(filterType);
+                
+                // Rebuild the service prices map from the fresh data
+                servicePricesMap.clear();
+                filteredData.forEach(service => {
+                    if (service.priceData && service.priceData.length > 0) {
+                        service.priceData.forEach(priceItem => {
+                            const key = `${service.id}_${priceItem.vehicleCode || priceItem.vehicleType?.code}`;
+                            servicePricesMap.set(key, {
+                                service: service,
+                                vehicleType: priceItem.vehicleType || { name: priceItem.vehicleType, code: priceItem.vehicleCode },
+                                price: priceItem.price,
+                                formattedPrice: priceItem.formattedPrice
+                            });
+                        });
+                    }
+                });
+            } else {
+                // No rate selected, just filter existing data
+                filteredData = filterServicesByType(filterType);
             }
             
             // Update DataTable
             dataTable.clear();
             dataTable.rows.add(filteredData);
             dataTable.draw();
+            
+            console.log('✅ Filter applied, table updated with', filteredData.length, 'rows');
         });
 
         // Load rates for header filter dropdown
@@ -894,86 +983,47 @@ table.dataTable thead th:nth-child(2) select {
             
             console.log('Rate filter changed:', { selectedRate, selectedRateText });
             
+            // Reload the main services data with the selected rate
+            // This ensures both main table and expanded view use the same rate-specific data
+            await loadAllServices();
+            
+            // Re-apply the current filter after reloading
+            const currentFilter = $('.filter-pill.active').data('filter') || 'airport';
+            filteredData = filterServicesByType(currentFilter);
+            
+            // Update the table with the new data (which already includes rate-specific pricing)
+            dataTable.clear();
+            dataTable.rows.add(filteredData);
+            dataTable.draw();
+            
+            // Clear the service prices map since we're using data directly from the main API
+            servicePricesMap.clear();
+            
             if (selectedRate) {
-                // Load rate prices for the selected rate
-                try {
-                    console.log('Making API request to /api/services/with-rate-prices with rateId:', selectedRate);
-                    
-                    const response = await $.ajax({
-                        url: '/api/services/with-rate-prices',
-                        type: 'GET',
-                        data: { rateId: selectedRate },
-                        beforeSend: function(xhr) {
-                            const token = getAccessToken();
-                            console.log('Access token found:', token ? 'yes' : 'no');
-                            if (token) {
-                                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-                            }
-                        }
-                    });
-                    
-                    console.log('API response received:', response);
-
-                    if (response.success && response.data) {
-                        // Create a map of service ID + vehicle type -> price
-                        servicePricesMap.clear();
-                        response.data.forEach(item => {
-                            if (item.service?.id && item.vehicleType?.code) {
-                                const key = `${item.service.id}_${item.vehicleType.code}`;
-                                servicePricesMap.set(key, item);
-                            }
-                        });
-
-                        // Update each row in filteredData with price information
-                        const updatedData = filteredData.map(service => {
-                            const serviceId = service.id;
-                            const vehicleTypes = ['SEDAN', 'SUBURBAN', 'SPRINTER', 'VAN', 'MODEL 3', 'MODEL Y'];
-                            const foundPrices = [];
-                            
-                            vehicleTypes.forEach(vehicleCode => {
-                                const key = `${serviceId}_${vehicleCode}`;
-                                const priceData = servicePricesMap.get(key);
-                                if (priceData) {
-                                    foundPrices.push({
-                                        vehicleType: priceData.vehicleType.name,
-                                        vehicleCode: vehicleCode,
-                                        price: priceData.price,
-                                        formattedPrice: priceData.formattedPrice
-                                    });
-                                }
+                // Build the service prices map from the already loaded data
+                // This is used for the expanded view pricing display
+                filteredData.forEach(service => {
+                    if (service.priceData && service.priceData.length > 0) {
+                        service.priceData.forEach(priceItem => {
+                            const key = `${service.id}_${priceItem.vehicleCode || priceItem.vehicleType?.code}`;
+                            servicePricesMap.set(key, {
+                                service: service,
+                                vehicleType: priceItem.vehicleType || { name: priceItem.vehicleType, code: priceItem.vehicleCode },
+                                price: priceItem.price,
+                                formattedPrice: priceItem.formattedPrice
                             });
-
-                            // Create a copy with price data
-                            return {
-                                ...service,
-                                priceData: foundPrices
-                            };
                         });
-
-                        // Update the table with the new data
-                        dataTable.clear();
-                        dataTable.rows.add(updatedData);
-                        dataTable.draw();
-                        
-                        // Re-apply filters after table update
-                        setTimeout(() => {
-                            const currentPaymentType = $(`#paymentTypeFilter-${tableId}`).val();
-                            const currentCurrency = $(`#currencyFilter-${tableId}`).val();
-                            if (currentPaymentType === 'transferencia' || currentCurrency === 'USD') {
-                                updatePricesForFilters(currentPaymentType, currentCurrency);
-                            }
-                        }, 100);
-                        
-                    } else {
-                        console.error('Error loading rate prices - response not successful:', response);
-                        showErrorAlert('Error al cargar precios');
                     }
-                } catch (error) {
-                    console.error('Error loading rate prices - AJAX error:', error);
-                    console.error('Error status:', error.status);
-                    console.error('Error responseText:', error.responseText);
-                    showErrorAlert('Error al cargar precios de la tarifa: ' + (error.responseText || error.message));
-                }
+                });
+                
+                // Re-apply filters after table update
+                setTimeout(() => {
+                    const currentPaymentType = $(`#paymentTypeFilter-${tableId}`).val();
+                    const currentCurrency = $(`#currencyFilter-${tableId}`).val();
+                    if (currentPaymentType === 'transferencia' || currentCurrency === 'USD') {
+                        updatePricesForFilters(currentPaymentType, currentCurrency);
+                    }
+                }, 100);
             } else {
                 // Reset to show without prices
                 const resetData = filteredData.map(service => ({
@@ -1348,7 +1398,7 @@ table.dataTable thead th:nth-child(2) select {
         }
 
         // Handle expand/collapse prices functionality
-        $(document).on('click', '.expand-prices-btn', function(e) {
+        $(document).on('click', '.expand-services-prices-btn', function(e) {
             e.preventDefault();
             const button = $(this);
             const rowId = button.data('row-id');
@@ -1366,8 +1416,23 @@ table.dataTable thead th:nth-child(2) select {
                 button.prop('disabled', true).html('<i class="ti ti-spinner ti-spin me-1"></i>Cargando...');
                 
                 // Make API call to get prices for all rates for this service
+                // Check if we have a clientId to use the client prices endpoint
+                const urlParams = new URLSearchParams(window.location.search);
+                let clientId = urlParams.get('clientId');
+                if (!clientId) {
+                    const clientElement = document.querySelector('[data-client-id]');
+                    if (clientElement) {
+                        clientId = clientElement.dataset.clientId;
+                    }
+                }
+                
+                const expandEndpoint = clientId 
+                    ? `/api/services/${rowId}/all-rate-prices-with-client-prices?clientId=${clientId}`
+                    : `/api/services/${rowId}/all-rate-prices`;
+                
+                
                 $.ajax({
-                    url: '/api/services/' + rowId + '/all-rate-prices',
+                    url: expandEndpoint,
                     type: 'GET',
                     beforeSend: function(xhr) {
                         const token = getAccessToken();
@@ -1424,7 +1489,13 @@ table.dataTable thead th:nth-child(2) select {
                                                         <div class="text-muted" style="font-size: 0.75rem;">${capacityInfo}</div>
                                                     </div>
                                                 </div>
-                                                <div class="fw-bold small" style="color: ${rateColor}" data-original-price="${price}">${price}</div>
+                                                <div class="text-end">
+                                                    ${(() => {
+                                                        // Display single price with consistent styling
+                                                        const priceFormatted = `$${p.price.toLocaleString()} MXN`;
+                                                        return `<div class="fw-bold small" style="color: ${rateColor}" data-price="${priceFormatted}">${priceFormatted}</div>`;
+                                                    })()}
+                                                </div>
                                             </div>
                                         </div>
                                     `;
@@ -2062,8 +2133,31 @@ table.dataTable thead th:nth-child(2) select {
                 // Debug: Log the service data structure
                 console.log('Service data for modal:', serviceData);
                 
-                // Load all rate prices for this specific service
-                const ratePricesResponse = await fetch(`/api/services/${serviceId}/all-rate-prices`, {
+                // Get clientId for loading client-specific prices
+                let clientId = null;
+                
+                // Try to get client ID from URL
+                const pathSegments = window.location.pathname.split('/');
+                if (pathSegments.includes('clients') && pathSegments.length > pathSegments.indexOf('clients') + 1) {
+                    clientId = pathSegments[pathSegments.indexOf('clients') + 1];
+                }
+                
+                // If not found in URL, try to get from a data attribute
+                if (!clientId) {
+                    const clientElement = document.querySelector('[data-client-id]');
+                    if (clientElement) {
+                        clientId = clientElement.dataset.clientId;
+                    }
+                }
+
+                // Load rate prices with client-specific prices if available
+                const endpoint = clientId 
+                    ? `/api/services/${serviceId}/all-rate-prices-with-client-prices?clientId=${clientId}`
+                    : `/api/services/${serviceId}/all-rate-prices`;
+
+                console.log('Loading prices from endpoint:', endpoint);
+
+                const ratePricesResponse = await fetch(endpoint, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
                         'Content-Type': 'application/json'
@@ -2077,7 +2171,6 @@ table.dataTable thead th:nth-child(2) select {
                 const ratePricesData = await ratePricesResponse.json();
                 const ratePrices = ratePricesData.success ? ratePricesData.data : [];
                 
-                console.log('Loaded rate prices:', ratePrices);
 
                 // Build the rates and prices HTML
                 let ratesHtml = '';
@@ -2117,43 +2210,60 @@ table.dataTable thead th:nth-child(2) select {
                     // Generate HTML for each vehicle type in this rate
                     rateGroup.vehicles.forEach(ratePrice => {
                         const vehicleType = ratePrice.vehicleType;
-                        const currentPrice = ratePrice.price || 0;
+                        const currentPrice = ratePrice.price || 0; // This is the final price (client or base)
+                        const basePrice = ratePrice.basePrice || currentPrice; // Base price for reference
+                        const isClientPrice = ratePrice.isClientPrice || false;
+                        
+                        // Determine labels and styling based on whether this is a client price
+                        const basePriceLabel = isClientPrice ? 'Precio Base:' : 'Precio Base:';
+                        const clientPriceLabel = isClientPrice ? 'Precio Cliente (Actual):' : 'Precio Cliente:';
+                        const priceDisplayClass = isClientPrice ? 'text-success fw-bold' : 'text-muted';
+                        const clientPriceInputClass = isClientPrice ? 'border-success' : '';
                         
                         ratesHtml += `
-                            <div class="row align-items-center mb-3 pb-3 border-bottom">
-                                <div class="col-md-4">
+                            <div class="row mb-3 pb-3 border-bottom ${isClientPrice ? 'bg-light' : ''}">
+                                <div class="col-md-3">
                                     <div class="d-flex align-items-center">
                                         <i class="ti ti-car me-2 text-primary"></i>
                                         <div>
                                             <strong>${vehicleType?.name || 'Vehículo'}</strong>
+                                            ${isClientPrice ? '<span class="badge bg-success ms-2">Personalizado</span>' : ''}
                                             <br>
                                             <small class="text-muted">${vehicleType?.code || ''} - Capacidad: ${vehicleType?.defaultCapacity || 'N/A'} pax</small>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label mb-1">Precio Base:</label>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">${basePriceLabel}</label>
                                     <div class="fw-bold text-muted">
-                                        ${currentPrice > 0 ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(currentPrice) : 'Sin precio'}
+                                        ${basePrice > 0 ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(basePrice) : 'Sin precio'}
                                     </div>
+                                    ${isClientPrice ? `
+                                        <label class="form-label mb-1 mt-2">Precio Actual:</label>
+                                        <div class="${priceDisplayClass}">
+                                            ${new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(currentPrice)}
+                                        </div>
+                                    ` : ''}
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label" for="clientPrice_${rateId}_${vehicleType?.id}">Precio Cliente *</label>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="clientPrice_${rateId}_${vehicleType?.id}">${clientPriceLabel}</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
                                         <input type="number" 
-                                               class="form-control client-price-input" 
+                                               class="form-control client-price-input ${clientPriceInputClass}" 
                                                id="clientPrice_${rateId}_${vehicleType?.id}"
                                                data-rate-id="${rateId}"
                                                data-vehicle-type-id="${vehicleType?.id}"
                                                data-rate-name="${rate.name}"
                                                data-vehicle-name="${vehicleType?.name}"
+                                               data-base-price="${basePrice}"
                                                step="0.01" 
                                                min="0" 
                                                placeholder="0.00"
                                                value="${currentPrice > 0 ? currentPrice.toFixed(2) : ''}">
                                         <span class="input-group-text">MXN</span>
                                     </div>
+                                    ${isClientPrice ? '<small class="text-success">✓ Precio personalizado activo</small>' : '<small class="text-muted">Deja en blanco para usar precio base</small>'}
                                 </div>
                             </div>
                         `;
@@ -2242,13 +2352,8 @@ table.dataTable thead th:nth-child(2) select {
                 const vehicleName = input.dataset.vehicleName;
                 const price = parseFloat(input.value) || 0;
                 
-                // Get base price from the displayed value
-                const basePriceElement = input.closest('.row').querySelector('.fw-bold.text-muted');
-                let basePrice = 0;
-                if (basePriceElement) {
-                    const basePriceText = basePriceElement.textContent.replace(/[^0-9.]/g, '');
-                    basePrice = parseFloat(basePriceText) || 0;
-                }
+                // Get base price from data attribute
+                const basePrice = parseFloat(input.dataset.basePrice) || 0;
 
                 // Only add prices that are different from base price
                 if (price > 0 && price !== basePrice) {
@@ -2334,9 +2439,34 @@ table.dataTable thead th:nth-child(2) select {
                     modal.hide();
                 }
 
-                // Don't refresh the table automatically to avoid errors
-                // The prices are saved but the display will update on next page load
-                console.log('Client prices saved successfully. Refresh the page to see updated prices.');
+                // Refresh the table to show updated prices immediately
+                try {
+                    if (window.servicesDataTable) {
+                        console.log('🔄 Refreshing client-side table data...');
+                        
+                        // For client-side DataTables, we need to reload the data from the API
+                        // and then update the table
+                        
+                        // Call the initializeTable function to reload all data
+                        if (typeof window.initializeTable === 'function') {
+                            await window.initializeTable();
+                            console.log('✅ Table data reloaded and refreshed successfully.');
+                        } else if (typeof initializeTable === 'function') {
+                            await initializeTable();
+                            console.log('✅ Table data reloaded and refreshed successfully.');
+                        } else {
+                            // Fallback: Simple page reload if functions not available
+                            console.log('🔄 Functions not available, performing simple refresh...');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        }
+                    } else {
+                        console.log('⚠️ DataTable instance not found. Prices saved but table not refreshed.');
+                    }
+                } catch (refreshError) {
+                    console.warn('⚠️ Error refreshing table:', refreshError.message, '- Prices saved successfully but table not refreshed.');
+                }
 
             } catch (error) {
                 console.error('Error saving client prices:', error);
@@ -2461,7 +2591,7 @@ table.dataTable thead th:nth-child(2) select {
 }
 
 /* Expand button styling */
-.expand-prices-btn {
+.expand-services-prices-btn {
     color: #6c757d !important;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
@@ -2469,21 +2599,21 @@ table.dataTable thead th:nth-child(2) select {
     background: none !important;
 }
 
-.expand-prices-btn:hover {
+.expand-services-prices-btn:hover {
     color: #495057 !important;
     text-decoration: none !important;
 }
 
-.expand-prices-btn:focus {
+.expand-services-prices-btn:focus {
     box-shadow: none !important;
     outline: none !important;
 }
 
-.expand-prices-btn i {
+.expand-services-prices-btn i {
     transition: transform 0.2s ease-in-out;
 }
 
-.expand-prices-btn.expanded i {
+.expand-services-prices-btn.expanded i {
     transform: rotate(180deg);
 }
 

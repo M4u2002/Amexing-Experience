@@ -177,7 +177,7 @@ class SecurityMiddleware {
   getRateLimiter() {
     return rateLimit({
       windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
-      max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || (this.isDevelopment ? 1000 : 100), // Increased to 1000 for development
+      max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || (this.isDevelopment ? 5000 : 100), // Increased to 5000 for development
       message: 'Too many requests from this IP, please try again later.',
       standardHeaders: true,
       legacyHeaders: false,
@@ -206,7 +206,7 @@ class SecurityMiddleware {
   getStrictRateLimiter() {
     return rateLimit({
       windowMs: 15 * 60 * 1000,
-      max: this.isDevelopment ? 50 : 5, // Increased to 50 for development
+      max: this.isDevelopment ? 200 : 5, // Increased to 200 for development
       message: 'Too many attempts. Please try again later.',
       skipSuccessfulRequests: false,
     });
@@ -225,7 +225,7 @@ class SecurityMiddleware {
   getApiRateLimiter() {
     return rateLimit({
       windowMs: 1 * 60 * 1000, // 1 minute
-      max: this.isDevelopment ? 2000 : 120, // Increased to 2000 for development workflows
+      max: this.isDevelopment ? 10000 : 120, // Increased to 10000 for development workflows
       message: 'API rate limit exceeded.',
       standardHeaders: true,
       legacyHeaders: false,

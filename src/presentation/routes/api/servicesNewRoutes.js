@@ -61,7 +61,12 @@ router.get(
   '/',
   jwtMiddleware.authenticateToken,
   jwtMiddleware.requireRoleLevel(4), // Department Manager and above
-  (req, res) => ServicesController.getServices(req, res)
+  (req, res) => {
+    console.log('\n⚡ /api/services-new ROUTE CALLED (NEW ROUTE) ⚡');
+    console.log(`  ClientId: ${req.query?.clientId}`);
+    console.log(`  Timestamp: ${new Date().toISOString()}`);
+    return ServicesController.getServices(req, res);
+  }
 );
 
 /**

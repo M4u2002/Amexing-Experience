@@ -384,7 +384,7 @@ const tarifarioTabs = [
                                         <div data-client-id="<%= clientId %>">
                                             <%- include('../../organisms/datatable/services-table', {
                                                 tableId: 'client-services-table',
-                                                apiEndpoint: '/api/services',
+                                                apiEndpoint: '/api/services?clientId=' + clientId,
                                                 userRole: 'client',
                                                 showActions: false,
                                                 showClientPricing: true,

@@ -24,13 +24,14 @@ class ClientPrices extends Parse.Object {
    * @param {string} data.clientPtr - Pointer to the AmexingUser object.
    * @param {string} data.ratePtr - Pointer to the Rate object.
    * @param {string} data.vehiclePtr - Pointer to the VehicleType object.
-   * @param {string} data.itemType - Type of item: 'SERVICES', 'TOURS', or 'EXPERIENCES'
-   * @param {string} data.itemId - ObjectId of the service, tour, or experience
-   * @param {number} data.precio - Custom price for this combination
-   * @param {number} [data.basePrice] - Original base price for reference
-   * @param {string} [data.currency] - Currency code (default: 'MXN')
-   * @param {boolean} [data.active] - Whether this price is active
-   * @param {boolean} [data.exists] - Logical deletion flag
+   * @param {string} data.itemType - Type of item: 'SERVICES', 'TOURS', or 'EXPERIENCES'.
+   * @param {string} data.itemId - ObjectId of the service, tour, or experience.
+   * @param {number} data.precio - Custom price for this combination.
+   * @param {number} [data.basePrice] - Original base price for reference.
+   * @param {string} [data.currency] - Currency code (default: 'MXN').
+   * @param {boolean} [data.active] - Whether this price is active.
+   * @param {boolean} [data.exists] - Logical deletion flag.
+   * @param {Date} [data.valid_until] - When this price version expires (null = current active price).
    * @example
    */
   initialize(data) {
@@ -89,6 +90,9 @@ class ClientPrices extends Parse.Object {
     this.set('createdBy', data.createdBy || null);
     this.set('lastModifiedBy', data.lastModifiedBy || null);
     this.set('notes', data.notes || '');
+
+    // Set versioning field
+    this.set('valid_until', data.valid_until || null);
   }
 
   /**
@@ -154,8 +158,8 @@ class ClientPrices extends Parse.Object {
    * @param {string} itemType - Type of item (SERVICES, TOURS, EXPERIENCES).
    * @param {string} itemId - Item object ID.
    * @param {Array} prices - Array of price objects with ratePtr, vehiclePtr, precio.
-   * @param {object} options - Parse options (e.g., useMasterKey)
-   * @returns {Promise<Array>} Array of saved ClientPrices objects
+   * @param {object} options - Parse options (e.g., useMasterKey).
+   * @returns {Promise<Array>} Array of saved ClientPrices objects.
    * @example
    */
   static async saveClientPrices(clientId, itemType, itemId, prices, options = {}) {
@@ -163,12 +167,13 @@ class ClientPrices extends Parse.Object {
     const objectsToSave = [];
     const objectsToDelete = [];
 
-    // First, find existing prices for this client and item
+    // First, find existing active prices for this client and item (valid_until = null)
     const query = new Parse.Query(ClientPricesClass);
     query.equalTo('clientPtr', new (Parse.Object.extend('Client'))({ id: clientId }));
     query.equalTo('itemType', itemType);
     query.equalTo('itemId', itemId);
     query.equalTo('exists', true);
+    query.doesNotExist('valid_until'); // Only get currently active prices (valid_until IS NULL)
 
     const existingPrices = await query.find(options);
     const existingMap = new Map();
@@ -179,67 +184,62 @@ class ClientPrices extends Parse.Object {
       existingMap.set(key, price);
     });
 
-    // Process each new price
+    // Process each new price with versioning
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+
     for (const priceData of prices) {
       const key = `${priceData.ratePtr}_${priceData.vehiclePtr}`;
-      let priceObject = existingMap.get(key);
+      const existingPrice = existingMap.get(key);
 
       if (priceData.precio && priceData.precio > 0) {
-        // Create new or update existing
-        if (!priceObject) {
-          priceObject = new ClientPricesClass();
-          priceObject.initialize({
-            clientPtr: clientId,
-            ratePtr: priceData.ratePtr,
-            vehiclePtr: priceData.vehiclePtr,
-            itemType,
-            itemId,
-            precio: priceData.precio,
-            basePrice: priceData.basePrice,
-            createdBy: priceData.createdBy,
-            lastModifiedBy: priceData.lastModifiedBy,
-          });
-        } else {
-          // Update existing price
-          priceObject.set('precio', Number(priceData.precio));
-          if (priceData.basePrice !== undefined) {
-            priceObject.set('basePrice', Number(priceData.basePrice));
-          }
-          priceObject.set('lastModifiedBy', priceData.lastModifiedBy);
-          priceObject.set('active', true);
+        // If there's an existing price, version it before creating new one
+        if (existingPrice) {
+          // Set existing price's valid_until to today (making it historical)
+          existingPrice.set('valid_until', today);
+          existingPrice.set('lastModifiedBy', priceData.lastModifiedBy);
+          objectsToSave.push(existingPrice);
           existingMap.delete(key); // Remove from map as it's been processed
         }
-        objectsToSave.push(priceObject);
-      } else if (priceObject) {
-        // Price is 0 or null, mark for deletion
-        priceObject.set('exists', false);
-        priceObject.set('active', false);
-        objectsToDelete.push(priceObject);
+
+        // Always create a new price record (for versioning)
+        const newPriceObject = new ClientPricesClass();
+        newPriceObject.initialize({
+          clientPtr: clientId,
+          ratePtr: priceData.ratePtr,
+          vehiclePtr: priceData.vehiclePtr,
+          itemType,
+          itemId,
+          precio: priceData.precio,
+          basePrice: priceData.basePrice,
+          createdBy: priceData.createdBy,
+          lastModifiedBy: priceData.lastModifiedBy,
+          valid_until: null, // New price is current (no expiration)
+        });
+        objectsToSave.push(newPriceObject);
+      } else if (existingPrice) {
+        // Price is 0 or null, version the existing price with today's date
+        existingPrice.set('valid_until', today);
+        existingPrice.set('lastModifiedBy', priceData.lastModifiedBy);
+        existingPrice.set('active', false); // Mark as inactive
+        objectsToSave.push(existingPrice);
         existingMap.delete(key);
       }
     }
 
-    // Mark any remaining existing prices as deleted (they weren't in the update)
+    // Mark any remaining existing prices as expired (they weren't in the update)
     existingMap.forEach((price) => {
-      price.set('exists', false);
+      price.set('valid_until', today);
       price.set('active', false);
-      objectsToDelete.push(price);
+      objectsToSave.push(price); // Save to objectsToSave, not delete
     });
 
     // Save all changes
-    const results = [];
-
     if (objectsToSave.length > 0) {
-      const saved = await Parse.Object.saveAll(objectsToSave, options);
-      results.push(...saved);
+      return await Parse.Object.saveAll(objectsToSave, options);
     }
 
-    if (objectsToDelete.length > 0) {
-      const deleted = await Parse.Object.saveAll(objectsToDelete, options);
-      results.push(...deleted);
-    }
-
-    return results;
+    return [];
   }
 
   /**
@@ -249,7 +249,7 @@ class ClientPrices extends Parse.Object {
    * @param {string} itemType - Type of item (SERVICES, TOURS, EXPERIENCES).
    * @param {string} itemId - Item object ID.
    * @param {object} options - Parse options.
-   * @returns {Promise<Array>} Array of ClientPrices objects
+   * @returns {Promise<Array>} Array of ClientPrices objects.
    * @example
    */
   static async getClientPrices(clientId, itemType, itemId, options = {}) {
@@ -261,6 +261,7 @@ class ClientPrices extends Parse.Object {
     query.equalTo('itemId', itemId);
     query.equalTo('active', true);
     query.equalTo('exists', true);
+    query.doesNotExist('valid_until'); // Only get current active prices (valid_until IS NULL)
     query.include(['ratePtr', 'vehiclePtr']);
 
     return await query.find(options);
@@ -285,6 +286,7 @@ class ClientPrices extends Parse.Object {
     }
     query.equalTo('active', true);
     query.equalTo('exists', true);
+    query.doesNotExist('valid_until'); // Only get current active prices (valid_until IS NULL)
     query.include(['ratePtr', 'vehiclePtr']);
     query.limit(1000); // Adjust as needed
 
