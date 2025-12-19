@@ -28,6 +28,7 @@ router.get('/superadmin/tours', dashboardAuth.requireRole('superadmin'), (req, r
 router.get('/superadmin/permissions', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.permissions(req, res));
 router.get('/superadmin/analytics', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.analytics(req, res));
 router.get('/superadmin/reports', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.reports(req, res));
+router.get('/superadmin/emails', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.emails(req, res));
 router.get('/superadmin/audit', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.audit(req, res));
 router.get('/superadmin/settings', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.settings(req, res));
 router.get('/superadmin/integrations', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.integrations(req, res));
