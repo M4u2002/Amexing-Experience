@@ -56,6 +56,25 @@ const currentPath = '/dashboard/superadmin/emails';
                         helpText: 'Ingresa el email donde deseas recibir la prueba'
                     }) %>
 
+                    <!-- Template Selection -->
+                    <div class="mb-3">
+                        <label for="templateSelect" class="form-label">
+                            Plantilla de Email
+                            <span class="text-danger ms-1">*</span>
+                        </label>
+                        <select class="form-select" id="templateSelect" name="template" required>
+                            <option value="">Selecciona una plantilla...</option>
+                            <option value="simple">Email Simple (sin plantilla)</option>
+                            <option value="welcome">Bienvenida</option>
+                            <option value="booking_confirmation">Confirmación de Reserva</option>
+                            <option value="password_reset">Restablecimiento de Contraseña</option>
+                        </select>
+                        <div class="form-text">
+                            <i class="ti ti-info-circle me-1"></i>
+                            Selecciona la plantilla que deseas probar
+                        </div>
+                    </div>
+
                     <!-- Submit Button -->
                     <div class="d-flex gap-2 align-items-center">
                         <button type="submit" class="btn btn-primary" id="sendTestBtn">
@@ -198,10 +217,16 @@ const currentPath = '/dashboard/superadmin/emails';
         e.preventDefault();
 
         const email = emailInput.value.trim();
+        const template = document.getElementById('templateSelect').value;
 
         // Basic validation
         if (!email) {
             showResult('danger', 'Por favor ingresa una dirección de email');
+            return;
+        }
+
+        if (!template) {
+            showResult('danger', 'Por favor selecciona una plantilla de email');
             return;
         }
 
@@ -223,7 +248,7 @@ const currentPath = '/dashboard/superadmin/emails';
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ email, template })
             });
 
             const result = await response.json();

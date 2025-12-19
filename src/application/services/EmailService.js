@@ -101,7 +101,7 @@ class EmailService {
       const emailParams = new EmailParams()
         .setFrom(new Sender(
           from || process.env.EMAIL_FROM || 'noreply@amexing.com',
-          fromName || process.env.EMAIL_FROM_NAME || 'Amexing System'
+          fromName || process.env.EMAIL_FROM_NAME || 'Amexing Experience'
         ))
         .setTo([new Recipient(to, toName || '')])
         .setSubject(subject);
@@ -380,7 +380,7 @@ class EmailService {
     const emailData = {
       to: email,
       toName: name,
-      subject: 'Verify Your Email Address - Amexing System',
+      subject: 'Verify Your Email Address - Amexing Experience',
       html: this.generateEmailVerificationHTML(name, verificationUrl),
       text: this.generateEmailVerificationText(name, verificationUrl),
       tags: ['email-verification', 'security'],
@@ -424,15 +424,15 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to Amexing System</title>
+        <title>Welcome to Amexing Experience</title>
       </head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: #f8f9fa; padding: 30px; border-radius: 10px;">
-          <h1 style="color: #007bff; margin-bottom: 30px;">Welcome to Amexing System</h1>
+          <h1 style="color: #007bff; margin-bottom: 30px;">Welcome to Amexing Experience</h1>
           
           <p>Dear ${name || 'User'},</p>
           
-          <p>Welcome to the Amexing System! We're excited to have you on board.</p>
+          <p>Welcome to the Amexing Experience! We're excited to have you on board.</p>
           
           ${role ? `<p>You have been granted <strong>${role}</strong> access to the system.</p>` : ''}
           
@@ -453,7 +453,7 @@ class EmailService {
           
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
           <p style="font-size: 12px; color: #666;">
-            This is an automated message from Amexing System. Please do not reply to this email.
+            This is an automated message from Amexing Experience. Please do not reply to this email.
           </p>
         </div>
       </body>
@@ -470,11 +470,11 @@ class EmailService {
    */
   generateWelcomeEmailText(name, role) {
     return `
-Welcome to Amexing System
+Welcome to Amexing Experience
 
 Dear ${name || 'User'},
 
-Welcome to the Amexing System! We're excited to have you on board.
+Welcome to the Amexing Experience! We're excited to have you on board.
 
 ${role ? `You have been granted ${role} access to the system.\n` : ''}
 
@@ -491,7 +491,7 @@ Best regards,
 The Amexing Team
 
 ---
-This is an automated message from Amexing System. Please do not reply to this email.
+This is an automated message from Amexing Experience. Please do not reply to this email.
     `.trim();
   }
 
@@ -517,7 +517,7 @@ This is an automated message from Amexing System. Please do not reply to this em
           
           <p>Dear ${name || 'User'},</p>
           
-          <p>We received a request to reset your password for your Amexing System account.</p>
+          <p>We received a request to reset your password for your Amexing Experience account.</p>
           
           <div style="margin: 30px 0; text-align: center;">
             <a href="${resetUrl}" style="display: inline-block; background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
@@ -541,7 +541,7 @@ This is an automated message from Amexing System. Please do not reply to this em
           
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
           <p style="font-size: 12px; color: #666;">
-            This is an automated security message from Amexing System. Please do not reply to this email.
+            This is an automated security message from Amexing Experience. Please do not reply to this email.
           </p>
         </div>
       </body>
@@ -562,7 +562,7 @@ Password Reset Request
 
 Dear ${name || 'User'},
 
-We received a request to reset your password for your Amexing System account.
+We received a request to reset your password for your Amexing Experience account.
 
 Please click the following link to reset your password:
 ${resetUrl}
@@ -578,7 +578,7 @@ Best regards,
 The Amexing Security Team
 
 ---
-This is an automated security message from Amexing System. Please do not reply to this email.
+This is an automated security message from Amexing Experience. Please do not reply to this email.
     `.trim();
   }
 
@@ -604,7 +604,7 @@ This is an automated security message from Amexing System. Please do not reply t
           
           <p>Dear ${name || 'User'},</p>
           
-          <p>Thank you for creating an account with Amexing System. To complete your registration, please verify your email address.</p>
+          <p>Thank you for creating an account with Amexing Experience. To complete your registration, please verify your email address.</p>
           
           <div style="margin: 30px 0; text-align: center;">
             <a href="${verificationUrl}" style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
@@ -628,7 +628,7 @@ This is an automated security message from Amexing System. Please do not reply t
           
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
           <p style="font-size: 12px; color: #666;">
-            This is an automated message from Amexing System. Please do not reply to this email.
+            This is an automated message from Amexing Experience. Please do not reply to this email.
           </p>
         </div>
       </body>
@@ -649,7 +649,7 @@ Verify Your Email Address
 
 Dear ${name || 'User'},
 
-Thank you for creating an account with Amexing System. To complete your registration, please verify your email address.
+Thank you for creating an account with Amexing Experience. To complete your registration, please verify your email address.
 
 Please click the following link to verify your email:
 ${verificationUrl}
@@ -665,7 +665,7 @@ Best regards,
 The Amexing Team
 
 ---
-This is an automated message from Amexing System. Please do not reply to this email.
+This is an automated message from Amexing Experience. Please do not reply to this email.
     `.trim();
   }
 
