@@ -837,6 +837,98 @@ This is an automated message from Amexing Experience. Please do not reply to thi
       };
     }
   }
+
+  /**
+   * Get email usage statistics from EmailLog database.
+   * Returns email send quotas and usage for current period.
+   * @returns {Promise<object>} Usage statistics.
+   * @example
+   * const stats = await emailService.getUsageStats();
+   */
+  async getUsageStats() {
+    try {
+      if (!this.isAvailable()) {
+        return {
+          success: false,
+          error: 'Email service not configured',
+        };
+      }
+
+      // Get today's count
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const todayQuery = new Parse.Query('EmailLog');
+      todayQuery.greaterThanOrEqualTo('createdAt', startOfDay);
+      todayQuery.equalTo('exists', true);
+      const todayCount = await todayQuery.count({ useMasterKey: true });
+
+      // Get this month's count
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const monthQuery = new Parse.Query('EmailLog');
+      monthQuery.greaterThanOrEqualTo('createdAt', startOfMonth);
+      monthQuery.equalTo('exists', true);
+      const monthCount = await monthQuery.count({ useMasterKey: true });
+
+      // Get successful emails this month
+      const successQuery = new Parse.Query('EmailLog');
+      successQuery.greaterThanOrEqualTo('createdAt', startOfMonth);
+      successQuery.equalTo('status', 'sent');
+      successQuery.equalTo('exists', true);
+      const successCount = await successQuery.count({ useMasterKey: true });
+
+      // Get failed emails this month
+      const failedQuery = new Parse.Query('EmailLog');
+      failedQuery.greaterThanOrEqualTo('createdAt', startOfMonth);
+      failedQuery.equalTo('status', 'failed');
+      failedQuery.equalTo('exists', true);
+      const failedCount = await failedQuery.count({ useMasterKey: true });
+
+      // MailerSend free tier limits (as of 2024)
+      const FREE_TIER_DAILY_LIMIT = 100;
+      const FREE_TIER_MONTHLY_LIMIT = 3000;
+
+      // Calculate success rate
+      const totalMonthEmails = successCount + failedCount;
+      const successRate = totalMonthEmails > 0
+        ? ((successCount / totalMonthEmails) * 100).toFixed(1)
+        : '0.0';
+
+      return {
+        success: true,
+        data: {
+          today: {
+            sent: todayCount,
+            limit: FREE_TIER_DAILY_LIMIT,
+            remaining: Math.max(0, FREE_TIER_DAILY_LIMIT - todayCount),
+            percentage: Math.min(100, (todayCount / FREE_TIER_DAILY_LIMIT) * 100).toFixed(1),
+          },
+          month: {
+            sent: monthCount,
+            successful: successCount,
+            failed: failedCount,
+            limit: FREE_TIER_MONTHLY_LIMIT,
+            remaining: Math.max(0, FREE_TIER_MONTHLY_LIMIT - monthCount),
+            percentage: Math.min(100, (monthCount / FREE_TIER_MONTHLY_LIMIT) * 100).toFixed(1),
+            successRate,
+          },
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to get email usage stats', {
+        error: error.message,
+        stack: error.stack,
+      });
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
 }
 
 module.exports = new EmailService();

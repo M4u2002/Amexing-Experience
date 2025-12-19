@@ -30,6 +30,99 @@ const currentPath = '/dashboard/superadmin/emails';
     </div>
 </div>
 
+<!-- Usage Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">
+                    <i class="ti ti-chart-bar me-2 text-primary"></i>Uso de Cuenta MailerSend
+                </h6>
+
+                <!-- Loading State -->
+                <div id="usageLoading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                    <span class="text-muted">Cargando estadísticas...</span>
+                </div>
+
+                <!-- Error State -->
+                <div id="usageError" class="alert alert-warning" style="display: none;">
+                    <i class="ti ti-alert-triangle me-2"></i>
+                    <span id="usageErrorMessage"></span>
+                </div>
+
+                <!-- Stats Content -->
+                <div id="usageStats" style="display: none;">
+                    <div class="row">
+                        <!-- Today Stats -->
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-dark">
+                                        <i class="ti ti-calendar-day me-1"></i>Hoy
+                                    </span>
+                                    <span class="badge bg-primary" id="todayPercentage">0%</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div id="todayProgressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <small class="text-muted">
+                                    <strong id="todaySent">0</strong> enviados de <strong id="todayLimit">100</strong> disponibles
+                                    (<strong id="todayRemaining">100</strong> restantes)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Month Stats -->
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-dark">
+                                        <i class="ti ti-calendar-month me-1"></i>Este Mes
+                                    </span>
+                                    <span class="badge bg-info" id="monthPercentage">0%</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div id="monthProgressBar" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <small class="text-muted">
+                                    <strong id="monthSent">0</strong> enviados de <strong id="monthLimit">3,000</strong> disponibles
+                                    (<strong id="monthRemaining">3,000</strong> restantes)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Stats -->
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <div class="text-center p-2 border-end">
+                                <i class="ti ti-check text-success me-1"></i>
+                                <strong id="monthSuccessful">0</strong>
+                                <small class="text-muted ms-1">Exitosos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-2 border-end">
+                                <i class="ti ti-alert-circle text-danger me-1"></i>
+                                <strong id="monthFailed">0</strong>
+                                <small class="text-muted ms-1">Fallidos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-2">
+                                <i class="ti ti-percentage text-primary me-1"></i>
+                                <strong id="successRate">0%</strong>
+                                <small class="text-muted ms-1">Tasa de Éxito</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Test Email Form -->
 <div class="row">
     <div class="col-lg-8 col-12">
@@ -277,5 +370,93 @@ const currentPath = '/dashboard/superadmin/emails';
     form.addEventListener('reset', () => {
         resultDiv.style.display = 'none';
     });
+
+    // Load usage statistics
+    async function loadUsageStats() {
+        const loadingDiv = document.getElementById('usageLoading');
+        const errorDiv = document.getElementById('usageError');
+        const statsDiv = document.getElementById('usageStats');
+        const errorMessage = document.getElementById('usageErrorMessage');
+
+        try {
+            // Get authentication token
+            const token = await getAccessToken();
+            if (!token) {
+                throw new Error('No se pudo obtener el token de autenticación');
+            }
+
+            // Fetch usage statistics
+            const response = await fetch('/api/emails/usage', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                const { today, month } = result.data;
+
+                // Update today's stats
+                document.getElementById('todaySent').textContent = today.sent;
+                document.getElementById('todayLimit').textContent = today.limit.toLocaleString();
+                document.getElementById('todayRemaining').textContent = today.remaining;
+                document.getElementById('todayPercentage').textContent = today.percentage + '%';
+                document.getElementById('todayProgressBar').style.width = today.percentage + '%';
+
+                // Update progress bar color based on usage
+                const todayBar = document.getElementById('todayProgressBar');
+                if (today.percentage >= 90) {
+                    todayBar.className = 'progress-bar bg-danger';
+                } else if (today.percentage >= 70) {
+                    todayBar.className = 'progress-bar bg-warning';
+                } else {
+                    todayBar.className = 'progress-bar';
+                }
+
+                // Update month's stats
+                document.getElementById('monthSent').textContent = month.sent;
+                document.getElementById('monthLimit').textContent = month.limit.toLocaleString();
+                document.getElementById('monthRemaining').textContent = month.remaining.toLocaleString();
+                document.getElementById('monthPercentage').textContent = month.percentage + '%';
+                document.getElementById('monthProgressBar').style.width = month.percentage + '%';
+
+                // Update month progress bar color
+                const monthBar = document.getElementById('monthProgressBar');
+                if (month.percentage >= 90) {
+                    monthBar.className = 'progress-bar bg-danger';
+                } else if (month.percentage >= 70) {
+                    monthBar.className = 'progress-bar bg-warning';
+                } else {
+                    monthBar.className = 'progress-bar bg-info';
+                }
+
+                // Update additional stats
+                document.getElementById('monthSuccessful').textContent = month.successful;
+                document.getElementById('monthFailed').textContent = month.failed;
+                document.getElementById('successRate').textContent = month.successRate + '%';
+
+                // Show stats, hide loading
+                loadingDiv.style.display = 'none';
+                statsDiv.style.display = 'block';
+            } else {
+                throw new Error(result.error || 'Error al cargar estadísticas');
+            }
+        } catch (error) {
+            console.error('Error loading usage stats:', error);
+
+            // Show error message
+            errorMessage.textContent = error.message;
+            loadingDiv.style.display = 'none';
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    // Load stats on page load
+    loadUsageStats();
+
+    // Auto-refresh stats every 60 seconds
+    setInterval(loadUsageStats, 60000);
 })();
 </script>

@@ -496,6 +496,44 @@ router.post('/emails/send-test', jwtMiddleware.requireRoleLevel(7), async (req, 
 });
 
 /**
+ * Email Usage Stats Endpoint - SuperAdmin Only
+ * Gets email usage statistics and quotas.
+ */
+router.get('/emails/usage', jwtMiddleware.requireRoleLevel(7), async (req, res) => {
+  try {
+    const emailService = require('../../application/services/EmailService');
+
+    // Check if email service is available
+    if (!emailService.isAvailable()) {
+      return res.status(503).json({
+        success: false,
+        error: 'El servicio de email no está configurado',
+      });
+    }
+
+    // Get usage statistics
+    const stats = await emailService.getUsageStats();
+
+    if (!stats.success) {
+      return res.status(500).json(stats);
+    }
+
+    res.json(stats);
+  } catch (error) {
+    logger.error('Error getting email usage stats:', {
+      error: error.message,
+      stack: error.stack,
+      user: req.user?.email,
+    });
+
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener estadísticas de uso de email',
+    });
+  }
+});
+
+/**
  * @swagger
  * /api/notifications:
  *   get:

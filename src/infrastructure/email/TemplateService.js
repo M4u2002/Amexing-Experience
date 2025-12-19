@@ -46,15 +46,20 @@ class TemplateService {
 
   /**
    * Get application base URL based on environment.
+   * For emails, uses EMAIL_BASE_URL to ensure production domain in templates.
    * @returns {string} Base URL.
    * @private
    * @example
    * const baseUrl = this.getBaseUrl();
-   * // Dev: http://localhost:1337
-   * // Prod: https://amexingexperience.com
+   * // Dev: https://quotes.amexingexperience.com (EMAIL_BASE_URL)
+   * // Prod: https://amexingexperience.com (EMAIL_BASE_URL or APP_BASE_URL)
    */
   getBaseUrl() {
-    // Priority: APP_BASE_URL env var > auto-detect from PORT
+    // Priority: EMAIL_BASE_URL > APP_BASE_URL > auto-detect from PORT
+    if (process.env.EMAIL_BASE_URL) {
+      return process.env.EMAIL_BASE_URL;
+    }
+
     if (process.env.APP_BASE_URL) {
       return process.env.APP_BASE_URL;
     }
@@ -67,8 +72,8 @@ class TemplateService {
       return `http://localhost:${port}`;
     }
 
-    // Production fallback (should always set APP_BASE_URL in production)
-    logger.warn('[TemplateService] APP_BASE_URL not set, using fallback');
+    // Production fallback (should always set EMAIL_BASE_URL in production)
+    logger.warn('[TemplateService] EMAIL_BASE_URL not set, using fallback');
     return `http://localhost:${port}`;
   }
 
@@ -177,11 +182,18 @@ class TemplateService {
       throw new Error('Variables must be an object');
     }
 
-    // Replace all {{VARIABLE}} placeholders
-    const result = template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    // Replace all {{VARIABLE}} placeholders (supports Spanish characters like Ñ)
+    const result = template.replace(/\{\{([A-ZÁÉÍÓÚÑ_0-9]+)\}\}/gi, (match, key) => {
+      // Try exact match first, then case-insensitive
       if (key in variables) {
         const value = variables[key];
         // Handle null/undefined as empty string
+        return value !== null && value !== undefined ? String(value) : '';
+      }
+      // Try uppercase match for compatibility
+      const upperKey = key.toUpperCase();
+      if (upperKey in variables) {
+        const value = variables[upperKey];
         return value !== null && value !== undefined ? String(value) : '';
       }
       // Preserve placeholder if no variable provided
@@ -190,7 +202,7 @@ class TemplateService {
 
     logger.debug('[TemplateService] Substituted template variables', {
       variablesProvided: Object.keys(variables).length,
-      placeholdersFound: (template.match(/\{\{\w+\}\}/g) || []).length,
+      placeholdersFound: (template.match(/\{\{([A-ZÁÉÍÓÚÑ_0-9]+)\}\}/gi) || []).length,
     });
 
     return result;
@@ -375,7 +387,7 @@ class TemplateService {
    */
   static getCommonVariables() {
     return {
-      LOGO_URL: this.getLogoUrl(),
+      LOGO_URL: this.getLogoUrl('/img/amexing_logo_vertical.avif'),
       AÑO: new Date().getFullYear(),
       TELEFONO: '+52 (415) 167 39 90',
       TELEFONO_EMERGENCIAS: '+52 (415) 153 50 67',
