@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-19
+
+### Added
+- **Email System with MailerSend Integration**
+  - Complete email service with MailerSend API integration
+  - Email template system with variable substitution
+  - HTML email templates: welcome, booking confirmation, password reset
+  - Email logging and tracking (EmailLog model)
+  - SuperAdmin email management dashboard at `/dashboard/superadmin/emails`
+  - Test email functionality with template selection
+  - Email usage statistics and monitoring
+  - Support for Spanish characters (Ñ, Á, É, etc.) in template variables
+  - Environment-aware logo URLs via EMAIL_BASE_URL configuration
+
+- **Dynamic Pricing System**
+  - Client-specific rate management (AgencyRate, TransferRate)
+  - Rate prices table with multi-currency support
+  - Tour prices with dynamic catalog
+  - Price adjustment tracking (InflationRate, ExchangeRate)
+  - Client exceptions and custom pricing rules
+  - Automated price synchronization from service catalog
+
+- **Tours Data Management**
+  - Complete tour catalog with 837 services from CSV
+  - Tour prices seeding for all rate classes (First Class, Green Class, Premium)
+  - Tour validation scripts
+  - Service type categorization (Aeropuerto, Punto a Punto, Local, Tours)
+
+- **Database Enhancements**
+  - Services table refactoring for better data organization
+  - Rate prices table with comprehensive pricing structure
+  - Migration scripts for price synchronization
+  - Client prices tracking
+  - Service catalog improvements
+
+### Changed
+- **Email Templates Styling**
+  - Updated header background color to #f45355 (Amexing brand red)
+  - Changed decorative line to #1a1a1a (black) for better contrast
+  - Implemented table-based TripAdvisor icon (centered "T" in green circle)
+  - All links and buttons use consistent #f45355 color
+  - Improved email client compatibility with table-based layouts
+
+- **Dependency Updates**
+  - body-parser: 2.2.0 → 2.2.1
+  - current-module-paths: 1.1.2 → 1.1.3
+  - @commitlint/load: 20.1.0 → 20.2.0
+  - @commitlint/parse: 20.0.0 → 20.2.0
+  - @emnapi/core: 1.5.0 → 1.7.1
+  - uuid: 9.0.1 → 13.0.0
+  - @commitlint/cli: 18.6.1 → 20.1.0
+  - husky: 8.0.3 → 9.1.7
+  - mongodb-memory-server: 9.5.0 → 10.3.0
+  - jsdoc-to-markdown: 9.1.2 → 9.1.3
+
+### Fixed
+- **Email Template Variables**
+  - Fixed {{AÑO}} placeholder not substituting due to regex not supporting Spanish characters
+  - Updated regex to `/\{\{([A-ZÁÉÍÓÚÑ_0-9]+)\}\}/gi` for full Spanish character support
+  - Logo URL now uses production domain instead of localhost via EMAIL_BASE_URL
+
+- **Merge Conflicts Resolution**
+  - Resolved yarn.lock conflicts in multiple dependency update branches
+  - Fixed iconv-lite version conflicts (0.6.3 and 0.7.1)
+  - Fixed raw-body version references (^3.0.0 and ^3.0.1)
+
+- **Quote Management**
+  - Quote cancellation functionality
+  - Client manual access improvements
+  - Quote information section enhancements
+
+### Security
+- Comprehensive dependency security updates via Dependabot
+- PCI DSS compliant email system with audit logging
+- Secure email template rendering with XSS prevention
+
 ## [0.2.0] - 2025-11-12
 
 ### Added
