@@ -29,6 +29,9 @@ A PCI DSS 4.0 compliant e-commerce platform built with Parse Server, Node.js, an
 - 🎯 **MongoDB** - NoSQL database with advanced security
 - 📊 **PM2 Ready** - Production-ready process management
 - 📝 **Comprehensive Logging** - Winston logger with audit trails
+- 📧 **Email System** - MailerSend integration with professional HTML templates
+- 💰 **Dynamic Pricing** - Client-specific rates and pricing management
+- 🎫 **Tours Management** - Complete catalog with 837+ services
 
 ## 🚀 Quick Start
 

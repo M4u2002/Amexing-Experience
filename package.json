@@ -1,6 +1,6 @@
 {
   "name": "amexing-web",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "PCI DSS compliant e-commerce platform with Parse Server backend",
   "main": "src/index.js",
   "scripts": {
@@ -249,6 +249,7 @@
     "joi": "^18.0.2",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mailersend": "^2.6.0",
     "method-override": "^3.0.0",
     "mongodb": "^6.3.0",
     "multer": "^2.0.2",
@@ -259,7 +260,7 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "uid-safe": "^2.1.5",
-    "uuid": "^9.0.1",
+    "uuid": "^13.0.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0",
     "xss": "^1.0.15",
@@ -273,6 +274,7 @@
     "depcheck": "^1.4.7",
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-import-resolver-node": "^0.3.9",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsdoc": "^61.5.0",
     "eslint-plugin-security": "^2.1.0",

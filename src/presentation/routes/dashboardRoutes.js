@@ -28,6 +28,7 @@ router.get('/superadmin/tours', dashboardAuth.requireRole('superadmin'), (req, r
 router.get('/superadmin/permissions', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.permissions(req, res));
 router.get('/superadmin/analytics', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.analytics(req, res));
 router.get('/superadmin/reports', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.reports(req, res));
+router.get('/superadmin/emails', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.emails(req, res));
 router.get('/superadmin/audit', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.audit(req, res));
 router.get('/superadmin/settings', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.settings(req, res));
 router.get('/superadmin/integrations', dashboardAuth.requireRole('superadmin'), (req, res) => superAdminController.integrations(req, res));
@@ -48,6 +49,7 @@ router.get('/admin/experiences', dashboardAuth.requireRole('admin'), (req, res) 
 router.get('/admin/schedule', dashboardAuth.requireRole('admin'), (req, res) => adminController.schedule(req, res));
 router.get('/admin/bookings', dashboardAuth.requireRole('admin'), (req, res) => adminController.bookings(req, res));
 router.get('/admin/vehicles', dashboardAuth.requireRole('admin'), (req, res) => adminController.vehicles(req, res));
+router.get('/admin/price-settings', dashboardAuth.requireRole('admin'), (req, res) => adminController.priceSettings(req, res));
 router.get('/admin/pois', dashboardAuth.requireRole('admin'), (req, res) => adminController.pois(req, res));
 router.get('/admin/services', dashboardAuth.requireRole('admin'), (req, res) => adminController.services(req, res));
 router.get('/admin/pricing', dashboardAuth.requireRole('admin'), (req, res) => adminController.pricing(req, res));
